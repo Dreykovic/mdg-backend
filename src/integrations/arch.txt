@@ -1,0 +1,8 @@
+.
+├── arch.txt
+└── mail
+    ├── mail.client.ts
+    ├── mail.service.ts
+    └── mail.types.ts
+
+1 directory, 4 files

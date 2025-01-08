@@ -1,0 +1,633 @@
+// generator client {
+//   provider        = "prisma-client-js"
+//   previewFeatures = ["omitApi"]
+// }
+
+// datasource db {
+//   provider = "postgresql" // Par défaut, PostgreSQL est utilisé. Adapter selon votre besoin.
+//   url      = env("DATABASE_URL")
+// }
+
+// enum ProfileName {
+//   CUSTOMER
+//   ADMIN
+//   PARTNER
+// }
+
+// model User {
+//   id                String        @id @default(uuid())
+//   username          String        @unique
+//   email             String        @unique
+//   profiles          ProfileName[]
+//   password          String
+//   email_verified_at DateTime?
+
+//   passwordResetTokens     PasswordResetToken[]
+//   emailVerificationTokens EmailVerificationToken[]
+//   orders                  Order[] // Commandes associées
+//   userHasRoles            UserHasRole[]
+//   userHasPermissions      UserHasPermission[]
+//   tokenFamilies           TokenFamily[]
+//   userProfile             UserProfile[]
+//   recipes                 Recipe[]
+//   createdAt               DateTime                 @default(now())
+//   updatedAt               DateTime                 @updatedAt
+//   comments                Comment[]
+
+//   @@index([username, id, email])
+// }
+
+// // Modèle Customer
+// model UserProfile {
+//   id         Int     @id @default(autoincrement())
+//   // Properties
+//   salutation String? // Civilité
+//   firstName  String // Prénom
+//   lastName   String // Nom de famille
+//   phone      String? // Téléphone
+//   address1   String // Adresse ligne 1
+//   address2   String? // Adresse ligne 2
+//   city       String // Ville
+//   state      String? // État ou région
+//   postalCode String // Code postal
+//   country    String // Pays
+//   // Relations
+//   user       User    @relation(fields: [userId], references: [id])
+//   userId     String
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// enum TokenStatus {
+//   ACTIVE
+//   REVOKED
+// }
+
+// model TokenFamily {
+//   id Int @id @default(autoincrement())
+
+//   family        String         @unique
+//   deviceModel   String // Show the user logged devices 
+//   ipAddress     String
+//   userAgent     String
+//   acceptLang    String
+//   deviceType    String
+//   deviceBrand   String
+//   osName        String
+//   osVersion     String
+//   clientName    String
+//   clientType    String
+//   clientVersion String
+//   status        TokenStatus    @default(ACTIVE)
+//   createdAt     DateTime       @default(now())
+//   updatedAt     DateTime       @updatedAt
+//   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   userId        String
+//   RefreshToken  RefreshToken[]
+
+//   @@index([family, status, userId])
+// }
+
+// model RefreshToken {
+//   id    Int    @id @default(autoincrement())
+//   token String @unique
+
+//   expiresAt DateTime
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   status TokenStatus @default(ACTIVE)
+
+//   family         TokenFamily    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+//   familyId       Int
+//   childrenTokens RefreshToken[] @relation("ChildrenTokens")
+//   parentToken    RefreshToken?  @relation("ChildrenTokens", fields: [parentTokenId], references: [id])
+//   parentTokenId  Int?
+
+//   @@index([status, token, parentTokenId, familyId])
+// }
+
+// model PasswordResetToken {
+//   id        Int      @id @default(autoincrement())
+//   token     String
+//   expiresAt DateTime
+//   user      User     @relation(fields: [userId], references: [id])
+//   userId    String
+
+//   createdAt DateTime @default(now())
+// }
+
+// model EmailVerificationToken {
+//   id        Int      @id @default(autoincrement())
+//   token     String
+//   expiresAt DateTime
+//   user      User     @relation(fields: [userId], references: [id])
+//   userId    String
+
+//   createdAt DateTime @default(now())
+// }
+
+// model Role {
+//   id                 Int                 @id @default(autoincrement())
+//   name               String              @unique
+//   roleHasPermissions RoleHasPermission[]
+//   userHasRoles       UserHasRole[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model Permission {
+//   id                 Int                 @id @default(autoincrement())
+//   name               String              @unique
+//   roleHasPermissions RoleHasPermission[]
+//   userHasPermissions UserHasPermission[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model RoleHasPermission {
+//   id           Int        @id @default(autoincrement())
+//   role         Role       @relation(fields: [roleId], references: [id])
+//   roleId       Int
+//   permission   Permission @relation(fields: [permissionId], references: [id])
+//   permissionId Int
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model UserHasRole {
+//   id     Int    @id @default(autoincrement())
+//   user   User   @relation(fields: [userId], references: [id])
+//   userId String
+//   role   Role   @relation(fields: [roleId], references: [id])
+//   roleId Int
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model UserHasPermission {
+//   id           Int        @id @default(autoincrement())
+//   user         User       @relation(fields: [userId], references: [id])
+//   userId       String
+//   permission   Permission @relation(fields: [permissionId], references: [id])
+//   permissionId Int
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // Resources Models
+
+// // Modèle Origin
+// model Origin {
+//   id      Int    @id @default(autoincrement())
+//   // Properties
+//   country String @unique // Pays d'origine 
+//   code    String @unique
+
+//   createdAt DateTime  @default(now())
+//   updatedAt DateTime  @updatedAt
+//   //Relations
+//   products  Product[] // Produits associés
+// }
+
+// // Modèle ProductCategory
+// model ProductCategory {
+//   id            Int                  @id @default(autoincrement())
+//   // Properties
+//   name          String               @unique // Nom de la catégorie
+//   description   String?
+//   imageRef      String?              @unique
+//   imageUrl      String?
+//   slug          String?
+//   // Relations
+//   subcategories ProductSubcategory[] // Sous-catégories associées
+//   Product       Product[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // Modèle ProductSubcategory
+// model ProductSubcategory {
+//   id          Int     @id @default(autoincrement())
+//   // Properties
+//   name        String // Nom de la sous-catégorie
+//   description String?
+
+//   imageRef String? @unique
+//   imageUrl String?
+//   slug     String?
+
+//   //References attributes
+
+//   categoryId Int
+//   // Relations
+//   category   ProductCategory @relation(fields: [categoryId], references: [id])
+//   products   Product[] // Produits associés
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@unique([categoryId, name])
+// }
+
+// // Modèle Supplier
+// model Supplier {
+//   id         Int     @id @default(autoincrement())
+//   // Properties
+//   name       String // Nom du fournisseur
+//   address1   String // Adresse ligne 1
+//   address2   String? // Adresse ligne 2
+//   city       String // Ville
+//   state      String? // État ou région
+//   postalCode String // Code postal
+//   country    String // Pays
+//   // Relations
+//   imageRef   String? @unique
+
+//   products Product[] // Produits fournis
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@unique([name, country, city, address1, postalCode])
+// }
+
+// model MarginLevel {
+//   id     Int    @id @default(autoincrement())
+//   // Properties
+//   name   String @unique
+//   margin Float
+//   // Relations
+
+//   products Product[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model UnitOfMeasure {
+//   id             Int     @id @default(autoincrement())
+//   // Properties
+//   name           String  @unique
+//   type           UOMType
+//   factor         Float   @default(1)
+//   isStandard     Boolean @default(false)
+//   // References attributes
+//   standardUnitId Int?
+
+//   // Relations
+//   lines Line[]
+
+//   derivedUnitOfMeasures UnitOfMeasure[] @relation("StandardUnit")
+//   standardUnit          UnitOfMeasure?  @relation("StandardUnit", fields: [standardUnitId], references: [id], onDelete: SetNull)
+//   ingredients           Ingredient[]
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // Modèle Product
+// model Product {
+//   id      String @id @default(uuid())
+//   barcode String @unique @default(uuid())
+
+//   name         String  @unique // Nom du produit
+//   isGlutenFree Boolean // Indique si le produit est sans gluten
+//   isGMOFree    Boolean // Indique si le produit est sans OGM
+//   description  String? // Description du produit
+
+//   // properties
+//   isActive          Boolean @default(false)
+//   isPublic          Boolean @default(false)
+//   minimumStockLevel Float   @default(0)
+//   quantity          Float   @default(0)
+
+//   additionalCost Float?  @default(0)
+//   imageRef       String? @unique
+
+//   costPerGramWhole   Float
+//   costPerGramGround  Float
+//   pricePerGramWhole  Float // Caluculated
+//   pricePerGramGround Float // Caluculated
+
+//   //References attributes
+//   originId      Int
+//   subcategoryId Int?
+//   categoryId    Int
+//   supplierId    Int
+//   marginLevelId Int
+
+//   // Relations
+//   lines       Line[] // Relations avec les lignes
+//   ingredients Ingredient[] // Références dans des recettes
+
+//   origin      Origin              @relation(fields: [originId], references: [id])
+//   subCategory ProductSubcategory? @relation(fields: [subcategoryId], references: [id])
+//   category    ProductCategory     @relation(fields: [categoryId], references: [id])
+//   supplier    Supplier            @relation(fields: [supplierId], references: [id])
+
+//   marginLevel    MarginLevel     @relation(fields: [marginLevelId], references: [id])
+//   createdAt      DateTime        @default(now())
+//   updatedAt      DateTime        @updatedAt
+//   productMedia   ProductMedia[]
+//   stockMovements StockMovement[]
+// }
+
+// model MediaCategory {
+//   id          String  @id @default(uuid())
+//   name        String // Ex: "Image principale", "Zoom", "Vidéo"
+//   description String? // Description du type de média (facultatif)
+
+//   mediaItems ProductMedia[] // Relation avec les éléments de médias
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model ProductMedia {
+//   id        String    @id @default(uuid()) // Identifiant unique
+//   url       String // URL de l'image ou de la vidéo
+//   type      MediaType // Type : image ou vidéo
+//   altText   String? // Texte alternatif pour l'accessibilité
+//   isPrimary Boolean   @default(false) // Image ou vidéo principale
+//   width     Int? // Largeur de l'image ou de la vidéo
+//   height    Int? // Hauteur de l'image ou de la vidéo
+//   size      Int? // Taille du fichier (en octets)
+//   duration  Int? // Durée de la vidéo en secondes (si vidéo)
+
+//   mediaCategoryId String // Catégorie de média (image principale, galerie, etc.)
+//   mediaCategory   MediaCategory @relation(fields: [mediaCategoryId], references: [id])
+
+//   order    Int? // Position de l'image ou de la vidéo dans la galerie
+//   position String? // Indicateur de la position (ex : front, back, left, right) pour les vues à 360°
+
+//   productId String
+//   product   Product @relation(fields: [productId], references: [id])
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// enum MediaType {
+//   IMAGE
+//   VIDEO
+// }
+
+// model StockMovement {
+//   id          Int               @id @default(autoincrement())
+//   productId   String
+//   product     Product           @relation(fields: [productId], references: [id])
+//   quantity    Float // Quantité ajoutée ou retirée
+//   type        StockMovementType // AJOUT, RETRAIT, CORRECTION
+//   description String? // Optionnel pour le contexte de la modification
+
+//   createdAt DateTime @default(now())
+// }
+
+// enum StockMovementType {
+//   ADDITION
+//   REMOVAL
+//   CORRECTION
+// }
+
+// // Purchase Models
+
+// // Modèle Order
+// model Order {
+//   id         String    @id @default(uuid())
+//   // Properties
+//   oderNum    String    @unique
+//   orderDate  DateTime
+//   shipDate   DateTime?
+//   subTotal   Float
+//   grandTotal Float
+//   tax        Float
+//   shipping   Float // TODO: A revoir
+
+//   sumLines Int
+//   //References attributes
+
+//   customerId String
+//   // Relations
+//   lines      Line[] // Lignes de commande associées
+//   kits       Kit[] // Lignes de commande associées
+
+//   costumer User @relation(fields: [customerId], references: [id])
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // Modèle Kit
+// model Kit {
+//   id          Int     @id @default(autoincrement())
+//   // Properties
+//   name        String // Nom du kit
+//   description String? // Description du kit
+//   // References Attributes
+//   orderId     String
+//   // Relations
+//   order       Order   @relation(fields: [orderId], references: [id])
+//   lines       Line[] // Lignes associées
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// enum UOMType {
+//   WEIGHT
+//   VOLUME
+//   OTHER
+// }
+
+// // Modèle Line
+// model Line {
+//   id String @id @default(uuid())
+
+//   //Properties
+//   lineNum           String        @unique
+//   quantity          Float
+//   value             Float
+//   inputQuantity     Float
+//   inputUOMType      UOMType       @default(WEIGHT)
+//   grindBefore       Boolean
+//   grindAfter        Boolean
+//   // References Attributes
+//   orderId           String
+//   kitId             Int?
+//   productId         String
+//   unitOfMeasureIdId Int
+//   //Relations
+//   unitOfMeasure     UnitOfMeasure @relation(fields: [unitOfMeasureIdId], references: [id])
+//   order             Order         @relation(fields: [orderId], references: [id])
+//   kit               Kit?          @relation(fields: [kitId], references: [id])
+//   product           Product       @relation(fields: [productId], references: [id])
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model VolToWeight {
+//   id              Int    @id @default(autoincrement())
+//   name            String @unique
+//   convertToStdVol Float
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model WeightConversion {
+//   id         Int    @id @default(autoincrement())
+//   name       String @unique
+//   convertPct Float
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model VolumeConversion {
+//   id      Int    @id @default(autoincrement())
+//   stdVol  String
+//   prIdVol String
+//   m1      Float
+//   m2      Float
+//   m3      Float
+//   avg     Float
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model OtherConversion {
+//   id     Int    @id @default(autoincrement())
+//   stdVol String
+//   prId   String
+//   m1     Float
+//   m2     Float
+//   m3     Float
+//   avg    Float
+
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// // Modèle Recipe
+// model RecipeCategory {
+//   id          Int                  @id @default(autoincrement())
+//   name        String               @unique
+//   imageRef    String?              @unique
+//   imageUrl    String?
+//   slug        String?
+//   description String?
+//   recipes     RecipeCategoryLink[] // Nouvelle relation many-to-many
+//   createdAt   DateTime             @default(now())
+//   updatedAt   DateTime             @updatedAt
+// }
+
+// model RecipeCategoryLink {
+//   id         Int @id @default(autoincrement())
+//   recipeId   Int
+//   categoryId Int
+
+//   recipe    Recipe         @relation(fields: [recipeId], references: [id])
+//   category  RecipeCategory @relation(fields: [categoryId], references: [id])
+//   createdAt DateTime       @default(now())
+//   updatedAt DateTime       @updatedAt
+
+//   @@unique([recipeId, categoryId]) // Évite les doublons dans la relation
+// }
+
+// enum RecipeDifficultyType {
+//   EASY
+//   MEDIUM
+//   HARD
+// }
+
+// model Recipe {
+//   // Properties
+
+//   id              Int                  @id @default(autoincrement())
+//   name            String               @unique
+//   description     String?
+//   preparationTime Int // Temps de préparation en minutes
+//   cookingTime     Int? // Temps de cuisson en minutes
+//   servings        Int? // Nombre de portions prévues
+//   isApproved      Boolean              @default(false)
+//   isPromoAwarded  Boolean              @default(false)
+//   difficulty      RecipeDifficultyType @default(EASY) // Facile, Moyen, Difficile
+
+//   // References Attributes
+//   userId     String
+//   // Relations
+//   categories RecipeCategoryLink[] // Nouvelle relation many-to-many
+
+//   ingrediants Ingredient[] // Relation avec les produits
+//   steps       Step[] // Étapes de la recette
+//   author      User         @relation(fields: [userId], references: [id])
+//   createdAt   DateTime     @default(now())
+//   updatedAt   DateTime     @updatedAt
+
+//   ratings  Rating[]
+//   comments Comment[]
+// }
+
+// model Ingredient {
+//   id            Int     @id @default(autoincrement())
+//   // Properties
+//   quantity      Float // Quantité nécessaire
+//   grindRequired Boolean // Indique si l'ingrédient doit être moulu
+
+//   // References Attributes
+//   recipeId        Int
+//   productId       String
+//   unitOfMeasureId Int // Unité de mesure (grammes, litres, etc.)
+//   // Relations
+//   unitOfMeasure   UnitOfMeasure @relation(fields: [unitOfMeasureId], references: [id])
+//   product         Product       @relation(fields: [productId], references: [id])
+//   recipe          Recipe        @relation(fields: [recipeId], references: [id])
+//   createdAt       DateTime      @default(now())
+//   updatedAt       DateTime      @updatedAt
+
+//   @@unique([recipeId, productId]) // Évite les doublons pour une même recette et produit
+// }
+
+// model Step {
+//   id          Int    @id @default(autoincrement())
+//   recipeId    Int
+//   stepNumber  Int // Numéro de l'étape
+//   description String // Description de l'étape
+//   duration    Int? // Durée en minutes pour cette étape
+
+//   recipe    Recipe   @relation(fields: [recipeId], references: [id])
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
+
+// model Rating {
+//   id        Int      @id @default(autoincrement())
+//   recipeId  Int
+//   userId    Int
+//   score     Int // Note entre 1 et 5
+//   comment   String? // Optionnel
+//   createdAt DateTime @default(now())
+
+//   recipe Recipe @relation(fields: [recipeId], references: [id])
+// }
+
+// model Comment {
+//   id        Int      @id @default(autoincrement())
+//   recipeId  Int
+//   userId    String
+//   content   String
+//   createdAt DateTime @default(now())
+
+//   recipe Recipe @relation(fields: [recipeId], references: [id])
+//   user   User   @relation(fields: [userId], references: [id])
+// }

@@ -225,11 +225,13 @@ class Server extends http.Server {
         if (!silent) {
           log(colorTxt.white(`-> Connected on database`));
         }
-      } else {
-        throw new Error(colorTxt.red(`-> Unable to connect to the database`));
       }
     } catch (error) {
-      throw new Error(colorTxt.red(`${(error as Error).message}'`));
+      throw new Error(
+        colorTxt.red(
+          `-> Unable to connect to the database : ${(error as Error).message}'`
+        )
+      );
     }
   }
 

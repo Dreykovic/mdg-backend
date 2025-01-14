@@ -69,7 +69,7 @@ export class PrismaService {
       await this.prisma.$connect();
       log('Database connected successfully');
     } catch (error) {
-      log('Failed to connect to the database:', (error as Error).message);
+      throw new Error((error as Error).message);
     }
   }
 
@@ -80,7 +80,7 @@ export class PrismaService {
   public async disconnect(): Promise<void> {
     try {
       await this.prisma.$disconnect();
-      log('Database disconnected successfully');
+      // log('Database disconnected successfully');
     } catch (error) {
       log('Error while disconnecting from the database:', error);
     }
@@ -93,9 +93,10 @@ export class PrismaService {
   public async checkConnection(): Promise<{ success: boolean; error: any }> {
     try {
       await this.connect();
+
       return { success: true, error: null };
     } catch (err) {
-      return { success: false, error: err };
+      throw new Error((err as any).message);
     } finally {
       await this.disconnect();
     }

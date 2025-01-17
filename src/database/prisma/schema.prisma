@@ -2,10 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator typescriptInterfaces {
-  provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
-  output   = "./dto/interfaces.ts"
-}
+// generator typescriptInterfaces {
+//   provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
+//   output   = "./dto/interfaces.ts"
+// }
 
 datasource db {
   provider = "postgresql" // Default database provider is PostgreSQL. Adjust as needed.

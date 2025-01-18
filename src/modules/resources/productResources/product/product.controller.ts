@@ -71,7 +71,10 @@ export class ProductController {
       log('Create product Request Received');
 
       const data = req.body;
+      log('data received to create a product before casting', data);
+
       data.isActive = StringUtil.parseBool(req.body.isActive);
+      data.isPublic = StringUtil.parseBool(req.body.isPublic);
       data.isGlutenFree = StringUtil.parseBool(req.body.isGlutenFree);
       data.isGMOFree = StringUtil.parseBool(req.body.isGMOFree);
       data.costPerGramGround = parseFloat(req.body.costPerGramGround);
@@ -83,7 +86,7 @@ export class ProductController {
       data.subcategoryId = req.body.subcategoryId
         ? parseFloat(req.body.subcategoryId)
         : null;
-
+      log('data received to create a product', data);
       const payload = await this.productService.createProduct(data);
 
       const response = ApiResponse.http200(payload);
@@ -133,11 +136,18 @@ export class ProductController {
       const data = req.body;
 
       data.isActive = StringUtil.parseBool(req.body.isActive);
+      data.isPublic = StringUtil.parseBool(req.body.isPublic);
       data.isGlutenFree = StringUtil.parseBool(req.body.isGlutenFree);
       data.isGMOFree = StringUtil.parseBool(req.body.isGMOFree);
       data.costPerGramGround = parseFloat(req.body.costPerGramGround);
       data.costPerGramWhole = parseFloat(req.body.costPerGramWhole);
-
+      data.categoryId = parseFloat(req.body.categoryId);
+      data.marginLevelId = parseFloat(req.body.marginLevelId);
+      data.supplierId = parseFloat(req.body.supplierId);
+      data.originId = parseFloat(req.body.originId);
+      data.subcategoryId = req.body.subcategoryId
+        ? parseFloat(req.body.subcategoryId)
+        : null;
       const payload = await this.productService.updateProduct(data, filter);
 
       const response = ApiResponse.http200(payload);

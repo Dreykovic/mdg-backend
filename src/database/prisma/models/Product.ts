@@ -10,6 +10,7 @@ const productSchema = z.object({
   description: z.string().max(1000).nullable().optional(),
   barcode: z.string().optional(),
   isActive: z.boolean().optional(),
+  isPublic: z.boolean().optional(),
   minimumStockLevel: z
     .number()
     .gte(0, 'Minimum stock level must be greater than or equal to 0')

@@ -135,16 +135,36 @@ export class ProductController {
       }
       const data = req.body;
 
-      data.isActive = StringUtil.parseBool(req.body.isActive);
-      data.isPublic = StringUtil.parseBool(req.body.isPublic);
-      data.isGlutenFree = StringUtil.parseBool(req.body.isGlutenFree);
-      data.isGMOFree = StringUtil.parseBool(req.body.isGMOFree);
-      data.costPerGramGround = parseFloat(req.body.costPerGramGround);
-      data.costPerGramWhole = parseFloat(req.body.costPerGramWhole);
-      data.categoryId = parseFloat(req.body.categoryId);
-      data.marginLevelId = parseFloat(req.body.marginLevelId);
-      data.supplierId = parseFloat(req.body.supplierId);
-      data.originId = parseFloat(req.body.originId);
+      data.isActive = req.body.isActive
+        ? StringUtil.parseBool(req.body.isActive)
+        : undefined;
+      data.isPublic = req.body.isPublic
+        ? StringUtil.parseBool(req.body.isPublic)
+        : undefined;
+      data.isGlutenFree = req.body.isGlutenFree
+        ? StringUtil.parseBool(req.body.isGlutenFree)
+        : undefined;
+      data.isGMOFree = req.body.isGMOFree
+        ? StringUtil.parseBool(req.body.isGMOFree)
+        : undefined;
+      data.costPerGramGround = req.body.costPerGramGround
+        ? parseFloat(req.body.costPerGramGround)
+        : undefined;
+      data.costPerGramWhole = req.body.costPerGramWhole
+        ? parseFloat(req.body.costPerGramWhole)
+        : undefined;
+      data.categoryId = req.body.categoryId
+        ? parseFloat(req.body.categoryId)
+        : undefined;
+      data.marginLevelId = req.body.marginLevelId
+        ? parseFloat(req.body.marginLevelId)
+        : undefined;
+      data.supplierId = req.body.supplierId
+        ? parseFloat(req.body.supplierId)
+        : undefined;
+      data.originId = req.body.originId
+        ? parseFloat(req.body.originId)
+        : undefined;
       data.subcategoryId = req.body.subcategoryId
         ? parseFloat(req.body.subcategoryId)
         : null;

@@ -97,6 +97,7 @@ export default class ProductService extends ServiceDefinition {
     filter: Prisma.ProductWhereUniqueInput
   ) {
     try {
+      log(data);
       const product = await this.db.product.update({
         where: filter,
         data,

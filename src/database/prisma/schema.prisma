@@ -2,10 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// generator typescriptInterfaces {
-//   provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
-//   output   = "./dto/interfaces.ts"
-// }
+generator typescriptInterfaces {
+  provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
+  output   = "./dto/interfaces.ts"
+}
 
 datasource db {
   provider = "postgresql" // Default database provider is PostgreSQL. Adjust as needed.
@@ -315,16 +315,15 @@ model Step {
 
 // Model for volume conversion
 model VolumeConversion {
-  id              Int           @id @default(autoincrement())
-  m1              Float // Conversion factor 1
-  m2              Float // Conversion factor 2
-  m3              Float // Conversion factor 3
-  avg             Float // Average conversion factor
-  unitOfMeasureId Int // Reference to unit of measure
-  productId       String        @unique // Reference to product
-  stdVolId        Int // Reference to standard volume
-  stdVol          UnitOfMeasure @relation(fields: [unitOfMeasureId], references: [id]) // Relation to standard volume
-  product         Product       @relation(fields: [productId], references: [id]) // Relation to product
-  createdAt       DateTime      @default(now()) // Creation timestamp
-  updatedAt       DateTime      @updatedAt // Update timestamp
+  id        Int           @id @default(autoincrement())
+  m1        Float // Conversion factor 1
+  m2        Float // Conversion factor 2
+  m3        Float // Conversion factor 3
+  avg       Float // Average conversion factor
+  productId String        @unique // Reference to product
+  stdVolId  Int // Reference to standard volume
+  stdVol    UnitOfMeasure @relation(fields: [stdVolId], references: [id]) // Relation to standard volume
+  product   Product       @relation(fields: [productId], references: [id]) // Relation to product
+  createdAt DateTime      @default(now()) // Creation timestamp
+  updatedAt DateTime      @updatedAt // Update timestamp
 }

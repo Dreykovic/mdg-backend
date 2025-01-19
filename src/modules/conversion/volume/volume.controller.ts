@@ -58,13 +58,6 @@ export class VolumeConversionController {
     }
   }
 
-  /**
-   * Fetches a complete list of volumeConversions without pagination.
-   *
-   * @param {Request} req - The HTTP request object.
-   * @param {Response} res - The HTTP response object.
-   * @returns {Promise<void>} Resolves with the full list of uOms.
-   */
   async volumeConversionsList(req: Request, res: Response): Promise<void> {
     try {
       log('List volumeConversion Request Received');
@@ -101,8 +94,7 @@ export class VolumeConversionController {
       data.m1 = parseFloat(data.m1);
       data.m2 = parseFloat(data.m2);
       data.m3 = parseFloat(data.m3);
-      data.unitOfMeasureId = parseFloat(data.unitOfMeasureId);
-      data.stdVolId = parseFloat(data.stdVolId);
+      // data.stdVolId = parseFloat(data.stdVolId);
       const payload =
         await this.volumeConversionService.createVolumeConversion(data);
 

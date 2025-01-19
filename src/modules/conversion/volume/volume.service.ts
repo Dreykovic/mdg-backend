@@ -14,6 +14,12 @@ export default class VolumeConversionService extends ServiceDefinition {
     data: Prisma.VolumeConversionUncheckedCreateInput
   ) {
     try {
+      const standardUnit = await this.db.unitOfMeasure.findUniqueOrThrow({
+        where: {
+          name: 'Tablespoon',
+        },
+      });
+      data.stdVolId = standardUnit.id;
       // Sanitize input data (if needed, add specific sanitization logic here)
       const cleanData = data;
       const avg = (cleanData.m1 + cleanData.m2 + cleanData.m3) / 3;

@@ -4,6 +4,7 @@
  */
 
 import adminAuthModule from '@/modules/adminAuth/adminAuth.module'; // Admin authentication module
+import conversionModule from '@/modules/conversion/resources.module';
 import filesModule from '@/modules/files/files.module'; // File handling module
 import resourcesModule from '@/modules/resources/resources.module'; // Resource management module
 import express from 'express'; // Express router to define API routes
@@ -22,6 +23,12 @@ apiRouter.use('/v1', adminAuthModule.controller);
  * Delegates requests to the resourcesModule controller.
  */
 apiRouter.use('/v1', resourcesModule.controller);
+
+/**
+ * Route to handle all resource management related requests under the `/v1` version.
+ * Delegates requests to the conversionModule controller.
+ */
+apiRouter.use('/v1', conversionModule.controller);
 
 /**
  * Route to handle all file management related requests under the `/v1` version.

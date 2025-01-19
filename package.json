@@ -31,7 +31,8 @@
     "pri:db:push": "prisma db push",
     "pri:validate": "prisma validate",
     "pri:seed": "prisma db seed",
-    "pri:format": "prisma format"
+    "pri:format": "prisma format",
+    "pri:doc": "prisma-docs-generator serve"
   },
   "prisma": {
     "schema": "./src/database/prisma/schema.prisma",

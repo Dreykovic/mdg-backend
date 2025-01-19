@@ -15,14 +15,6 @@ import { Service } from 'typedi';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { log } from 'console';
 
-import { OriginValidation } from './models/Origin';
-import { ProductCategoryValidation } from './models/ProductCategory';
-import { ProductSubcategoryValidation } from './models/ProductSubcategory';
-import { MarginLevelValidation } from './models/MarginLevel';
-import { UnitOfMeasureValidation } from './models/UnitOfMeasure';
-import { SupplierValidation } from './models/Supplier';
-import { ProductValidation } from './models/Product';
-
 /**
  * The PrismaService class provides an extended Prisma client with validation logic.
  * It also includes methods for managing database connections and handling errors.
@@ -40,15 +32,7 @@ export class PrismaService {
    * @returns {PrismaClient} An extended Prisma client instance.
    */
   getExtendedClient() {
-    const xPrisma = new PrismaClient()
-      .$extends(OriginValidation)
-      .$extends(ProductCategoryValidation)
-      .$extends(ProductSubcategoryValidation)
-      .$extends(MarginLevelValidation)
-      .$extends(UnitOfMeasureValidation)
-      .$extends(SupplierValidation)
-      .$extends(ProductValidation);
-
+    const xPrisma = new PrismaClient();
     return xPrisma;
   }
 
@@ -69,7 +53,7 @@ export class PrismaService {
       await this.prisma.$connect();
       log('Database connected successfully');
     } catch (error) {
-      log('Failed to connect to the database:', (error as Error).message);
+      throw new Error((error as Error).message);
     }
   }
 
@@ -80,7 +64,7 @@ export class PrismaService {
   public async disconnect(): Promise<void> {
     try {
       await this.prisma.$disconnect();
-      log('Database disconnected successfully');
+      // log('Database disconnected successfully');
     } catch (error) {
       log('Error while disconnecting from the database:', error);
     }
@@ -93,9 +77,10 @@ export class PrismaService {
   public async checkConnection(): Promise<{ success: boolean; error: any }> {
     try {
       await this.connect();
+
       return { success: true, error: null };
     } catch (err) {
-      return { success: false, error: err };
+      throw new Error((err as any).message);
     } finally {
       await this.disconnect();
     }

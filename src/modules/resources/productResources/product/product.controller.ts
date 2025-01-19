@@ -45,6 +45,35 @@ export class ProductController {
       res.status(response.httpStatusCode).json(response.data);
     }
   }
+  async product(req: Request, res: Response): Promise<void> {
+    try {
+      log('Fetch unique product  Request Received');
+
+      const productId = req.params.modelId;
+      if (!productId) {
+        const response = ApiResponse.http400({
+          message:
+            'An error occurred while fetching unique product, Please provide a valid product Id',
+        });
+        res.status(response.httpStatusCode).json(response.data);
+      }
+      const filters = { id: productId };
+
+      const payload = await this.productService.product(filters);
+
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+
+      const response = ApiResponse.http404({
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching filtered products',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
 
   async productsList(req: Request, res: Response): Promise<void> {
     try {
@@ -71,7 +100,10 @@ export class ProductController {
       log('Create product Request Received');
 
       const data = req.body;
+      log('data received to create a product before casting', data);
+
       data.isActive = StringUtil.parseBool(req.body.isActive);
+      data.isPublic = StringUtil.parseBool(req.body.isPublic);
       data.isGlutenFree = StringUtil.parseBool(req.body.isGlutenFree);
       data.isGMOFree = StringUtil.parseBool(req.body.isGMOFree);
       data.costPerGramGround = parseFloat(req.body.costPerGramGround);
@@ -83,7 +115,7 @@ export class ProductController {
       data.subcategoryId = req.body.subcategoryId
         ? parseFloat(req.body.subcategoryId)
         : null;
-
+      log('data received to create a product', data);
       const payload = await this.productService.createProduct(data);
 
       const response = ApiResponse.http200(payload);
@@ -132,12 +164,39 @@ export class ProductController {
       }
       const data = req.body;
 
-      data.isActive = StringUtil.parseBool(req.body.isActive);
-      data.isGlutenFree = StringUtil.parseBool(req.body.isGlutenFree);
-      data.isGMOFree = StringUtil.parseBool(req.body.isGMOFree);
-      data.costPerGramGround = parseFloat(req.body.costPerGramGround);
-      data.costPerGramWhole = parseFloat(req.body.costPerGramWhole);
-
+      data.isActive = req.body.isActive
+        ? StringUtil.parseBool(req.body.isActive)
+        : undefined;
+      data.isPublic = req.body.isPublic
+        ? StringUtil.parseBool(req.body.isPublic)
+        : undefined;
+      data.isGlutenFree = req.body.isGlutenFree
+        ? StringUtil.parseBool(req.body.isGlutenFree)
+        : undefined;
+      data.isGMOFree = req.body.isGMOFree
+        ? StringUtil.parseBool(req.body.isGMOFree)
+        : undefined;
+      data.costPerGramGround = req.body.costPerGramGround
+        ? parseFloat(req.body.costPerGramGround)
+        : undefined;
+      data.costPerGramWhole = req.body.costPerGramWhole
+        ? parseFloat(req.body.costPerGramWhole)
+        : undefined;
+      data.categoryId = req.body.categoryId
+        ? parseFloat(req.body.categoryId)
+        : undefined;
+      data.marginLevelId = req.body.marginLevelId
+        ? parseFloat(req.body.marginLevelId)
+        : undefined;
+      data.supplierId = req.body.supplierId
+        ? parseFloat(req.body.supplierId)
+        : undefined;
+      data.originId = req.body.originId
+        ? parseFloat(req.body.originId)
+        : undefined;
+      data.subcategoryId = req.body.subcategoryId
+        ? parseFloat(req.body.subcategoryId)
+        : null;
       const payload = await this.productService.updateProduct(data, filter);
 
       const response = ApiResponse.http200(payload);

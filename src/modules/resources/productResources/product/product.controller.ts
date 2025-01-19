@@ -45,6 +45,35 @@ export class ProductController {
       res.status(response.httpStatusCode).json(response.data);
     }
   }
+  async product(req: Request, res: Response): Promise<void> {
+    try {
+      log('Fetch unique product  Request Received');
+
+      const productId = req.params.modelId;
+      if (!productId) {
+        const response = ApiResponse.http400({
+          message:
+            'An error occurred while fetching unique product, Please provide a valid product Id',
+        });
+        res.status(response.httpStatusCode).json(response.data);
+      }
+      const filters = { id: productId };
+
+      const payload = await this.productService.product(filters);
+
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+
+      const response = ApiResponse.http404({
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching filtered products',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
 
   async productsList(req: Request, res: Response): Promise<void> {
     try {

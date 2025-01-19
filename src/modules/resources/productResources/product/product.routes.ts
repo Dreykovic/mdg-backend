@@ -15,6 +15,12 @@ productRouter.get('/list', verifyJWT, rbacMiddleware(['ADMIN']), (req, res) =>
 productRouter.get('/', verifyJWT, rbacMiddleware(['ADMIN']), (req, res) =>
   productController.products(req, res)
 );
+productRouter.get(
+  '/details/:modelId',
+  verifyJWT,
+  rbacMiddleware(['ADMIN']),
+  (req, res) => productController.product(req, res)
+);
 productRouter.post('/save', verifyJWT, rbacMiddleware(['ADMIN']), (req, res) =>
   productController.createProduct(req, res)
 );

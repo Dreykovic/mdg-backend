@@ -68,6 +68,25 @@ export default class ProductService extends ServiceDefinition {
     }
   }
 
+  async product(filters: Prisma.ProductWhereUniqueInput) {
+    try {
+      const product = await this.db.product.findUniqueOrThrow({
+        where: filters,
+        include: {
+          category: true,
+          origin: true,
+          supplier: true,
+          volumeConversion: true,
+          marginLevel: true,
+        },
+      });
+      log('Unique product', product);
+      return { product };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async productsList() {
     try {
       const products = await this.db.product.findMany();

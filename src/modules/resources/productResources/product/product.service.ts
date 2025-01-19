@@ -116,15 +116,38 @@ export default class ProductService extends ServiceDefinition {
     filter: Prisma.ProductWhereUniqueInput
   ) {
     try {
-      log(data);
+      if (data.costPerGramWhole || data.costPerGramGround) {
+        const oldProduct = await this.db.product.findUniqueOrThrow({
+          where: filter,
+        });
+        const marginLevel = await this.db.marginLevel.findUnique({
+          where: { id: oldProduct.marginLevelId },
+        });
+
+        if (!marginLevel) {
+          throw new Error('MarginLevel not found');
+        }
+        if (data.costPerGramWhole) {
+          const cost = data.costPerGramWhole as number;
+          data.pricePerGramWhole = cost + cost * marginLevel.margin;
+        }
+        if (data.costPerGramGround) {
+          const cost = data.costPerGramGround as number;
+          data.pricePerGramGround = cost + cost * marginLevel.margin;
+        }
+      }
+
+      const cleanData = data;
+      log(' Product to update', cleanData);
       const product = await this.db.product.update({
         where: filter,
-        data,
+        data: cleanData,
       });
 
       log('Updated Product : ', product);
       return { product };
     } catch (error) {
+      log('Product Update Error', error);
       throw this.handleError(error);
     }
   }

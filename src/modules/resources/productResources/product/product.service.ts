@@ -16,9 +16,11 @@ export default class ProductService extends ServiceDefinition {
       }
 
       data.pricePerGramWhole =
-        data.costPerGramWhole + data.costPerGramWhole * marginLevel.margin;
+        data.costPerGramWhole +
+        (data.costPerGramWhole * marginLevel.margin) / 100;
       data.pricePerGramGround =
-        data.costPerGramGround + data.costPerGramGround * marginLevel.margin;
+        data.costPerGramGround +
+        (data.costPerGramGround * marginLevel.margin) / 100;
 
       const cleanData = data;
       log('Created Product', cleanData);
@@ -129,12 +131,33 @@ export default class ProductService extends ServiceDefinition {
         }
         if (data.costPerGramWhole) {
           const cost = data.costPerGramWhole as number;
-          data.pricePerGramWhole = cost + cost * marginLevel.margin;
+          data.pricePerGramWhole = cost + (cost * marginLevel.margin) / 100;
         }
         if (data.costPerGramGround) {
           const cost = data.costPerGramGround as number;
-          data.pricePerGramGround = cost + cost * marginLevel.margin;
+          data.pricePerGramGround = cost + (cost * marginLevel.margin) / 100;
         }
+      }
+      if (data.marginLevelId) {
+        const marginId = data.marginLevelId as number;
+        const oldProduct = await this.db.product.findUniqueOrThrow({
+          where: filter,
+        });
+        const marginLevel = await this.db.marginLevel.findUnique({
+          where: { id: marginId },
+        });
+
+        if (!marginLevel) {
+          throw new Error('MarginLevel not found');
+        }
+
+        const costPerGramWhole = oldProduct.costPerGramWhole as number;
+        data.pricePerGramWhole =
+          costPerGramWhole + (costPerGramWhole * marginLevel.margin) / 100;
+
+        const costPerGramGround = oldProduct.costPerGramGround as number;
+        data.pricePerGramGround =
+          costPerGramGround + (costPerGramGround * marginLevel.margin) / 100;
       }
 
       const cleanData = data;

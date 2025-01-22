@@ -93,6 +93,8 @@ export class PrismaService {
    * @returns {Error} A formatted error with a user-friendly message.
    */
   public handleError(error: any): Error {
+    log(' Error:', error);
+
     // Handle Zod validation issues
     if (error?.issues) {
       const formattedIssues = error.issues

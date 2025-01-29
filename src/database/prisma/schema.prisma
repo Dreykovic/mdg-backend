@@ -181,6 +181,13 @@ model UnitOfMeasure {
   volumeConversions VolumeConversion[] // Volume conversion relationships
 }
 
+enum ProductVisibility {
+  DRAFT
+  VISIBLE
+  HIDDEN
+  ARCHIVED
+}
+
 // Product model
 model Product {
   id String @id @default(uuid()) // Unique identifier
@@ -190,10 +197,11 @@ model Product {
   isGMOFree    Boolean // Indicates if the product is GMO-free
   description  String? // Product description
 
-  isActive          Boolean @default(false) // Indicates if the product is active
-  isPublic          Boolean @default(false) // Indicates if the product is public
-  minimumStockLevel Float   @default(0) // Minimum stock level
-  quantity          Float   @default(0) // Current stock quantity
+  isActive          Boolean           @default(false) // Indicates if the product is active
+  isPublic          Boolean           @default(false) // Indicates if the product is public
+  visibility        ProductVisibility @default(DRAFT)
+  minimumStockLevel Float             @default(0) // Minimum stock level
+  quantity          Float             @default(0) // Current stock quantity
 
   additionalCost Float?  @default(0) // Additional cost
   imageRef       String? @unique // Reference to image file

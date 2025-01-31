@@ -64,6 +64,10 @@ export default class RecipeService extends ServiceDefinition {
     try {
       const recipe = await this.db.recipe.findUniqueOrThrow({
         where: filters,
+        include: {
+          steps: true,
+          ingredients: true,
+        },
       });
 
       return { recipe };

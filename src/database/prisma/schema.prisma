@@ -181,7 +181,7 @@ model UnitOfMeasure {
   volumeConversions VolumeConversion[] // Volume conversion relationships
 }
 
-enum ProductVisibility {
+enum VisibilityType {
   DRAFT
   VISIBLE
   HIDDEN
@@ -197,11 +197,11 @@ model Product {
   isGMOFree    Boolean // Indicates if the product is GMO-free
   description  String? // Product description
 
-  isActive          Boolean           @default(false) // Indicates if the product is active
-  isPublic          Boolean           @default(false) // Indicates if the product is public
-  visibility        ProductVisibility @default(DRAFT)
-  minimumStockLevel Float             @default(0) // Minimum stock level
-  quantity          Float             @default(0) // Current stock quantity
+  isActive          Boolean        @default(false) // Indicates if the product is active
+  isPublic          Boolean        @default(false) // Indicates if the product is public
+  visibility        VisibilityType @default(DRAFT)
+  minimumStockLevel Float          @default(0) // Minimum stock level
+  quantity          Float          @default(0) // Current stock quantity
 
   additionalCost Float?  @default(0) // Additional cost
   imageRef       String? @unique // Reference to image file
@@ -280,14 +280,14 @@ model Recipe {
   isApproved      Boolean              @default(false) // Approval status
   isPromoAwarded  Boolean              @default(false) // Promo status
   difficulty      RecipeDifficultyType @default(EASY) // Difficulty level
-
-  userId      String // Reference to author
-  categories  RecipeCategoryLink[] // Many-to-many relationship with categories
-  ingrediants Ingredient[] // Relation to ingredients
-  steps       Step[] // Relation to recipe steps
-  author      User                 @relation(fields: [userId], references: [id]) // Relation to author
-  createdAt   DateTime             @default(now()) // Creation timestamp
-  updatedAt   DateTime             @updatedAt // Update timestamp
+  visibility      VisibilityType       @default(DRAFT)
+  userId          String // Reference to author
+  categories      RecipeCategoryLink[] // Many-to-many relationship with categories
+  ingredients     Ingredient[] // Relation to ingredients
+  steps           Step[] // Relation to recipe steps
+  author          User                 @relation(fields: [userId], references: [id]) // Relation to author
+  createdAt       DateTime             @default(now()) // Creation timestamp
+  updatedAt       DateTime             @updatedAt // Update timestamp
 }
 
 // Ingredient model for recipes
@@ -301,7 +301,7 @@ model Ingredient {
   unitOfMeasureId Int // Reference to unit of measure
   unitOfMeasure   UnitOfMeasure @relation(fields: [unitOfMeasureId], references: [id]) // Relation to unit of measure
   product         Product       @relation(fields: [productId], references: [id]) // Relation to product
-  recipe          Recipe        @relation(fields: [recipeId], references: [id]) // Relation to recipe
+  recipe          Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade) // Relation to recipe
   createdAt       DateTime      @default(now()) // Creation timestamp
   updatedAt       DateTime      @updatedAt // Update timestamp
 
@@ -316,7 +316,7 @@ model Step {
   description String // Description of the step
   duration    Int? // Optional duration in minutes
 
-  recipe    Recipe   @relation(fields: [recipeId], references: [id]) // Relation to recipe
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade) // Relation to recipe
   createdAt DateTime @default(now()) // Creation timestamp
   updatedAt DateTime @updatedAt // Update timestamp
 }

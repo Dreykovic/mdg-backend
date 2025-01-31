@@ -46,7 +46,35 @@ export class RecipeController {
       res.status(response.httpStatusCode).json(response.data);
     }
   }
+  async recipe(req: Request, res: Response): Promise<void> {
+    try {
+      log('Fetch unique recipe  Request Received');
 
+      const modelIdParam = req.params.modelId;
+      const recipeId = StringUtil.parseAndValidateNumber(modelIdParam);
+
+      if (recipeId === null) {
+        throw Error(
+          'An error occurred while fetching unique recipe, Please provide a valid recipe Id'
+        );
+      }
+      const filters = { id: recipeId };
+
+      const payload = await this.recipeService.recipe(filters);
+
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+
+      const response = ApiResponse.http404({
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching filtered products',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
   async recipesList(req: Request, res: Response): Promise<void> {
     try {
       log('List Recipe Categories Request Received');

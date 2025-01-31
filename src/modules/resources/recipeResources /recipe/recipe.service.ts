@@ -60,6 +60,17 @@ export default class RecipeService extends ServiceDefinition {
       throw this.handleError(error);
     }
   }
+  async recipe(filters: Prisma.RecipeWhereUniqueInput) {
+    try {
+      const recipe = await this.db.recipe.findUniqueOrThrow({
+        where: filters,
+      });
+
+      return { recipe };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
 
   async deleteRecipe(filter: Prisma.RecipeWhereUniqueInput) {
     try {

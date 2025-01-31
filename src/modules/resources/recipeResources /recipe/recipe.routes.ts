@@ -15,6 +15,12 @@ recipesRouter.get('/list', verifyJWT, rbacMiddleware(['ADMIN']), (req, res) =>
 recipesRouter.get('/', verifyJWT, rbacMiddleware(['ADMIN']), (req, res) =>
   recipeController.recipes(req, res)
 );
+recipesRouter.get(
+  '/details/:modelId',
+  verifyJWT,
+  rbacMiddleware(['ADMIN']),
+  (req, res) => recipeController.recipe(req, res)
+);
 recipesRouter.post(
   '/save',
   verifyJWT,

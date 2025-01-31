@@ -283,7 +283,7 @@ model Recipe {
   visibility      VisibilityType       @default(DRAFT)
   userId          String // Reference to author
   categories      RecipeCategoryLink[] // Many-to-many relationship with categories
-  ingrediants     Ingredient[] // Relation to ingredients
+  ingredients     Ingredient[] // Relation to ingredients
   steps           Step[] // Relation to recipe steps
   author          User                 @relation(fields: [userId], references: [id]) // Relation to author
   createdAt       DateTime             @default(now()) // Creation timestamp

@@ -100,21 +100,21 @@ model Origin {
 
 // Model for product categories
 model ProductCategory {
-  id            Int                  @id @default(autoincrement())
-  name          String               @unique // Unique category name
-  description   String? // Optional description
-  imageRef      String?              @unique // Reference to image file
-  imageUrl      String? // URL to the image
-  slug          String? // URL-friendly identifier
-  subcategories ProductSubcategory[] // Related subcategories
-  Product       Product[] // Related products
+  id          Int     @id @default(autoincrement())
+  name        String  @unique // Unique category name
+  description String? // Optional description
+  imageRef    String? @unique // Reference to image file
+  imageUrl    String? // URL to the image
+  slug        String? // URL-friendly identifier
+
+  Product Product[] // Related products
 
   createdAt DateTime @default(now()) // Creation timestamp
   updatedAt DateTime @updatedAt // Update timestamp
 }
 
 // Subcategory model for products
-model ProductSubcategory {
+model ProductTag {
   id          Int     @id @default(autoincrement())
   name        String // Subcategory name
   description String? // Optional description
@@ -124,13 +124,20 @@ model ProductSubcategory {
   slug     String? // URL-friendly identifier
 
   categoryId Int // Reference to parent category
-  category   ProductCategory @relation(fields: [categoryId], references: [id]) // Relation to parent category
-  products   Product[] // Related products
 
-  createdAt DateTime @default(now()) // Creation timestamp
-  updatedAt DateTime @updatedAt // Update timestamp
+  ProductTagLinks ProductTagLink[] // Related Product Tag link
+  createdAt       DateTime         @default(now()) // Creation timestamp
+  updatedAt       DateTime         @updatedAt // Update timestamp
 
   @@unique([categoryId, name]) // Unique constraint for category and name combination
+}
+
+model ProductTagLink {
+  id           Int        @id @default(autoincrement())
+  productId    String // reference to Product
+  productTagId Int // reference to Product Tag
+  product      Product    @relation(fields: [productId], references: [id]) // Related to the Product
+  productTag   ProductTag @relation(fields: [productTagId], references: [id]) // Related TO ProductTag
 }
 
 // Supplier model for product providers
@@ -217,11 +224,13 @@ model Product {
   supplierId    Int // Reference to supplier
   marginLevelId Int // Reference to margin level
 
-  ingredients Ingredient[] // Related ingredients in recipes
-  origin      Origin              @relation(fields: [originId], references: [id]) // Relation to origin
-  subCategory ProductSubcategory? @relation(fields: [subcategoryId], references: [id]) // Relation to subcategory
-  category    ProductCategory     @relation(fields: [categoryId], references: [id]) // Relation to category
-  supplier    Supplier            @relation(fields: [supplierId], references: [id]) // Relation to supplier
+  ingredients     Ingredient[] // Related ingredients in recipes
+  ProductTagLinks ProductTagLink[] // Related Product Tag link
+
+  origin Origin @relation(fields: [originId], references: [id]) // Relation to origin
+
+  category ProductCategory @relation(fields: [categoryId], references: [id]) // Relation to category
+  supplier Supplier        @relation(fields: [supplierId], references: [id]) // Relation to supplier
 
   marginLevel      MarginLevel       @relation(fields: [marginLevelId], references: [id]) // Relation to margin level
   createdAt        DateTime          @default(now()) // Creation timestamp

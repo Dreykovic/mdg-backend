@@ -302,19 +302,21 @@ model Recipe {
 // Ingredient model for recipes
 model Ingredient {
   id            Int     @id @default(autoincrement())
+  name          String?
   quantity      Float // Quantity required
   grindRequired Boolean // Indicates if grinding is required
 
   recipeId        Int // Reference to recipe
-  productId       String // Reference to product
+  productId       String? // Reference to product
   unitOfMeasureId Int // Reference to unit of measure
   unitOfMeasure   UnitOfMeasure @relation(fields: [unitOfMeasureId], references: [id]) // Relation to unit of measure
-  product         Product       @relation(fields: [productId], references: [id]) // Relation to product
+  product         Product?      @relation(fields: [productId], references: [id]) // Relation to product
   recipe          Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade) // Relation to recipe
   createdAt       DateTime      @default(now()) // Creation timestamp
   updatedAt       DateTime      @updatedAt // Update timestamp
 
   @@unique([recipeId, productId]) // Unique constraint for recipe-product pairs
+  @@unique([recipeId, name])
 }
 
 // Model for recipe steps

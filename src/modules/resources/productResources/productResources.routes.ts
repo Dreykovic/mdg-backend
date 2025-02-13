@@ -3,7 +3,7 @@ import express from 'express'; // Importing the Express framework for creating r
 // Importing route handlers for specific resource-related features.
 import originsRouter from './origin/origin.routes'; // Router to handle routes related to "origins".
 import categoriesRouter from './category/category.routes'; // Router to handle routes related to "categories".
-import subcategoriesRouter from './subcategory/subcategory.routes'; // Router to handle routes related to "subcategories".
+
 import marginsRouter from './margin/margin.routes';
 import supplierRouter from './supplier/supplier.routes';
 
@@ -21,8 +21,6 @@ productResourcesRouter.use('/product-resources', originsRouter);
 productResourcesRouter.use('/product-resources', categoriesRouter);
 
 // Mount the subcategories router under the `/product-resources` path.
-// Routes from `subcategoriesRouter` will now be accessible under `/product-resources/...`.
-productResourcesRouter.use('/product-resources', subcategoriesRouter);
 
 productResourcesRouter.use('/product-resources', marginsRouter);
 productResourcesRouter.use('/product-resources', supplierRouter);

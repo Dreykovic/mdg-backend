@@ -4,10 +4,6 @@
  * application to function securely and efficiently.
  */
 
-import { Request, Response } from 'express';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
-
 import expressInstance from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
@@ -30,7 +26,6 @@ import { generateSwaggerDocument } from './swaggerLoader'; // Swagger documentat
 import apiRouter from './routes'; // API routes handler
 import { log } from 'console';
 import { clientInfoMiddleware } from '@/core/middlewares/clientInfo.middleware'; // Middleware to capture client info
-import { AllowedSitesType } from '@/integrations/recipe-scrapping/recipeScrapping.types';
 
 /**
  * Main class that sets up and configures the Express application. It is configured
@@ -86,19 +81,6 @@ class App {
       throw new Error('This is a test error!');
     });
 
-    this.express.get('/scrape', async (req: Request, res: Response) => {
-      try {
-        const url =
-          'https://cooking.nytimes.com/recipes/1026573-marry-me-salmon'; // Remplace par l'URL à scraper
-        const data = await new RecipeScrappingService().getData(url);
-
-        res.json({ data });
-      } catch (error) {
-        log('Erreur lors du scraping :', error);
-        res.status(500).json({ error });
-      }
-    });
-
     // Generate and serve Swagger documentation at the `/api-docs` endpoint
     const swaggerDocs = generateSwaggerDocument();
     this.express.use(
@@ -129,69 +111,4 @@ class App {
   }
 }
 
-class RecipeScrappingService {
-  extractTimes = ($: cheerio.CheerioAPI) => {
-    const times: Record<string, string> = {};
-
-    // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
-    $('.stats_cookingTimeTable__b0moV dt').each((_, dt) => {
-      const label = $(dt).text().trim();
-      const value = $(dt).next('dd').text().trim();
-
-      if (label && value) {
-        times[label] = value;
-      }
-    });
-
-    return times;
-  };
-  // Store allowed sites in a Set for faster lookup
-  private allowedSites = new Set<AllowedSitesType>([
-    'allrecipes.com',
-    'cooking.nytimes.com',
-    'simplyrecipes.com',
-  ]);
-
-  // Check if a given URL belongs to an allowed site
-  private isValidSite(domain: string): boolean {
-    return this.allowedSites.has(domain as AllowedSitesType);
-  }
-
-  // Extract the domain name from a URL
-  private extractDomain(url: string): string | undefined | null {
-    const match = url.match(/^(?:https?:\/\/)?([^/]+)/);
-    return match ? match[1] : null;
-  }
-
-  // Validate if the URL belongs to an allowed site
-  checkUrl(link: string): void {
-    const domain = this.extractDomain(link);
-    if (!domain || !this.isValidSite(domain)) {
-      throw new Error(
-        'Invalid URL. Please provide a valid URL from allowed sites.'
-      );
-    }
-  }
-
-  // Fetch and scrape data from a given URL
-  async getData(url: string): Promise<any> {
-    try {
-      this.checkUrl(url); // Validate the URL before proceeding
-
-      const { data } = await axios.get(url);
-      const $ = cheerio.load(data);
-
-      const titles: string[] = [];
-      const description: String = $('.topnote_topnoteParagraphs__A3OtF').text();
-      $('h1').each((_, element) => {
-        titles.push($(element).text());
-      });
-      const times = this.extractTimes($);
-
-      return { titles, description, times };
-    } catch (error) {
-      throw new Error(`Scraping Error: ${(error as Error).message}`);
-    }
-  }
-}
 export default App;

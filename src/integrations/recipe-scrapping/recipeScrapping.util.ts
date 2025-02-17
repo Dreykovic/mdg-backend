@@ -1,5 +1,6 @@
 import { Service } from 'typedi';
 import { fractionMap } from './recipeScrapping.types';
+import { log } from 'console';
 
 type Ingredient = {
   quantity: number | null;
@@ -11,8 +12,9 @@ type Ingredient = {
 export default class RecipeScrappingUtil {
   // Extract the domain name from a URL
   extractDomain(url: string): string | undefined | null {
-    const match = url.match(/^(?:https?:\/\/)?([^/]+)/);
-    return match ? match[1] : null;
+    const match = url.match(/^(?:https?:\/\/)?(www\.)?([^/]+)/);
+    log(match);
+    return match ? match[2] : null;
   }
 
   // Function to convert a fraction to a float

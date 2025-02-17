@@ -36,9 +36,9 @@ export default class RecipeScrappingService {
     const times: Record<string, string> = {};
 
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
-    $('.stats_cookingTimeTable__b0moV dt').each((_, dt) => {
-      const label = $(dt).text().trim();
-      const value = $(dt).next('dd').text().trim();
+    $(config.times.label).each((_, item) => {
+      const label = $(item).text().trim();
+      const value = $(item).next(config.times.next).text().trim();
 
       if (label && value) {
         times[label] = value;
@@ -64,14 +64,18 @@ export default class RecipeScrappingService {
     return description;
   }
   extractIngredients($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
-    const ingredients: Array<{ quantity: string; textData: string }> = [];
+    const ingredients: Array<{ quantity: string; unit: string; name: string }> =
+      [];
 
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
     $(config.ingredients.list).each((_, item) => {
-      const quantityElements = $(item).find(config.ingredients.quantity);
-      const quantity = quantityElements.text().trim();
-      const textData = $(item).text().trim();
-      const ingredient = { quantity, textData };
+      const quantityElement = $(item).find(config.ingredients.quantity);
+      const unitElement = $(item).find(config.ingredients.unit);
+      const nameElement = $(item).find(config.ingredients.name);
+      const quantity = quantityElement.text().trim();
+      const unit = $(unitElement).text().trim();
+      const name = $(nameElement).text().trim();
+      const ingredient = { quantity, unit, name };
       ingredients.push(ingredient);
     });
     log('Extracted Ingrédient: ', ingredients);
@@ -80,12 +84,14 @@ export default class RecipeScrappingService {
   }
   extractSteps($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
     const steps: Record<string, string> = {};
-
+    let index = 0;
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
     $(config.steps.list).each((_, item) => {
-      const stepTitleElmt = $(item).find(config.steps.title);
-      const title = stepTitleElmt.text().trim();
+      const title = `Step ${++index}`;
       const stepDescriptionElmt = $(item).find(config.steps.description);
+
+      log('Extracted Step description: ', stepDescriptionElmt.before().text());
+
       const description = stepDescriptionElmt.text().trim();
 
       steps[title] = description;

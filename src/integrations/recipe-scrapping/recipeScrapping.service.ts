@@ -3,6 +3,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { AllowedSitesType } from './recipeScrapping.types';
 import RecipeScrappingUtil from './recipeScrapping.util';
+import { log } from 'console';
 
 @Service()
 export default class RecipeScrappingService {
@@ -19,6 +20,7 @@ export default class RecipeScrappingService {
         times[label] = value;
       }
     });
+    log('Extracted Times: ', times);
 
     return times;
   };
@@ -41,21 +43,62 @@ export default class RecipeScrappingService {
   }
 
   // Fetch and scrape data from a given URL
+  extractTitle($: cheerio.CheerioAPI): string {
+    const title: string = $('.pantry--title-display').text().trim();
+    log('Extracted Title: ', title);
+    return title;
+  }
+  extractDescription($: cheerio.CheerioAPI): string {
+    const description: string = $('.topnote_topnoteParagraphs__A3OtF')
+      .text()
+      .trim();
+    log('Extracted Description: ', description);
+    return description;
+  }
+  extractIngredients($: cheerio.CheerioAPI) {
+    const ingredients: Array<{ quantity: string; textData: string }> = [];
+
+    // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
+    $('.ingredient_ingredient__rfjvs').each((_, item) => {
+      const quantityElements = $(item).find('.ingredient_quantity__Z_Mvw');
+      const quantity = quantityElements.text().trim();
+      const textData = $(item).text().trim();
+      const ingredient = { quantity, textData };
+      ingredients.push(ingredient);
+    });
+    log('Extracted Ingrédient: ', ingredients);
+
+    return ingredients;
+  }
+  extractSteps($: cheerio.CheerioAPI) {
+    const steps: Record<string, string> = {};
+
+    // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
+    $('.preparation_step__nzZHP').each((_, item) => {
+      const stepTitleElmt = $(item).find('.preparation_stepNumber__qWIz4');
+      const title = stepTitleElmt.text().trim();
+      const description = $(item).text().trim();
+
+      steps[title] = description;
+    });
+    log('Extracted Steps: ', steps);
+
+    return steps;
+  }
+
   async getData(url: string): Promise<any> {
     try {
       this.checkUrl(url); // Validate the URL before proceeding
 
       const { data } = await axios.get(url);
       const $ = cheerio.load(data);
-
-      const titles: string[] = [];
-      const description: String = $('.topnote_topnoteParagraphs__A3OtF').text();
-      $('h1').each((_, element) => {
-        titles.push($(element).text());
-      });
+      const title = this.extractTitle($);
+      const description = this.extractDescription($);
       const times = this.extractTimes($);
 
-      return { titles, description, times };
+      const ingredients = this.extractIngredients($);
+      const steps = this.extractSteps($);
+      return { title, description, times, ingredients, steps };
     } catch (error) {
       throw new Error(`Scraping Error: ${(error as Error).message}`);
     }

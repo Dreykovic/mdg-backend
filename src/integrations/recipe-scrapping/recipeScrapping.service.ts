@@ -4,11 +4,35 @@ import * as cheerio from 'cheerio';
 import { AllowedSitesType } from './recipeScrapping.types';
 import RecipeScrappingUtil from './recipeScrapping.util';
 import { log } from 'console';
+import {
+  allowedSitesSelectorsConfig,
+  SiteSelectorConfig,
+} from './recipeScrapping.config';
 
 @Service()
 export default class RecipeScrappingService {
+  // Store allowed sites in a Set for faster lookup
+  private allowedSites = new Set<AllowedSitesType>([
+    'allrecipes.com',
+    'cooking.nytimes.com',
+    'simplyrecipes.com',
+  ]);
   constructor(private readonly recipeScrappingUtil: RecipeScrappingUtil) {}
-  extractTimes = ($: cheerio.CheerioAPI) => {
+  // Validate if the URL belongs to an allowed site
+  checkUrl(link: string): string {
+    const domain = this.recipeScrappingUtil.extractDomain(link);
+    const isValidSite = this.allowedSites.has(domain as AllowedSitesType);
+    if (!domain || !isValidSite) {
+      throw new Error(
+        'Invalid URL. Please provide a valid URL from allowed sites.'
+      );
+    } else {
+      return domain;
+    }
+  }
+
+  extractTimes = ($: cheerio.CheerioAPI, config: SiteSelectorConfig) => {
+    log(config);
     const times: Record<string, string> = {};
 
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
@@ -24,43 +48,27 @@ export default class RecipeScrappingService {
 
     return times;
   };
-  // Store allowed sites in a Set for faster lookup
-  private allowedSites = new Set<AllowedSitesType>([
-    'allrecipes.com',
-    'cooking.nytimes.com',
-    'simplyrecipes.com',
-  ]);
-
-  // Validate if the URL belongs to an allowed site
-  checkUrl(link: string): void {
-    const domain = this.recipeScrappingUtil.extractDomain(link);
-    const isValidSite = this.allowedSites.has(domain as AllowedSitesType);
-    if (!domain || !isValidSite) {
-      throw new Error(
-        'Invalid URL. Please provide a valid URL from allowed sites.'
-      );
-    }
-  }
 
   // Fetch and scrape data from a given URL
-  extractTitle($: cheerio.CheerioAPI): string {
-    const title: string = $('.pantry--title-display').text().trim();
+  extractTitle($: cheerio.CheerioAPI, config: SiteSelectorConfig): string {
+    const title: string = $(config.title).text().trim();
     log('Extracted Title: ', title);
     return title;
   }
-  extractDescription($: cheerio.CheerioAPI): string {
-    const description: string = $('.topnote_topnoteParagraphs__A3OtF')
-      .text()
-      .trim();
+  extractDescription(
+    $: cheerio.CheerioAPI,
+    config: SiteSelectorConfig
+  ): string {
+    const description: string = $(config.description).text().trim();
     log('Extracted Description: ', description);
     return description;
   }
-  extractIngredients($: cheerio.CheerioAPI) {
+  extractIngredients($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
     const ingredients: Array<{ quantity: string; textData: string }> = [];
 
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
-    $('.ingredient_ingredient__rfjvs').each((_, item) => {
-      const quantityElements = $(item).find('.ingredient_quantity__Z_Mvw');
+    $(config.ingredients.list).each((_, item) => {
+      const quantityElements = $(item).find(config.ingredients.quantity);
       const quantity = quantityElements.text().trim();
       const textData = $(item).text().trim();
       const ingredient = { quantity, textData };
@@ -70,14 +78,15 @@ export default class RecipeScrappingService {
 
     return ingredients;
   }
-  extractSteps($: cheerio.CheerioAPI) {
+  extractSteps($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
     const steps: Record<string, string> = {};
 
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
-    $('.preparation_step__nzZHP').each((_, item) => {
-      const stepTitleElmt = $(item).find('.preparation_stepNumber__qWIz4');
+    $(config.steps.list).each((_, item) => {
+      const stepTitleElmt = $(item).find(config.steps.title);
       const title = stepTitleElmt.text().trim();
-      const description = $(item).text().trim();
+      const stepDescriptionElmt = $(item).find(config.steps.description);
+      const description = stepDescriptionElmt.text().trim();
 
       steps[title] = description;
     });
@@ -88,16 +97,17 @@ export default class RecipeScrappingService {
 
   async getData(url: string): Promise<any> {
     try {
-      this.checkUrl(url); // Validate the URL before proceeding
+      const domain: AllowedSitesType = this.checkUrl(url) as AllowedSitesType; // Validate the URL before proceeding
 
       const { data } = await axios.get(url);
+      const urlSelectConfig = allowedSitesSelectorsConfig[domain];
       const $ = cheerio.load(data);
-      const title = this.extractTitle($);
-      const description = this.extractDescription($);
-      const times = this.extractTimes($);
+      const title = this.extractTitle($, urlSelectConfig);
+      const description = this.extractDescription($, urlSelectConfig);
+      const times = this.extractTimes($, urlSelectConfig);
 
-      const ingredients = this.extractIngredients($);
-      const steps = this.extractSteps($);
+      const ingredients = this.extractIngredients($, urlSelectConfig);
+      const steps = this.extractSteps($, urlSelectConfig);
       return { title, description, times, ingredients, steps };
     } catch (error) {
       throw new Error(`Scraping Error: ${(error as Error).message}`);

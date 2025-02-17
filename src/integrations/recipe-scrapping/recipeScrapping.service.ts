@@ -55,6 +55,11 @@ export default class RecipeScrappingService {
     log('Extracted Title: ', title);
     return title;
   }
+  extractServings($: cheerio.CheerioAPI, config: SiteSelectorConfig): string {
+    const servings: string = $(config.servings).text().trim();
+    log('Extracted Servigns: ', servings);
+    return servings;
+  }
   extractDescription(
     $: cheerio.CheerioAPI,
     config: SiteSelectorConfig
@@ -109,12 +114,13 @@ export default class RecipeScrappingService {
       const urlSelectConfig = allowedSitesSelectorsConfig[domain];
       const $ = cheerio.load(data);
       const title = this.extractTitle($, urlSelectConfig);
+      const servings = this.extractServings($, urlSelectConfig);
       const description = this.extractDescription($, urlSelectConfig);
       const times = this.extractTimes($, urlSelectConfig);
 
       const ingredients = this.extractIngredients($, urlSelectConfig);
       const steps = this.extractSteps($, urlSelectConfig);
-      return { title, description, times, ingredients, steps };
+      return { title, description, servings, times, ingredients, steps };
     } catch (error) {
       throw new Error(`Scraping Error: ${(error as Error).message}`);
     }

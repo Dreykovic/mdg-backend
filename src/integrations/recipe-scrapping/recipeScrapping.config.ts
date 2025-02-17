@@ -15,7 +15,7 @@ export const allowedSitesSelectorsConfig = {
       description: '.preparation_stepContent__CFrQM',
     },
     times: { label: '.stats_cookingTimeTable__b0moV dt', next: 'dd' },
-    servings: '.ingredients_recipeYield__DN65p > span::second-child',
+    servings: '.ingredients_recipeYield__DN65p > span:last-child',
   },
   'allrecipes.com': {
     title: 'h1.article-heading',
@@ -36,7 +36,7 @@ export const allowedSitesSelectorsConfig = {
       label: '.mm-recipes-details__label',
       next: '.mm-recipes-details__value',
     },
-    servings: '.ingredients_recipeYield__DN65p > span::second-child',
+    servings: '.mm-recipes-serving-size-adjuster__meta',
   },
   'simplyrecipes.com': {
     title: 'h2.comp.recipe-block__header.text-block',

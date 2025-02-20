@@ -58,13 +58,7 @@ export default class RecipeScrappingService {
     log('Extracted Title: ', title);
     return title;
   }
-  extractServings(
-    $: cheerio.CheerioAPI,
-    config: SiteSelectorConfig
-  ): {
-    min: number;
-    max: number;
-  } | null {
+  extractServings($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
     const extractedServings: string = $(config.servings).text().trim();
     log('Extracted Servigns: ', extractedServings);
     const servings = this.recipeScrappingUtil.parseServings(extractedServings);
@@ -100,9 +94,9 @@ export default class RecipeScrappingService {
     const ingredients = extractedIngredients.map(
       ({ quantity, unit, name }) => ({
         quantity: quantity
-          ? this.recipeScrappingUtil.fractionToFloat(quantity)
+          ? this.recipeScrappingUtil.normalizeQuantity(quantity)
           : null,
-        unit: unit || null,
+        unit: this.recipeScrappingUtil.cleanUnit(unit) || null,
         name,
       })
     );

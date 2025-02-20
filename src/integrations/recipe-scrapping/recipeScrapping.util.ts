@@ -43,6 +43,26 @@ export default class RecipeScrappingUtil {
     return parseFloat(fraction);
   }
 
+  convertTimeToMinutes = (timeStr: string) => {
+    const match = timeStr.match(/(\d+)\s*(hour|minute|second)/i);
+    if (!match) {
+      return null;
+    }
+    const value = parseFloat(match[1] ?? '');
+    return match[2]?.startsWith('hour') ? value * 60 : value;
+  };
+
+  parseServings(servingsStr: string) {
+    const match = servingsStr.match(/(\d+)\s*(to\s*(\d+))?/);
+    if (!match) {
+      return null;
+    }
+    return {
+      min: parseInt(match[1] ?? ''),
+      max: match[3] ? parseInt(match[3]) : parseInt(match[1] ?? ''),
+    };
+  }
+
   // Function to extract quantity, unit, and name of the ingredient
   parseIngredient(ingredient: string): Ingredient {
     const regex = /([\d\s½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞\/.-]+)?\s*([a-zA-Z-]+)?\s*(.+)/;

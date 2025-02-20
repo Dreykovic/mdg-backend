@@ -16,7 +16,7 @@ export class RecipeConversionController {
 
       log(`Get Recipe From Site ${url} Request Received`);
 
-      const payload = await this.recipeScrappingService.getData(url);
+      const payload = await this.recipeScrappingService.extractRecipeData(url);
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
     } catch (error) {

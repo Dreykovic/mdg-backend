@@ -24,3 +24,18 @@ export const fractionMap: { [key: string]: number } = {
   '⅝': 5 / 8,
   '⅞': 7 / 8,
 };
+
+export type ExtractedRecipeContent = {
+  title: string;
+  description: string;
+  servings: string;
+  times: Record<string, string>;
+  ingredients: Ingredient[];
+  steps: Record<string, string>;
+};
+
+export type Ingredient = {
+  quantity: string;
+  unit: string;
+  name: string;
+};

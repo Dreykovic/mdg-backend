@@ -33,7 +33,7 @@ export default class RecipeScrappingService {
 
   extractTimes = ($: cheerio.CheerioAPI, config: SiteSelectorConfig) => {
     log(config);
-    const times: Record<string, string> = {};
+    const extractedTimes: Record<string, string> = {};
 
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
     $(config.times.label).each((_, item) => {
@@ -41,11 +41,14 @@ export default class RecipeScrappingService {
       const value = $(item).next(config.times.next).text().trim();
 
       if (label && value) {
-        times[label] = value;
+        extractedTimes[label] = value;
       }
     });
-    log('Extracted Times: ', times);
-
+    log('Extracted Times: ', extractedTimes);
+    const times: Record<string, number | null> = {};
+    for (const [key, value] of Object.entries(extractedTimes)) {
+      times[key] = this.recipeScrappingUtil.convertTimeToMinutes(value);
+    }
     return times;
   };
 
@@ -55,9 +58,16 @@ export default class RecipeScrappingService {
     log('Extracted Title: ', title);
     return title;
   }
-  extractServings($: cheerio.CheerioAPI, config: SiteSelectorConfig): string {
-    const servings: string = $(config.servings).text().trim();
-    log('Extracted Servigns: ', servings);
+  extractServings(
+    $: cheerio.CheerioAPI,
+    config: SiteSelectorConfig
+  ): {
+    min: number;
+    max: number;
+  } | null {
+    const extractedServings: string = $(config.servings).text().trim();
+    log('Extracted Servigns: ', extractedServings);
+    const servings = this.recipeScrappingUtil.parseServings(extractedServings);
     return servings;
   }
   extractDescription(
@@ -69,8 +79,11 @@ export default class RecipeScrappingService {
     return description;
   }
   extractIngredients($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
-    const ingredients: Array<{ quantity: string; unit: string; name: string }> =
-      [];
+    const extractedIngredients: Array<{
+      quantity: string;
+      unit: string;
+      name: string;
+    }> = [];
 
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
     $(config.ingredients.list).each((_, item) => {
@@ -81,10 +94,18 @@ export default class RecipeScrappingService {
       const unit = $(unitElement).text().trim();
       const name = $(nameElement).text().trim();
       const ingredient = { quantity, unit, name };
-      ingredients.push(ingredient);
+      extractedIngredients.push(ingredient);
     });
-    log('Extracted Ingrédient: ', ingredients);
-
+    log('Extracted Ingrédient: ', extractedIngredients);
+    const ingredients = extractedIngredients.map(
+      ({ quantity, unit, name }) => ({
+        quantity: quantity
+          ? this.recipeScrappingUtil.fractionToFloat(quantity)
+          : null,
+        unit: unit || null,
+        name,
+      })
+    );
     return ingredients;
   }
   extractSteps($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
@@ -106,7 +127,7 @@ export default class RecipeScrappingService {
     return steps;
   }
 
-  async getData(url: string): Promise<any> {
+  async extractRecipeData(url: string): Promise<any> {
     try {
       const domain: AllowedSitesType = this.checkUrl(url) as AllowedSitesType; // Validate the URL before proceeding
 

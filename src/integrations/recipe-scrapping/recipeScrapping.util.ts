@@ -43,13 +43,29 @@ export default class RecipeScrappingUtil {
     return parseFloat(fraction);
   }
 
-  convertTimeToMinutes = (timeStr: string) => {
-    const match = timeStr.match(/(\d+)\s*(hour|minute|second)/i);
-    if (!match) {
+  convertTimeToMinutes = (timeStr: string): number | null => {
+    if (!timeStr) {
       return null;
     }
-    const value = parseFloat(match[1] ?? '');
-    return match[2]?.startsWith('hour') ? value * 60 : value;
+
+    const timeRegex = /(\d+)\s*(hour|hr|minute|min|second|sec)s?/gi;
+    let totalMinutes = 0;
+
+    let match;
+    while ((match = timeRegex.exec(timeStr)) !== null) {
+      const value = parseInt(match[1] ?? '', 10);
+      const unit = match[2]?.toLowerCase();
+
+      if (unit?.startsWith('hour') || unit?.startsWith('hr')) {
+        totalMinutes += value * 60;
+      } else if (unit?.startsWith('minute') || unit?.startsWith('min')) {
+        totalMinutes += value;
+      } else if (unit?.startsWith('second') || unit?.startsWith('sec')) {
+        totalMinutes += Math.round(value / 60); // Convertir les secondes en minutes
+      }
+    }
+
+    return totalMinutes > 0 ? totalMinutes : null;
   };
 
   parseServings(servingsStr: string) {

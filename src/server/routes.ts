@@ -4,7 +4,7 @@
  */
 
 import adminAuthModule from '@/modules/adminAuth/adminAuth.module'; // Admin authentication module
-import conversionModule from '@/modules/conversion/resources.module';
+import conversionModule from '@/modules/conversion/conversion.module';
 import filesModule from '@/modules/files/files.module'; // File handling module
 import resourcesModule from '@/modules/resources/resources.module'; // Resource management module
 import express from 'express'; // Express router to define API routes

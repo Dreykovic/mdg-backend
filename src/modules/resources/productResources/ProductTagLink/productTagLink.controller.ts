@@ -4,18 +4,16 @@ import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
-import RecipeCategoryLinkService from './recipeCategoryLink.service';
+import ProductTagLinkService from './productTagLink.service';
 import StringUtil from '@/core/utils/string.util';
 
 @Service()
-export class RecipeCategoryLinkController {
-  constructor(
-    private readonly recipeCategoryLinkService: RecipeCategoryLinkService
-  ) {}
+export class ProductTagLinkController {
+  constructor(private readonly productTagLinkService: ProductTagLinkService) {}
 
-  async recipeCategoryLinks(req: Request, res: Response): Promise<void> {
+  async productTagLinks(req: Request, res: Response): Promise<void> {
     try {
-      log('List RecipeCategoryLink Categories Request Received');
+      log('List ProductTagLink  Request Received');
 
       const page = parseInt(req.query.page as string) || 1;
       const pageSize = parseInt(req.query.pageSize as string) || 10;
@@ -29,7 +27,7 @@ export class RecipeCategoryLinkController {
         allowedFields
       );
 
-      const payload = await this.recipeCategoryLinkService.recipeCategoryLinks(
+      const payload = await this.productTagLinkService.productTagLinks(
         page,
         pageSize,
         whereConditions
@@ -43,18 +41,17 @@ export class RecipeCategoryLinkController {
       const response = ApiResponse.http400({
         message:
           (error as Error).message ||
-          'An error occurred while fetching recipeCategoryLink categories.',
+          'An error occurred while fetching productTagLink categories.',
       });
       res.status(response.httpStatusCode).json(response.data);
     }
   }
 
-  async recipeCategoryLinksList(req: Request, res: Response): Promise<void> {
+  async productTagLinksList(req: Request, res: Response): Promise<void> {
     try {
-      log('List RecipeCategoryLink Categories Request Received');
+      log('List ProductTagLink  Request Received');
 
-      const payload =
-        await this.recipeCategoryLinkService.recipeCategoryLinksList();
+      const payload = await this.productTagLinkService.productTagLinksList();
 
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
@@ -64,23 +61,22 @@ export class RecipeCategoryLinkController {
       const response = ApiResponse.http400({
         message:
           (error as Error).message ||
-          'An error occurred while fetching recipeCategoryLink categories.',
+          'An error occurred while fetching productTagLink categories.',
       });
       res.status(response.httpStatusCode).json(response.data);
     }
   }
 
-  async createRecipeCategoryLink(req: Request, res: Response): Promise<void> {
+  async createProductTagLink(req: Request, res: Response): Promise<void> {
     try {
-      log('Create RecipeCategoryLink Category Request Received');
+      log('Create ProductTagLink  Request Received');
 
       const data = req.body;
 
-      data.categoryId = parseInt(data.categoryId);
-      data.recipeId = parseInt(data.recipeId);
+      data.productTagId = parseInt(data.productTagId);
 
       const payload =
-        await this.recipeCategoryLinkService.createRecipeCategoryLink(data);
+        await this.productTagLinkService.createProductTagLink(data);
 
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
@@ -90,19 +86,19 @@ export class RecipeCategoryLinkController {
       const response = ApiResponse.http400({
         message:
           (error as Error).message ||
-          'An error occurred while creating the recipeCategoryLink category.',
+          'An error occurred while creating the productTagLink category.',
       });
       res.status(response.httpStatusCode).json(response.data);
     }
   }
 
-  async deleteRecipeCategoryLink(req: Request, res: Response): Promise<void> {
+  async deleteProductTagLink(req: Request, res: Response): Promise<void> {
     try {
-      log('Delete RecipeCategoryLink Category Request Received');
+      log('Delete ProductTagLink  Request Received');
 
       const filter = req.body;
       const payload =
-        await this.recipeCategoryLinkService.deleteRecipeCategoryLink(filter);
+        await this.productTagLinkService.deleteProductTagLink(filter);
 
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
@@ -112,15 +108,15 @@ export class RecipeCategoryLinkController {
       const response = ApiResponse.http400({
         message:
           (error as Error).message ||
-          'An error occurred while deleting the recipeCategoryLink category.',
+          'An error occurred while deleting the productTagLink category.',
       });
       res.status(response.httpStatusCode).json(response.data);
     }
   }
 
-  async updateRecipeCategoryLink(req: Request, res: Response): Promise<void> {
+  async updateProductTagLink(req: Request, res: Response): Promise<void> {
     try {
-      log('Update RecipeCategoryLink Category Request Received');
+      log('Update ProductTagLink  Request Received');
 
       const modelIdParam = req.params.modelId;
       const id = StringUtil.parseAndValidateNumber(modelIdParam);
@@ -131,13 +127,12 @@ export class RecipeCategoryLinkController {
       const filter = { id };
       const data = req.body;
 
-      data.categoryId = parseInt(data.categoryId);
-      data.recipeId = parseInt(data.recipeId);
-      const payload =
-        await this.recipeCategoryLinkService.updateRecipeCategoryLink(
-          data,
-          filter
-        );
+      data.productTagId = parseInt(data.productTagId);
+
+      const payload = await this.productTagLinkService.updateProductTagLink(
+        data,
+        filter
+      );
 
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
@@ -147,7 +142,7 @@ export class RecipeCategoryLinkController {
       const response = ApiResponse.http400({
         message:
           (error as Error).message ||
-          'An error occurred while updating the recipeCategoryLink category.',
+          'An error occurred while updating the productTagLink category.',
       });
       res.status(response.httpStatusCode).json(response.data);
     }

@@ -4,37 +4,35 @@ import { log } from 'console';
 import { Service } from 'typedi';
 
 @Service()
-export default class RecipeCategoryLinkService extends ServiceDefinition {
-  async createRecipeCategoryLink(
-    data: Prisma.RecipeCategoryLinkUncheckedCreateInput
-  ) {
+export default class ProductTagLinkService extends ServiceDefinition {
+  async createProductTagLink(data: Prisma.ProductTagLinkUncheckedCreateInput) {
     try {
       const cleanData = data;
-
-      const recipeCategoryLink = await this.db.recipeCategoryLink.create({
+      log(cleanData);
+      const productTagLink = await this.db.productTagLink.create({
         data: cleanData,
       });
 
-      return { recipeCategoryLink };
+      return { productTagLink };
     } catch (error) {
       throw this.handleError(error);
     }
   }
 
-  async recipeCategoryLinks(
+  async productTagLinks(
     page: number = 1,
     pageSize: number = 10,
-    filters: Prisma.RecipeCategoryLinkWhereInput = {}
+    filters: Prisma.ProductTagLinkWhereInput = {}
   ) {
     try {
       const skip = (page - 1) * pageSize;
 
       const [total, data] = await this.db.$transaction([
-        this.db.recipeCategoryLink.count({
+        this.db.productTagLink.count({
           where: filters,
         }),
 
-        this.db.recipeCategoryLink.findMany({
+        this.db.productTagLink.findMany({
           where: filters,
           skip,
           take: pageSize,
@@ -53,21 +51,19 @@ export default class RecipeCategoryLinkService extends ServiceDefinition {
     }
   }
 
-  async recipeCategoryLinksList() {
+  async productTagLinksList() {
     try {
-      const recipeCategoryLinks = await this.db.recipeCategoryLink.findMany();
+      const productTagLinks = await this.db.productTagLink.findMany();
 
-      return { recipeCategoryLinks };
+      return { productTagLinks };
     } catch (error) {
       throw this.handleError(error);
     }
   }
 
-  async deleteRecipeCategoryLink(
-    filter: Prisma.RecipeCategoryLinkWhereUniqueInput
-  ) {
+  async deleteProductTagLink(filter: Prisma.ProductTagLinkWhereUniqueInput) {
     try {
-      await this.db.recipeCategoryLink.delete({
+      await this.db.productTagLink.delete({
         where: filter,
       });
 
@@ -77,19 +73,17 @@ export default class RecipeCategoryLinkService extends ServiceDefinition {
     }
   }
 
-  async updateRecipeCategoryLink(
-    data: Prisma.RecipeCategoryLinkUncheckedUpdateInput,
-    filter: Prisma.RecipeCategoryLinkWhereUniqueInput
+  async updateProductTagLink(
+    data: Prisma.ProductTagLinkUncheckedUpdateInput,
+    filter: Prisma.ProductTagLinkWhereUniqueInput
   ) {
     try {
-      const updatedRecipeCategoryLink = await this.db.recipeCategoryLink.update(
-        {
-          where: filter,
-          data,
-        }
-      );
+      const updatedProductTagLink = await this.db.productTagLink.update({
+        where: filter,
+        data,
+      });
 
-      return { recipeCategoryLink: updatedRecipeCategoryLink };
+      return { productTagLink: updatedProductTagLink };
     } catch (error) {
       log(`Error updating category: ${(error as any).message}`);
       throw this.handleError(error);

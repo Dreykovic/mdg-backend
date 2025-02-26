@@ -6,9 +6,9 @@ import config from '@/config';
 import { PrismaClient } from '@prisma/client';
 import colorTxt from 'ansi-colors';
 
-import { log } from 'console';
 import { seedDefaultUnits } from './unit.seeder';
 import { createOrFindDefaultUser } from './user.seeder';
+import logger from '@/core/utils/logger.util';
 
 const prisma = new PrismaClient();
 
@@ -17,17 +17,17 @@ async function main() {
     await seedDefaultUnits(prisma);
     await createOrFindDefaultUser(prisma);
   } else if (config.isStage) {
-    log('Good update');
+    logger.info('Good update');
   }
 }
 main()
   .catch((e) => {
-    log(colorTxt.red(`x Database seed error ${e}`));
+    logger.debug(colorTxt.red(`x Database seed error ${e}`));
 
     process.exit(1);
   })
   .finally(async () => {
-    log(colorTxt.green(`✔ Database seed successfully `));
+    logger.info(colorTxt.green(`✔ Database seed successfully `));
 
     await prisma.$disconnect();
   });

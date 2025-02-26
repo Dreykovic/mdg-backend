@@ -15,7 +15,7 @@ import { env, nodeEnv } from './env.config'; // Importing environment variables 
 import { parseAllowedOrigins } from '@/core/utils/cors.util'; // Utility function to parse allowed CORS origins
 import { EnvConfig } from './types'; // Importing the type definition for environment configuration
 import { ProfileName } from '@prisma/client'; // Importing the ProfileName type from Prisma client
-import { log } from 'console'; // Importing the logging utility
+import logger from '@/core/utils/logger.util';
 
 // Configuration object with strongly typed properties
 const config: EnvConfig = {
@@ -120,6 +120,6 @@ const config: EnvConfig = {
 };
 
 // Log the parsed CORS allowed origins to the console
-log('Allowed Origins :', config.cors.allowOrigins);
+logger.debug('Allowed Origins :', config.cors.allowOrigins);
 
 export default config; // Exporting the configuration object

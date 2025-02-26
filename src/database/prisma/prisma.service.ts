@@ -13,7 +13,7 @@
 
 import { Service } from 'typedi';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { log } from 'console';
+import logger from '@/core/utils/logger.util';
 
 /**
  * The PrismaService class provides an extended Prisma client with validation logic.
@@ -51,7 +51,7 @@ export class PrismaService {
   private async connect(): Promise<void> {
     try {
       await this.prisma.$connect();
-      log('Database connected successfully');
+      logger.info('Database connected successfully');
     } catch (error) {
       throw new Error((error as Error).message);
     }
@@ -64,9 +64,10 @@ export class PrismaService {
   public async disconnect(): Promise<void> {
     try {
       await this.prisma.$disconnect();
-      // log('Database disconnected successfully');
-    } catch (error) {
-      log('Error while disconnecting from the database:', error);
+    } catch (error: any) {
+      logger.error(
+        `Error while disconnecting from the database: (${error.message})`
+      );
     }
   }
 
@@ -93,8 +94,6 @@ export class PrismaService {
    * @returns {Error} A formatted error with a user-friendly message.
    */
   public handleError(error: any): Error {
-    log(' Error:', error);
-
     // Handle Zod validation issues
     if (error?.issues) {
       const formattedIssues = error.issues
@@ -103,7 +102,7 @@ export class PrismaService {
         })
         .join(', ');
 
-      log('Validation Issues:', formattedIssues);
+      logger.error('Validation Issues:', formattedIssues);
       return new Error(`Validation Error: ${formattedIssues}`);
     }
 
@@ -129,7 +128,7 @@ export class PrismaService {
 
     // Handle Prisma validation errors
     if (error instanceof Prisma.PrismaClientValidationError) {
-      log('Validation Error:', error.message);
+      logger.error('Validation Error:', error.message);
       return new Error(
         'The provided data is invalid. Please check your input.'
       );

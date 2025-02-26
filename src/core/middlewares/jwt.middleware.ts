@@ -18,7 +18,8 @@ import config from '@/config';
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import ApiResponse from '../utils/apiResponse.util';
-import { log } from 'console';
+
+import logger from '../utils/logger.util';
 
 /**
  * Middleware for verifying JWT token in the authorization header.
@@ -88,7 +89,7 @@ const verifyJWT = (
       errorMessage = 'Invalid token';
     }
     // Log the error for debugging purposes
-    log(err);
+    logger.error('Jwt Error', err);
 
     // Respond with an appropriate HTTP status and message
     const response = ApiResponse.http401({ message: errorMessage });

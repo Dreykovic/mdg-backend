@@ -6,7 +6,7 @@
 import adminAuthModule from '@/modules/adminAuth/adminAuth.module'; // Admin authentication module
 import conversionModule from '@/modules/conversion/conversion.module';
 import filesModule from '@/modules/files/files.module'; // File handling module
-import resourcesModule from '@/modules/resources/resources.module'; // Resource management module
+import catalogModule from '@/modules/catalog/catalog.module'; // Catalog management module
 import express from 'express'; // Express router to define API routes
 
 // Initialize the API router
@@ -19,13 +19,13 @@ const apiRouter = express.Router();
 apiRouter.use('/v1', adminAuthModule.controller);
 
 /**
- * Route to handle all resource management related requests under the `/v1` version.
- * Delegates requests to the resourcesModule controller.
+ * Route to handle all catalog management related requests under the `/v1` version.
+ * Delegates requests to the catalogsModule controller.
  */
-apiRouter.use('/v1', resourcesModule.controller);
+apiRouter.use('/v1', catalogModule.controller);
 
 /**
- * Route to handle all resource management related requests under the `/v1` version.
+ * Route to handle all catalog management related requests under the `/v1` version.
  * Delegates requests to the conversionModule controller.
  */
 apiRouter.use('/v1', conversionModule.controller);

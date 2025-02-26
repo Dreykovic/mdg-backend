@@ -3,7 +3,7 @@ import express from 'express'; // Importing the Express framework for creating r
 import volumeConversionsRouter from './volume/volume.routes';
 import recipeConversionsRouter from './recipe/recipeConversion.routes';
 
-// Create a new router instance to organize and manage resource-related routes.
+// Create a new router instance to organize and manage Catalog-related routes.
 const router = express.Router();
 
 router.use('/conversion', volumeConversionsRouter);

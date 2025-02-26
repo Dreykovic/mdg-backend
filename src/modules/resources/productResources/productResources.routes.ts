@@ -8,6 +8,8 @@ import marginsRouter from './margin/margin.routes';
 import supplierRouter from './supplier/supplier.routes';
 
 import productRouter from './product/product.routes';
+import productTagsRouter from './ProductTag/productTag.routes';
+import productTagLinksRouter from './ProductTagLink/recipeCategoryLink.routes';
 
 // Create a new router instance to organize and manage resource-related routes.
 const productResourcesRouter = express.Router();
@@ -26,6 +28,8 @@ productResourcesRouter.use('/product-resources', marginsRouter);
 productResourcesRouter.use('/product-resources', supplierRouter);
 
 productResourcesRouter.use('/product-resources', productRouter);
+productResourcesRouter.use('/product-resources', productTagsRouter);
+productResourcesRouter.use('/product-resources', productTagLinksRouter);
 
 // Export the router so it can be used in the main application.
 export default productResourcesRouter;

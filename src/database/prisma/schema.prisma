@@ -123,13 +123,11 @@ model ProductTag {
   imageUrl String? // URL to the image
   slug     String? // URL-friendly identifier
 
-  categoryId Int // Reference to parent category
-
   ProductTagLinks ProductTagLink[] // Related Product Tag link
   createdAt       DateTime         @default(now()) // Creation timestamp
   updatedAt       DateTime         @updatedAt // Update timestamp
 
-  @@unique([categoryId, name]) // Unique constraint for category and name combination
+  @@unique([name]) // Unique constraint for category and name combination
 }
 
 model ProductTagLink {

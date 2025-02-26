@@ -1,6 +1,7 @@
+import logger from '@/core/utils/logger.util';
 import ServiceDefinition from '@/modules/definitions/service';
 import { Prisma } from '@prisma/client';
-import { log } from 'console';
+
 import { Service } from 'typedi';
 
 @Service()
@@ -98,11 +99,13 @@ export default class RecipeService extends ServiceDefinition {
         data,
       });
 
-      log(`Category updated successfully: ${JSON.stringify(updatedRecipe)}`);
+      logger.debug(
+        `Recipe updated successfully: ${JSON.stringify(updatedRecipe)}`
+      );
 
       return { recipe: updatedRecipe };
     } catch (error) {
-      log(`Error updating category: ${(error as any).message}`);
+      logger.debug(`Error updating category: ${(error as any).message}`);
       throw this.handleError(error);
     }
   }

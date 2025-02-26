@@ -147,7 +147,7 @@ export class RecipeController {
 
   async updateRecipe(req: Request, res: Response): Promise<void> {
     try {
-      log('Update Recipe Category Request Received');
+      log('Update Recipe Request Received');
 
       const modelIdParam = req.params.modelId;
       const id = StringUtil.parseAndValidateNumber(modelIdParam);
@@ -157,19 +157,27 @@ export class RecipeController {
       }
       const filter = { id };
       const data = req.body;
-
+      log('this is data to update', data);
       data.userId = (req as any).user.id;
-      data.preparationTime = parseInt(data.preparationTime);
-      data.cookingTime = parseInt(data.cookingTime);
-      data.servings = parseInt(data.servings);
+      data.preparationTime = req.body.preparationTime
+        ? parseInt(data.preparationTime)
+        : undefined;
+      data.cookingTime = req.body.cookingTime
+        ? parseInt(data.cookingTime)
+        : undefined;
+      data.isApproved = req.body.isApproved
+        ? StringUtil.parseBool(data.isApproved)
+        : undefined;
+      data.isPromoAwarded = req.body.isPromoAwarded
+        ? StringUtil.parseBool(data.isPromoAwarded)
+        : undefined;
+      data.servings = req.body.servings ? parseInt(data.servings) : undefined;
 
       const payload = await this.recipeService.updateRecipe(data, filter);
 
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      log(error);
-
+    } catch (error: any) {
       const response = ApiResponse.http400({
         message:
           (error as Error).message ||

@@ -1,3 +1,5 @@
+import logger from '@/core/utils/logger.util';
+import StringUtil from '@/core/utils/string.util';
 import ServiceDefinition from '@/modules/definitions/service';
 import { Prisma } from '@prisma/client';
 import { log } from 'console';
@@ -21,8 +23,16 @@ export default class ProductService extends ServiceDefinition {
       data.pricePerGramGround =
         data.costPerGramGround +
         (data.costPerGramGround * marginLevel.margin) / 100;
+      // Generate the SKU first
+      const sku = await this.generateSKU(
+        data.categoryId,
+        data.originId,
+        data.supplierId,
+        data.isGlutenFree,
+        data.isGMOFree
+      );
 
-      const cleanData = data;
+      const cleanData = { ...data, sku };
       log('Created Product', cleanData);
 
       const product = await this.db.product.create({
@@ -172,6 +182,144 @@ export default class ProductService extends ServiceDefinition {
     } catch (error) {
       log('Product Update Error', error);
       throw this.handleError(error);
+    }
+  }
+
+  async generateSKU(
+    categoryId: number,
+    originId: number,
+    supplierId: number,
+    isGlutenFree: boolean = false,
+    isGMOFree: boolean = false
+  ): Promise<string> {
+    try {
+      // Initialize with fallback values in case of failure
+      let category = null;
+      let origin = null;
+      let supplier = null;
+
+      try {
+        // Fetch related entities, catching errors for each individually
+        [category, origin, supplier] = await Promise.all([
+          this.db.productCategory
+            .findUnique({ where: { id: categoryId } })
+            .catch(() => null),
+          this.db.origin
+            .findUnique({ where: { id: originId } })
+            .catch(() => null),
+          this.db.supplier
+            .findUnique({ where: { id: supplierId } })
+            .catch(() => null),
+        ]);
+      } catch (fetchError) {
+        console.error('Error fetching entities:', fetchError);
+        // Continue with nulls for any entities that couldn't be fetched
+      }
+
+      // Log warning if any required entity is missing
+      if (!category || !origin || !supplier) {
+        console.warn(
+          `Warning: Missing entities for SKU generation - Category: ${!!category}, Origin: ${!!origin}, Supplier: ${!!supplier}`
+        );
+        // Continue with generation using fallbacks instead of throwing error
+      }
+
+      // Create codes from entity names (use first 3 letters, uppercase)
+      // Add null checks for all properties
+      const catCode = category?.name
+        ? StringUtil.generateSlug(category.name).substring(0, 3).toUpperCase()
+        : 'XXX';
+      const origCode = origin?.country
+        ? StringUtil.generateSlug(origin.country).substring(0, 2).toUpperCase()
+        : 'XX';
+      const supCode = supplier?.name
+        ? StringUtil.generateSlug(supplier.name).substring(0, 3).toUpperCase()
+        : 'XXX';
+
+      // Add optional attribute flags
+      const glutenFlag = isGlutenFree ? 'GF' : '';
+      const gmoFlag = isGMOFree ? 'NM' : ''; // NM for Non-GMO
+
+      // Create base SKU pattern
+      const basePattern = `${catCode}-${origCode}-${supCode}`;
+
+      // Count existing products with the same pattern to determine sequence number
+      let existingProducts: any[] = [];
+      try {
+        existingProducts = await this.db.product.findMany({
+          where: {
+            sku: {
+              startsWith: basePattern,
+            },
+          },
+          orderBy: {
+            sku: 'desc',
+          },
+          take: 1,
+        });
+      } catch (queryError) {
+        logger.error('Error querying existing products:', queryError);
+        // Continue with empty array if query fails
+      }
+
+      // Determine sequence number
+      let sequenceNumber = 1;
+
+      if (
+        existingProducts &&
+        existingProducts.length > 0 &&
+        existingProducts[0]?.sku
+      ) {
+        const lastSKU = existingProducts[0].sku;
+        const parts = lastSKU.split('-');
+
+        if (parts && parts.length > 0) {
+          const lastPart = parts[parts.length - 1];
+
+          // Extract the numeric portion
+          const numericMatch = lastPart.match(/\d+/);
+          if (numericMatch && numericMatch[0]) {
+            sequenceNumber = parseInt(numericMatch[0], 10) + 1;
+          }
+        }
+      }
+
+      // Format sequence number with leading zeros
+      const sequenceStr = sequenceNumber.toString().padStart(4, '0');
+
+      // Combine attribute flags if present
+      const attributeFlags = [glutenFlag, gmoFlag].filter(Boolean).join('-');
+      const attributePart = attributeFlags ? `-${attributeFlags}` : '';
+
+      // Build final SKU
+      const sku = `${basePattern}-${sequenceStr}${attributePart}`;
+
+      // Verify uniqueness
+      let existingSKU = null;
+      try {
+        existingSKU = await this.db.product.findUnique({
+          where: { sku },
+        });
+      } catch (uniqueCheckError) {
+        logger.error('Error checking SKU uniqueness:', uniqueCheckError);
+        // If we can't verify uniqueness, assume it's not unique to be safe
+        existingSKU = { id: 'unknown' };
+      }
+
+      if (existingSKU) {
+        // If SKU already exists (rare case), add a random suffix
+        const randomSuffix = Math.floor(Math.random() * 1000)
+          .toString()
+          .padStart(3, '0');
+        return `${sku}-${randomSuffix}`;
+      }
+
+      return sku;
+    } catch (error) {
+      logger.error('Error generating SKU:', error);
+      // Instead of throwing, return a fallback SKU with timestamp for uniqueness
+      const timestamp = Date.now().toString().substr(-8);
+      return `FALLBACK-${timestamp}`;
     }
   }
 }

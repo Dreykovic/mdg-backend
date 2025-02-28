@@ -2,10 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// generator typescriptInterfaces {
-//   provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
-//   output   = "./dto/interfaces.ts"
-// }
+generator typescriptInterfaces {
+  provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
+  output   = "./dto/interfaces.ts"
+}
 
 datasource db {
   provider = "postgresql" // Default database provider is PostgreSQL. Adjust as needed.
@@ -203,13 +203,13 @@ model Product {
   isGlutenFree Boolean // Indicates if the product is gluten-free
   isGMOFree    Boolean // Indicates if the product is GMO-free
   description  String? // Product description
+  sku          String  @unique // Stock Keeping Unit
 
   isActive       Boolean        @default(false) // Indicates if the product is active
   isArchived     Boolean        @default(false) // Indicates if the product is archived
   visibility     VisibilityType @default(DRAFT)
   isFeatured     Boolean        @default(false) // Indicates if the product is featured
   additionalCost Float?         @default(0) // Additional cost
-  imageRef       String?        @unique // Reference to image file
 
   costPerGramWhole   Float // Cost per gram (whole form)
   costPerGramGround  Float // Cost per gram (ground form)
@@ -225,6 +225,8 @@ model Product {
   ingredients     Ingredient[] // Related ingredients in recipes
   ProductTagLinks ProductTagLink[] // Related Product Tag link
   inventory       Inventory?
+  // Media
+  images          ProductImage[]
 
   origin Origin @relation(fields: [originId], references: [id]) // Relation to origin
 
@@ -235,6 +237,16 @@ model Product {
   createdAt        DateTime          @default(now()) // Creation timestamp
   updatedAt        DateTime          @updatedAt // Update timestamp
   volumeConversion VolumeConversion? // Relation to volume conversion
+}
+
+model ProductImage {
+  id         String  @id @default(uuid())
+  url        String
+  altText    String?
+  isFeatured Boolean @default(false)
+  sortOrder  Int     @default(0)
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Inventory {

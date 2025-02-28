@@ -166,11 +166,11 @@ export class ProductController {
       data.isActive = req.body.isActive
         ? StringUtil.parseBool(req.body.isActive)
         : undefined;
-      data.isFeatured = req.body.isPublic
-        ? StringUtil.parseBool(req.body.isPublic)
+      data.isFeatured = req.body.isFeatured
+        ? StringUtil.parseBool(req.body.isFeatured)
         : undefined;
-      data.isArchived = req.body.isPublic
-        ? StringUtil.parseBool(req.body.isPublic)
+      data.isArchived = req.body.isArchived
+        ? StringUtil.parseBool(req.body.isArchived)
         : undefined;
       data.isGlutenFree = req.body.isGlutenFree
         ? StringUtil.parseBool(req.body.isGlutenFree)

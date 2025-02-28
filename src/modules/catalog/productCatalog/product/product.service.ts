@@ -2,7 +2,7 @@ import logger from '@/core/utils/logger.util';
 import StringUtil from '@/core/utils/string.util';
 import ServiceDefinition from '@/modules/definitions/service';
 import { Prisma } from '@prisma/client';
-import { log } from 'console';
+import { log, warn } from 'console';
 import { Service } from 'typedi';
 
 @Service()
@@ -212,13 +212,13 @@ export default class ProductService extends ServiceDefinition {
             .catch(() => null),
         ]);
       } catch (fetchError) {
-        console.error('Error fetching entities:', fetchError);
+        warn('Error fetching entities:', fetchError);
         // Continue with nulls for any entities that couldn't be fetched
       }
 
       // Log warning if any required entity is missing
       if (!category || !origin || !supplier) {
-        console.warn(
+        warn(
           `Warning: Missing entities for SKU generation - Category: ${!!category}, Origin: ${!!origin}, Supplier: ${!!supplier}`
         );
         // Continue with generation using fallbacks instead of throwing error

@@ -103,7 +103,6 @@ export class ProductController {
       log('data received to create a product before casting', data);
 
       data.isActive = StringUtil.parseBool(req.body.isActive);
-      data.isPublic = StringUtil.parseBool(req.body.isPublic);
       data.isGlutenFree = StringUtil.parseBool(req.body.isGlutenFree);
       data.isGMOFree = StringUtil.parseBool(req.body.isGMOFree);
       data.costPerGramGround = parseFloat(req.body.costPerGramGround);
@@ -167,7 +166,10 @@ export class ProductController {
       data.isActive = req.body.isActive
         ? StringUtil.parseBool(req.body.isActive)
         : undefined;
-      data.isPublic = req.body.isPublic
+      data.isFeatured = req.body.isPublic
+        ? StringUtil.parseBool(req.body.isPublic)
+        : undefined;
+      data.isArchived = req.body.isPublic
         ? StringUtil.parseBool(req.body.isPublic)
         : undefined;
       data.isGlutenFree = req.body.isGlutenFree

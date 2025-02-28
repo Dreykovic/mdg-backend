@@ -204,14 +204,12 @@ model Product {
   isGMOFree    Boolean // Indicates if the product is GMO-free
   description  String? // Product description
 
-  isActive          Boolean        @default(false) // Indicates if the product is active
-  isPublic          Boolean        @default(false) // Indicates if the product is public
-  visibility        VisibilityType @default(DRAFT)
-  minimumStockLevel Float          @default(0) // Minimum stock level
-  quantity          Float          @default(0) // Current stock quantity
-
-  additionalCost Float?  @default(0) // Additional cost
-  imageRef       String? @unique // Reference to image file
+  isActive       Boolean        @default(false) // Indicates if the product is active
+  isArchived     Boolean        @default(false) // Indicates if the product is archived
+  visibility     VisibilityType @default(DRAFT)
+  isFeatured     Boolean        @default(false) // Indicates if the product is featured
+  additionalCost Float?         @default(0) // Additional cost
+  imageRef       String?        @unique // Reference to image file
 
   costPerGramWhole   Float // Cost per gram (whole form)
   costPerGramGround  Float // Cost per gram (ground form)
@@ -226,6 +224,7 @@ model Product {
 
   ingredients     Ingredient[] // Related ingredients in recipes
   ProductTagLinks ProductTagLink[] // Related Product Tag link
+  inventory       Inventory?
 
   origin Origin @relation(fields: [originId], references: [id]) // Relation to origin
 
@@ -236,6 +235,75 @@ model Product {
   createdAt        DateTime          @default(now()) // Creation timestamp
   updatedAt        DateTime          @updatedAt // Update timestamp
   volumeConversion VolumeConversion? // Relation to volume conversion
+}
+
+model Inventory {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Stock information
+  quantity          Float @default(0)
+  availableQuantity Float @default(0) // Accounts for reserved items
+  reservedQuantity  Float @default(0) // Items in carts or pending orders
+
+  // Reorder information
+  reorderThreshold Float @default(5)
+  reorderQuantity  Float @default(10)
+
+  // Stock status
+  inStock       Boolean @default(true)
+  backorderable Boolean @default(false)
+
+  // Stock tracking
+  lastStockCheck     DateTime?
+  nextScheduledCheck DateTime?
+
+  // Relationships
+  productId String?  @unique
+  product   Product? @relation(fields: [productId], references: [id])
+
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+  // Stock movements
+  stockMovements StockMovement[]
+}
+
+model Warehouse {
+  id          String      @id @default(uuid())
+  name        String
+  location    String?
+  isDefault   Boolean     @default(false)
+  inventories Inventory[]
+}
+
+model StockMovement {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  // Movement details
+  quantity Int
+  type     MovementType
+  notes    String?
+
+  // Reference to related documents
+  referenceType String? // e.g., "order", "purchase_order", "adjustment"
+  referenceId   String? // ID of the related document
+
+  // Relationships
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  userId      String? // Who performed the operation
+}
+
+enum MovementType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+  TRANSFER
+  RETURN
+  DAMAGE
 }
 
 // Enumeration for unit of measure types

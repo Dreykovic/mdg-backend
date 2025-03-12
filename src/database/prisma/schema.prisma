@@ -28,10 +28,11 @@ model User {
   password          String // User's password
   email_verified_at DateTime? // Timestamp for email verification
 
-  tokenFamilies TokenFamily[] // Relation to token families
-  recipes       Recipe[] // Relation to recipes created by the user
-  createdAt     DateTime      @default(now()) // Timestamp for creation
-  updatedAt     DateTime      @updatedAt // Timestamp for last update
+  tokenFamilies  TokenFamily[] // Relation to token families
+  recipes        Recipe[] // Relation to recipes created by the user
+  createdAt      DateTime        @default(now()) // Timestamp for creation
+  updatedAt      DateTime        @updatedAt // Timestamp for last update
+  stockMovements StockMovement[]
 
   @@index([username, id, email]) // Compound index for fast lookups
 }
@@ -291,8 +292,7 @@ model Warehouse {
 }
 
 model StockMovement {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
+  id String @id @default(uuid())
 
   // Movement details
   quantity Int
@@ -307,6 +307,9 @@ model StockMovement {
   inventoryId String
   inventory   Inventory @relation(fields: [inventoryId], references: [id])
   userId      String? // Who performed the operation
+  user        User?     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
 }
 
 enum MovementType {

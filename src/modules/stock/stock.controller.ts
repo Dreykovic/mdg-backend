@@ -29,16 +29,39 @@ export class InventoryController {
       );
       if (inventoryMetaData.quantity > 0) {
         await this.stockMvtService.recordStockMovement({
-          inventoryId: inventory.productInventory.id,
+          inventoryId: inventory.id,
           quantity: inventoryMetaData.quantity,
           type: 'STOCK_IN',
           notes: 'Initial stock',
           referenceType: 'INVENTORY',
           userId,
-          warehouseId: inventory.productInventory.warehouseId,
+          warehouseId: inventory.warehouseId,
         });
       }
 
+      const payload = { inventory };
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+
+      const response = ApiResponse.http400({
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching volume conversions.',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
+
+  async getInventory(req: Request, res: Response): Promise<void> {
+    try {
+      log('Get Inventory Request Received');
+      const productId = req.params.modelId;
+      if (!productId) {
+        throw new Error('Product ID is required to fetch inventory.');
+      }
+      const inventory = await this.inventoryService.getInventory(productId);
       const payload = { inventory };
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);

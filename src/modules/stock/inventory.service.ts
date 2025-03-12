@@ -18,7 +18,7 @@ export default class InventoryService extends StockService {
     sku: string,
     inventoryMetadata: InventoryMetadata,
     warehouseId?: string
-  ): Promise<{ productInventory: Inventory }> {
+  ): Promise<Inventory> {
     try {
       // Validate SKU
       StockValidator.validateSku(sku);
@@ -52,20 +52,7 @@ export default class InventoryService extends StockService {
         },
       });
 
-      // // Record the initial stock movement
-      // if (normalizedMetadata.quantity > 0) {
-      //   await this.recordStockMovement({
-      //     inventoryId: productInventory.id,
-      //     quantity: normalizedMetadata.quantity,
-      //     type: 'STOCK_IN' as MovementType,
-      //     notes: 'Initial inventory',
-      //     referenceType: 'INITIALIZATION',
-      //     userId,
-      //     warehouseId: warehouse.id,
-      //   });
-      // }
-
-      return { productInventory };
+      return productInventory;
     } catch (error) {
       // Handle any database or validation errors
       throw this.handleError(error);
@@ -173,6 +160,17 @@ export default class InventoryService extends StockService {
       });
 
       return updatedInventory;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getInventory(productId: string): Promise<any> {
+    try {
+      const inventory = this.db.inventory.findUniqueOrThrow({
+        where: { productId },
+      });
+      return inventory;
     } catch (error) {
       throw this.handleError(error);
     }

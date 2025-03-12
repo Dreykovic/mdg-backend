@@ -16,5 +16,11 @@ inventoryRouter.post(
   rbacMiddleware(['ADMIN']),
   (req, res) => inventoryController.createInventory(req, res)
 );
+inventoryRouter.get(
+  '/get/:modelId',
+  verifyJWT,
+  rbacMiddleware(['ADMIN']),
+  (req, res) => inventoryController.getInventory(req, res)
+);
 
 export default inventoryRouter;

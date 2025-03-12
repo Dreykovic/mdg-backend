@@ -266,7 +266,7 @@ model Inventory {
 
   // Stock status
   inStock       Boolean @default(true)
-  backorderable Boolean @default(false)
+  backOrderable Boolean @default(false)
 
   // Stock tracking
   lastStockCheck     DateTime?

@@ -46,7 +46,7 @@ export default class InventoryService extends StockService {
           reorderThreshold: normalizedMetadata.reorderThreshold,
           reorderQuantity: normalizedMetadata.reorderQuantity,
           inStock: normalizedMetadata.inStock,
-          backorderable: normalizedMetadata.backorderable,
+          backOrderable: normalizedMetadata.backOrderable,
           warehouseId: warehouse.id,
           productId: product.id,
         },
@@ -81,8 +81,8 @@ export default class InventoryService extends StockService {
       const newQuantity = inventory.quantity + changeAmount;
       let newAvailableQuantity = inventory.availableQuantity + changeAmount;
 
-      // Ensure available quantity doesn't go below 0 for non-backorderable items
-      if (!inventory.backorderable && newAvailableQuantity < 0) {
+      // Ensure available quantity doesn't go below 0 for non-backOrderable items
+      if (!inventory.backOrderable && newAvailableQuantity < 0) {
         newAvailableQuantity = 0;
       }
 
@@ -134,7 +134,7 @@ export default class InventoryService extends StockService {
       StockValidator.validateInventoryReservation(
         inventory.availableQuantity,
         quantity,
-        inventory.backorderable
+        inventory.backOrderable
       );
 
       // Update inventory

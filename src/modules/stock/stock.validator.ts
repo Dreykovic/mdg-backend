@@ -9,7 +9,7 @@ export interface InventoryMetadata {
   reorderThreshold?: number;
   reorderQuantity?: number;
   inStock?: boolean;
-  backorderable?: boolean;
+  backOrderable?: boolean;
 }
 
 /**
@@ -80,14 +80,14 @@ export class StockValidator {
       throw new Error('Available quantity must be a valid number');
     }
 
-    // For backorderable false, available quantity can't be negative
+    // For backOrderable false, available quantity can't be negative
     if (
-      metadata.backorderable === false &&
+      metadata.backOrderable === false &&
       metadata.availableQuantity !== undefined &&
       metadata.availableQuantity < 0
     ) {
       throw new Error(
-        'Available quantity cannot be negative for non-backorderable items'
+        'Available quantity cannot be negative for non-backOrderable items'
       );
     }
 
@@ -98,7 +98,7 @@ export class StockValidator {
       reorderThreshold: metadata.reorderThreshold ?? 5,
       reorderQuantity: metadata.reorderQuantity ?? 10,
       inStock: metadata.inStock ?? metadata.quantity > 0,
-      backorderable: metadata.backorderable ?? false,
+      backOrderable: metadata.backOrderable ?? false,
     };
   }
 

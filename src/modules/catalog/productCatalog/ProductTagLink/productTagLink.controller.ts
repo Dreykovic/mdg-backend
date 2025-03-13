@@ -47,11 +47,34 @@ export class ProductTagLinkController {
     }
   }
 
+  async tagLinksList(req: Request, res: Response): Promise<void> {
+    try {
+      log('List TagLink  Request Received');
+
+      const payload = await this.productTagLinkService.tagLinksList();
+
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+
+      const response = ApiResponse.http400({
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching productTagLink categories.',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
   async productTagLinksList(req: Request, res: Response): Promise<void> {
     try {
       log('List ProductTagLink  Request Received');
-
-      const payload = await this.productTagLinkService.productTagLinksList();
+      const productId = req.params.modelId;
+      if (!productId) {
+        throw Error('Product Id is required to fetch tag links');
+      }
+      const payload =
+        await this.productTagLinkService.productTagLinksList(productId);
 
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
@@ -72,7 +95,7 @@ export class ProductTagLinkController {
       log('Create ProductTagLink  Request Received');
 
       const data = req.body;
-
+      log('data received ', data);
       data.productTagId = parseInt(data.productTagId);
 
       const payload =

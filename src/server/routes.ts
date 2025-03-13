@@ -8,6 +8,7 @@ import conversionModule from '@/modules/conversion/conversion.module';
 import filesModule from '@/modules/files/files.module'; // File handling module
 import catalogModule from '@/modules/catalog/catalog.module'; // Catalog management module
 import express from 'express'; // Express router to define API routes
+import stockModule from '@/modules/stock/stock.module';
 
 // Initialize the API router
 const apiRouter = express.Router();
@@ -35,6 +36,11 @@ apiRouter.use('/v1', conversionModule.controller);
  * Delegates requests to the filesModule controller.
  */
 apiRouter.use('/v1', filesModule.controller);
+/**
+ * Route to handle all file management related requests under the `/v1` version.
+ * Delegates requests to the filesModule controller.
+ */
+apiRouter.use('/v1', stockModule.controller);
 
 // Export the configured API router for use in the main app
 export default apiRouter;

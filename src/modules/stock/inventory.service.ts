@@ -1,4 +1,4 @@
-import { Inventory, MovementType, ReferenceType } from '@prisma/client';
+import { Inventory } from '@prisma/client';
 import { Service } from 'typedi';
 
 import { InventoryMetadata, StockValidator } from './stock.validator';
@@ -81,112 +81,6 @@ export default class InventoryService extends StockService {
         throw this.handleError(error);
       }
     });
-  }
-
-  /**
-   * Update inventory and record stock movement
-   */
-  async updateInventoryQuantity(
-    inventoryId: string,
-    changeAmount: number,
-    movementType: MovementType,
-    referenceType: ReferenceType,
-    notes?: string,
-    referenceId?: string,
-    userId?: string
-  ): Promise<Inventory> {
-    try {
-      // Get current inventory
-      const inventory = await this.db.inventory.findUniqueOrThrow({
-        where: { id: inventoryId },
-      });
-
-      // Calculate new quantities
-      const newQuantity = inventory.quantity + changeAmount;
-      let newAvailableQuantity = inventory.availableQuantity + changeAmount;
-
-      // Ensure available quantity doesn't go below 0 for non-backOrderable items
-      if (!inventory.backOrderable && newAvailableQuantity < 0) {
-        newAvailableQuantity = 0;
-      }
-
-      // Update the inventory
-      const updatedInventory = await this.db.inventory.update({
-        where: { id: inventoryId },
-        data: {
-          quantity: newQuantity,
-          availableQuantity: newAvailableQuantity,
-          inStock: newQuantity > 0,
-        },
-      });
-
-      // Record the movement
-      await this.db.stockMovement.create({
-        data: {
-          quantity: Math.abs(changeAmount), // Always store positive quantity
-          type: movementType,
-          notes,
-          referenceType,
-          referenceId,
-          inventoryId,
-          userId,
-        },
-      });
-
-      return updatedInventory;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Reserve inventory (for cart or pending order)
-   */
-  async reserveInventory(
-    inventoryId: string,
-    quantity: number,
-    referenceType: ReferenceType,
-    referenceId: string,
-    userId?: string
-  ): Promise<Inventory> {
-    try {
-      const inventory = await this.db.inventory.findUniqueOrThrow({
-        where: { id: inventoryId },
-      });
-
-      // Validate reservation
-      StockValidator.validateInventoryReservation(
-        inventory.availableQuantity,
-        quantity,
-        inventory.backOrderable
-      );
-
-      // Update inventory
-      const updatedInventory = await this.db.inventory.update({
-        where: { id: inventoryId },
-        data: {
-          availableQuantity: { decrement: quantity },
-          reservedQuantity: { increment: quantity },
-        },
-      });
-
-      // Record the reservation
-      await this.db.stockMovement.create({
-        data: {
-          quantity,
-          type: 'STOCK_OUT',
-          notes: `Reserved for ${referenceType} #${referenceId}`,
-          referenceType,
-          referenceId,
-          inventoryId,
-          userId,
-        },
-      });
-
-      return updatedInventory;
-    } catch (error) {
-      throw this.handleError(error);
-    }
   }
 
   async inventory(productId: string): Promise<any> {

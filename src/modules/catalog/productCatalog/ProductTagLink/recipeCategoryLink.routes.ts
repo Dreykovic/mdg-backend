@@ -18,7 +18,7 @@ productTagLinksRouter.get(
   (req, res) => productTagLinkController.tagLinksList(req, res)
 );
 productTagLinksRouter.get(
-  'product/:modelId',
+  '/product/:modelId',
   verifyJWT,
   rbacMiddleware(['ADMIN']),
   (req, res) => productTagLinkController.productTagLinksList(req, res)

@@ -165,9 +165,9 @@ export default class InventoryService extends StockService {
     }
   }
 
-  async getInventory(productId: string): Promise<any> {
+  async inventory(productId: string): Promise<any> {
     try {
-      const inventory = this.db.inventory.findUniqueOrThrow({
+      const inventory = this.db.inventory.findUnique({
         where: { productId },
       });
       return inventory;

@@ -61,7 +61,7 @@ export class InventoryController {
       if (!productId) {
         throw new Error('Product ID is required to fetch inventory.');
       }
-      const inventory = await this.inventoryService.getInventory(productId);
+      const inventory = await this.inventoryService.inventory(productId);
       const payload = { inventory };
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);

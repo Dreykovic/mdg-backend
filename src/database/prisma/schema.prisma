@@ -300,7 +300,7 @@ model StockMovement {
   notes    String?
 
   // Reference to related documents
-  referenceType String? // e.g., "order", "purchase_order", "adjustment"
+  referenceType ReferenceType
   referenceId   String? // ID of the related document
 
   // Relationships
@@ -315,10 +315,17 @@ model StockMovement {
 enum MovementType {
   STOCK_IN
   STOCK_OUT
-  ADJUSTMENT
-  TRANSFER
-  RETURN
-  DAMAGE
+}
+
+enum ReferenceType {
+  ORDER // Commande client
+  PURCHASE_ORDER // Bon d'achat / commande fournisseur
+  ADJUSTMENT // Ajustement manuel du stock
+  TRANSFER // Transfert entre entrepôts
+  RETURN // Retour de marchandise
+  DAMAGE // Produit endommagé
+  OTHER // Autres types non spécifiés
+  INVENTORY //
 }
 
 // Enumeration for unit of measure types

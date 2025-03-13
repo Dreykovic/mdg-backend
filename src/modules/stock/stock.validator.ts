@@ -1,4 +1,4 @@
-import { MovementType } from '@prisma/client';
+import { MovementType, ReferenceType } from '@prisma/client';
 
 /**
  * Interface for inventory metadata validation
@@ -20,7 +20,7 @@ export interface StockMovementData {
   quantity: number;
   type: MovementType;
   notes?: string;
-  referenceType?: string;
+  referenceType: ReferenceType;
   referenceId?: string;
   userId?: string;
   warehouseId?: string;
@@ -130,6 +130,10 @@ export class StockValidator {
     // Validate movement type
     if (!Object.values(MovementType).includes(data.type)) {
       throw new Error(`Invalid movement type: ${data.type}`);
+    }
+    // Validate movement reference type
+    if (!Object.values(ReferenceType).includes(data.referenceType)) {
+      throw new Error(`Invalid movement referencetype: ${data.referenceType}`);
     }
 
     // Return validated data

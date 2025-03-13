@@ -110,14 +110,6 @@ export default class StockService extends ServiceDefinition {
         return 'IN';
       case 'STOCK_OUT':
         return 'OUT';
-      case 'ADJUSTMENT':
-        return 'ADJ';
-      case 'TRANSFER':
-        return 'TRF';
-      case 'RETURN':
-        return 'RET';
-      case 'DAMAGE':
-        return 'DMG';
       default:
         // TypeScript should catch this with exhaustive check
         return 'UNK'; // Unknown - fallback for runtime safety

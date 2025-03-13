@@ -1,4 +1,4 @@
-import { Inventory, MovementType } from '@prisma/client';
+import { Inventory, MovementType, ReferenceType } from '@prisma/client';
 import { Service } from 'typedi';
 
 import { InventoryMetadata, StockValidator } from './stock.validator';
@@ -66,8 +66,8 @@ export default class InventoryService extends StockService {
     inventoryId: string,
     changeAmount: number,
     movementType: MovementType,
+    referenceType: ReferenceType,
     notes?: string,
-    referenceType?: string,
     referenceId?: string,
     userId?: string
   ): Promise<Inventory> {
@@ -121,7 +121,7 @@ export default class InventoryService extends StockService {
   async reserveInventory(
     inventoryId: string,
     quantity: number,
-    referenceType: string,
+    referenceType: ReferenceType,
     referenceId: string,
     userId?: string
   ): Promise<Inventory> {

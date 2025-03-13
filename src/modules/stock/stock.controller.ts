@@ -22,22 +22,13 @@ export class InventoryController {
 
       log(`Get Create Inventory For Product ${sku} Request Received`);
 
-      const inventory = await this.inventoryService.createInventory(
-        sku,
-        inventoryMetaData,
-        wareHouseId
-      );
-      if (inventoryMetaData.quantity > 0) {
-        await this.stockMvtService.recordStockMovement({
-          inventoryId: inventory.id,
-          quantity: inventoryMetaData.quantity,
-          type: 'STOCK_IN',
-          notes: 'Initial stock',
-          referenceType: 'INVENTORY',
-          userId,
-          warehouseId: inventory.warehouseId,
-        });
-      }
+      const inventory =
+        await this.inventoryService.createInventoryWithStockMovement(
+          sku,
+          inventoryMetaData,
+          wareHouseId,
+          userId
+        );
 
       const payload = { inventory };
       const response = ApiResponse.http200(payload);

@@ -139,6 +139,8 @@ model ProductTagLink {
   productTag   ProductTag @relation(fields: [productTagId], references: [id]) // Related TO ProductTag
   createdAt    DateTime   @default(now()) // Creation timestamp
   updatedAt    DateTime   @updatedAt // Update timestamp
+
+  @@unique([productTagId, productId])
 }
 
 // Supplier model for product providers

@@ -5,6 +5,7 @@ import { Service } from 'typedi';
 import InventoryService from './inventory.service';
 import StockMvtService from './stockMvt.service';
 import { InventoryMetadata } from './stock.validator';
+import StringUtil from '@/core/utils/string.util';
 
 @Service()
 export class InventoryController {
@@ -19,6 +20,10 @@ export class InventoryController {
       const wareHouseId: string = req.body.wareHouseId;
       const inventoryMetaData: InventoryMetadata = req.body.inventoryMetaData;
       const userId = (req as any).user.id;
+      inventoryMetaData.inStock = StringUtil.parseBool(req.body.inStock);
+      inventoryMetaData.backOrderable = StringUtil.parseBool(
+        req.body.backOrderable
+      );
 
       log(`Get Create Inventory For Product ${sku} Request Received`);
 

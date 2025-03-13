@@ -90,6 +90,7 @@ export default class ProductService extends ServiceDefinition {
           supplier: true,
           volumeConversion: true,
           marginLevel: true,
+          inventory: true,
         },
       });
       log('Unique product', product);

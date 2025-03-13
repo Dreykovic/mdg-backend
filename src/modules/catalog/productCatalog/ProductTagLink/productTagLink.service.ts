@@ -51,9 +51,29 @@ export default class ProductTagLinkService extends ServiceDefinition {
     }
   }
 
-  async productTagLinksList() {
+  async tagLinksList() {
     try {
-      const productTagLinks = await this.db.productTagLink.findMany();
+      const tagLinks = await this.db.productTagLink.findMany({
+        include: {
+          productTag: true,
+        },
+      });
+
+      return { tagLinks };
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+  async productTagLinksList(productId: string) {
+    try {
+      const productTagLinks = await this.db.productTagLink.findMany({
+        where: {
+          productId,
+        },
+        include: {
+          productTag: true,
+        },
+      });
 
       return { productTagLinks };
     } catch (error) {

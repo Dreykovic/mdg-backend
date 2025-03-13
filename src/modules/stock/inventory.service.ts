@@ -169,6 +169,10 @@ export default class InventoryService extends StockService {
     try {
       const inventory = this.db.inventory.findUnique({
         where: { productId },
+        include: {
+          stockMovements: true,
+          warehouse: true,
+        },
       });
       return inventory;
     } catch (error) {

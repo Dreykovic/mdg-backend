@@ -7,7 +7,7 @@ import verifyJWT from '@/core/middlewares/jwt.middleware';
 
 const productTagController = Container.get(ProductTagController);
 const productTagsRouter = express.Router();
-prefixRoutes(productTagsRouter, '/product-tags');
+prefixRoutes(productTagsRouter, '/tags');
 
 productTagsRouter.get(
   '/list',

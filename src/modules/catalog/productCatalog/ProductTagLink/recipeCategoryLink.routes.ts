@@ -9,7 +9,7 @@ import { ProductTagLinkController } from './productTagLink.controller';
 
 const productTagLinkController = Container.get(ProductTagLinkController);
 const productTagLinksRouter = express.Router();
-prefixRoutes(productTagLinksRouter, '/product-tag-links');
+prefixRoutes(productTagLinksRouter, '/tag-links');
 
 productTagLinksRouter.get(
   '/list',

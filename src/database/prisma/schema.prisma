@@ -224,7 +224,7 @@ model Product {
   marginLevelId Int // Reference to margin level
 
   ingredients     Ingredient[] // Related ingredients in recipes
-  ProductTagLinks ProductTagLink[] // Related Product Tag link
+  productTagLinks ProductTagLink[] // Related Product Tag link
   inventory       Inventory?
   // Media
   images          ProductImage[]

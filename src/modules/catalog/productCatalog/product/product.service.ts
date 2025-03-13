@@ -91,6 +91,9 @@ export default class ProductService extends ServiceDefinition {
           volumeConversion: true,
           marginLevel: true,
           inventory: true,
+          productTagLinks: {
+            include: { productTag: true },
+          },
         },
       });
       log('Unique product', product);

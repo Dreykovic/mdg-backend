@@ -14,16 +14,21 @@ export class InventoryController {
     private readonly stockMvtService: StockMvtService
   ) {}
 
+  /**
+   * Create a new inventory with initial stock
+   */
   async createInventory(req: Request, res: Response): Promise<void> {
     try {
       const sku: string = req.body.sku;
       const wareHouseId: string = req.body.wareHouseId;
-      const inventoryMetaData: InventoryMetadata = req.body.inventoryMetaData;
       const userId = (req as any).user.id;
-      inventoryMetaData.inStock = StringUtil.parseBool(req.body.inStock);
-      inventoryMetaData.backOrderable = StringUtil.parseBool(
-        req.body.backOrderable
-      );
+
+      // Parse and prepare inventory metadata
+      const inventoryMetaData: InventoryMetadata = {
+        ...req.body.inventoryMetaData,
+        inStock: StringUtil.parseBool(req.body.inStock),
+        backOrderable: StringUtil.parseBool(req.body.backOrderable),
+      };
 
       log(`Get Create Inventory For Product ${sku} Request Received`);
 
@@ -44,12 +49,15 @@ export class InventoryController {
       const response = ApiResponse.http400({
         message:
           (error as Error).message ||
-          'An error occurred while fetching volume conversions.',
+          'An error occurred while creating inventory.',
       });
       res.status(response.httpStatusCode).json(response.data);
     }
   }
 
+  /**
+   * Get inventory details for a product
+   */
   async getInventory(req: Request, res: Response): Promise<void> {
     try {
       log('Get Inventory Request Received');
@@ -67,7 +75,220 @@ export class InventoryController {
       const response = ApiResponse.http400({
         message:
           (error as Error).message ||
-          'An error occurred while fetching volume conversions.',
+          'An error occurred while fetching inventory.',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
+
+  /**
+   * Get inventory summary stats
+   */
+  async getInventorySummary(req: Request, res: Response): Promise<void> {
+    try {
+      log('Get Inventory Summary Request Received');
+      const summary = await this.inventoryService.getInventorySummary();
+      const payload = { summary };
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+      const response = ApiResponse.http400({
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching inventory summary.',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
+
+  /**
+   * Update inventory quantity
+   */
+  async updateInventoryQuantity(req: Request, res: Response): Promise<void> {
+    try {
+      const inventoryId = req.params.inventoryId;
+      const { quantity } = req.body;
+      const userId = (req as any).user.id;
+
+      if (!inventoryId) {
+        throw new Error('Inventory ID is required.');
+      }
+
+      if (quantity === undefined || isNaN(Number(quantity))) {
+        throw new Error('Valid quantity is required.');
+      }
+
+      log(`Update Inventory Quantity Request Received for ${inventoryId}`);
+
+      const updatedInventory =
+        await this.inventoryService.updateInventoryQuantity(
+          inventoryId,
+          Number(quantity),
+          userId
+        );
+
+      const payload = { inventory: updatedInventory };
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+      const response = ApiResponse.http400({
+        message:
+          (error as Error).message ||
+          'An error occurred while updating inventory quantity.',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
+
+  /**
+   * Create a stock movement
+   */
+  async createStockMovement(req: Request, res: Response): Promise<void> {
+    try {
+      const movementData = req.body;
+      const userId = (req as any).user.id;
+
+      log('Create Stock Movement Request Received');
+
+      // Ensure user ID is included
+      movementData.createdById = userId;
+
+      const movement =
+        await this.stockMvtService.createStockMovement(movementData);
+
+      const payload = { movement };
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+      const response = ApiResponse.http400({
+        message:
+          (error as Error).message ||
+          'An error occurred while creating stock movement.',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
+
+  /**
+   * Get a stock movement by ID
+   */
+  async getStockMovement(req: Request, res: Response): Promise<void> {
+    try {
+      const movementId = req.params.movementId;
+
+      if (!movementId) {
+        throw new Error('Movement ID is required.');
+      }
+
+      log(`Get Stock Movement Request Received for ${movementId}`);
+
+      const movement = await this.stockMvtService.getStockMovement(movementId);
+
+      const payload = { movement };
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+      const response = ApiResponse.http400({
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching stock movement.',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
+
+  /**
+   * Get recent stock movements
+   */
+  async getRecentMovements(req: Request, res: Response): Promise<void> {
+    try {
+      const limit = Number(req.query.limit) || 10;
+
+      log('Get Recent Stock Movements Request Received');
+
+      const movements = await this.stockMvtService.getRecentMovements(limit);
+
+      const payload = { movements };
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+      const response = ApiResponse.http400({
+        message:
+          (error as Error).message ||
+          'An error occurred while fetching recent movements.',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
+
+  /**
+   * Process a stock movement
+   */
+  async processStockMovement(req: Request, res: Response): Promise<void> {
+    try {
+      const movementId = req.params.movementId;
+      const { action } = req.body;
+      const userId = (req as any).user.id;
+
+      if (!movementId) {
+        throw new Error('Movement ID is required.');
+      }
+
+      if (!action) {
+        throw new Error(
+          'Action is required (approve, start, complete, cancel).'
+        );
+      }
+
+      log(
+        `Process Stock Movement Request Received for ${movementId} with action ${action}`
+      );
+
+      let result;
+
+      switch (action) {
+        case 'approve':
+          result = await this.stockMvtService.approveStockMovement(
+            movementId,
+            userId
+          );
+          break;
+        case 'start':
+          result = await this.stockMvtService.startProcessingMovement(
+            movementId,
+            userId
+          );
+          break;
+        case 'complete':
+          result = await this.stockMvtService.completeStockMovement(
+            movementId,
+            userId
+          );
+          break;
+        case 'cancel':
+          result = await this.stockMvtService.cancelStockMovement(
+            movementId,
+            userId
+          );
+          break;
+        default:
+          throw new Error(`Invalid action: ${action}`);
+      }
+
+      const payload = { result };
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+      const response = ApiResponse.http400({
+        message:
+          (error as Error).message ||
+          'An error occurred while processing stock movement.',
       });
       res.status(response.httpStatusCode).json(response.data);
     }

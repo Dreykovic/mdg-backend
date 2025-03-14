@@ -1,4 +1,9 @@
-import { MovementType, ReferenceType } from '@prisma/client';
+import {
+  MovementType,
+  MovementReason,
+  MovementStatus,
+  ValuationMethod,
+} from '@prisma/client';
 
 /**
  * Interface for inventory metadata validation
@@ -6,10 +11,19 @@ import { MovementType, ReferenceType } from '@prisma/client';
 export interface InventoryMetadata {
   quantity: number;
   availableQuantity?: number;
+  minimumQuantity?: number;
+  maximumQuantity?: number;
+  safetyStockLevel?: number;
+  economicOrderQuantity?: number;
   reorderThreshold: number;
   reorderQuantity?: number;
+  leadTimeInDays?: number;
+  unitCost?: number;
+  valuationMethod?: ValuationMethod;
   inStock?: boolean;
   backOrderable?: boolean;
+  stockLocation?: string;
+  notes?: string;
 }
 
 /**
@@ -17,13 +31,26 @@ export interface InventoryMetadata {
  */
 export interface StockMovementData {
   inventoryId: string;
+  productId: string;
   quantity: number;
-  type: MovementType;
+  unitCost?: number;
+  movementType: MovementType;
+  reason?: MovementReason;
+  status?: MovementStatus;
   notes?: string;
-  referenceType: ReferenceType;
-  referenceId?: string;
-  userId?: string;
-  warehouseId?: string;
+  lotNumber?: string;
+  expiryDate?: Date;
+  batchId?: string;
+  isAdjustment?: boolean;
+  documentNumber?: string;
+  metadata?: Record<string, any>;
+  scheduledAt?: Date;
+  sourceWarehouseId?: string;
+  destinationWarehouseId?: string;
+  createdById: string;
+  approvedById?: string;
+  referenceType?: string; // Legacy support
+  referenceId?: string; // Legacy support or document reference
 }
 
 /**
@@ -80,6 +107,16 @@ export class StockValidator {
       throw new Error('Available quantity must be a valid number');
     }
 
+    // Validate unit cost
+    if (
+      metadata.unitCost !== undefined &&
+      (typeof metadata.unitCost !== 'number' ||
+        isNaN(metadata.unitCost) ||
+        metadata.unitCost < 0)
+    ) {
+      throw new Error('Unit cost must be a valid non-negative number');
+    }
+
     // For backOrderable false, available quantity can't be negative
     if (
       metadata.backOrderable === false &&
@@ -95,11 +132,20 @@ export class StockValidator {
     return {
       quantity: metadata.quantity,
       availableQuantity: metadata.availableQuantity ?? metadata.quantity,
+      minimumQuantity: metadata.minimumQuantity ?? 0,
+      maximumQuantity: metadata.maximumQuantity ?? 0,
+      safetyStockLevel: metadata.safetyStockLevel ?? 0,
+      economicOrderQuantity: metadata.economicOrderQuantity ?? 0,
       reorderThreshold: metadata.reorderThreshold ?? 5,
       reorderQuantity: metadata.reorderQuantity ?? 10,
+      leadTimeInDays: metadata.leadTimeInDays ?? 0,
+      unitCost: metadata.unitCost ?? 0,
+      valuationMethod: metadata.valuationMethod ?? ValuationMethod.FIFO,
       inStock:
         metadata.inStock ?? metadata.quantity > metadata.reorderThreshold,
       backOrderable: metadata.backOrderable ?? false,
+      stockLocation: metadata.stockLocation ?? '',
+      notes: metadata.notes ?? '',
     };
   }
 
@@ -115,6 +161,14 @@ export class StockValidator {
       throw new Error('Inventory ID is required');
     }
 
+    if (!data.productId) {
+      throw new Error('Product ID is required');
+    }
+
+    if (!data.createdById) {
+      throw new Error('User ID is required');
+    }
+
     if (data.quantity === undefined) {
       throw new Error('Quantity is required');
     }
@@ -128,17 +182,77 @@ export class StockValidator {
       throw new Error('Quantity must be a positive number');
     }
 
-    // Validate movement type
-    if (!Object.values(MovementType).includes(data.type)) {
-      throw new Error(`Invalid movement type: ${data.type}`);
-    }
-    // Validate movement reference type
-    if (!Object.values(ReferenceType).includes(data.referenceType)) {
-      throw new Error(`Invalid movement referencetype: ${data.referenceType}`);
+    // Validate unit cost if provided
+    if (
+      data.unitCost !== undefined &&
+      (typeof data.unitCost !== 'number' ||
+        isNaN(data.unitCost) ||
+        data.unitCost < 0)
+    ) {
+      throw new Error('Unit cost must be a valid non-negative number');
     }
 
-    // Return validated data
-    return data;
+    // Validate movement type
+    if (!Object.values(MovementType).includes(data.movementType)) {
+      throw new Error(`Invalid movement type: ${data.movementType}`);
+    }
+
+    // Validate scheduled date
+    if (data.scheduledAt && !(data.scheduledAt instanceof Date)) {
+      throw new Error('Scheduled date must be a valid date');
+    }
+
+    // Validate expiry date
+    if (data.expiryDate && !(data.expiryDate instanceof Date)) {
+      throw new Error('Expiry date must be a valid date');
+    }
+
+    // Validate warehouse IDs if transfer
+    if (data.movementType === 'TRANSFER') {
+      if (!data.sourceWarehouseId) {
+        throw new Error('Source warehouse ID is required for transfers');
+      }
+      if (!data.destinationWarehouseId) {
+        throw new Error('Destination warehouse ID is required for transfers');
+      }
+      if (data.sourceWarehouseId === data.destinationWarehouseId) {
+        throw new Error('Source and destination warehouses must be different');
+      }
+    }
+
+    // Return validated data with defaults
+    return {
+      ...data,
+      reason:
+        data.reason ||
+        this.getDefaultReasonForType(data.movementType, data.referenceType),
+      status: data.status || MovementStatus.DRAFT,
+    };
+  }
+
+  /**
+   * Get default reason based on movement type and reference type
+   */
+  private static getDefaultReasonForType(
+    movementType: MovementType,
+    referenceType?: string
+  ): MovementReason {
+    switch (movementType) {
+      case 'INCOMING':
+      case 'STOCK_IN':
+        return 'PURCHASE';
+      case 'OUTGOING':
+      case 'STOCK_OUT':
+        return referenceType === 'ORDER' ? 'SALE' : 'CONSUMPTION';
+      case 'TRANSFER':
+        return 'TRANSFER';
+      case 'ADJUSTMENT':
+        return 'ADJUSTMENT_INVENTORY';
+      case 'RETURN':
+        return 'RETURN_FROM_CUSTOMER';
+      default:
+        return 'OTHER';
+    }
   }
 
   /**

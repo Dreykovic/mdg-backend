@@ -1,7 +1,7 @@
 import ServiceDefinition from '@/modules/definitions/service';
 import logger from '@/core/utils/logger.util';
 
-import { MovementType } from '@prisma/client';
+import { MovementType, MovementReason } from '@prisma/client';
 
 import { Service } from 'typedi';
 
@@ -30,7 +30,7 @@ export default class StockService extends ServiceDefinition {
    * YYYYMMDD: Current date
    * XXXX: Sequential number for movements of the same type on the same day
    */
-  async generateMovementReferenceId(
+  async generateMovementReference(
     movementType: MovementType,
     warehouseId?: string
   ): Promise<string> {
@@ -61,12 +61,12 @@ export default class StockService extends ServiceDefinition {
       try {
         latestMovement = await this.db.stockMovement.findFirst({
           where: {
-            referenceId: {
+            reference: {
               startsWith: fullPattern,
             },
           },
           orderBy: {
-            referenceId: 'desc',
+            reference: 'desc',
           },
         });
       } catch (error) {
@@ -76,8 +76,8 @@ export default class StockService extends ServiceDefinition {
 
       // Determine sequence number
       let sequenceNumber = 1;
-      if (latestMovement?.referenceId) {
-        const parts = latestMovement.referenceId.split('-');
+      if (latestMovement?.reference) {
+        const parts = latestMovement.reference.split('-');
         if (parts && parts.length > 0) {
           const lastPart = parts[parts.length - 1];
           if (lastPart && /^\d+$/.test(lastPart)) {
@@ -90,11 +90,11 @@ export default class StockService extends ServiceDefinition {
       const sequenceStr = sequenceNumber.toString().padStart(4, '0');
 
       // Combine to create final reference ID
-      const referenceId = `${fullPattern}-${sequenceStr}`;
+      const reference = `${fullPattern}-${sequenceStr}`;
 
-      return referenceId;
+      return reference;
     } catch (error) {
-      logger.error('Error generating movement reference ID:', error);
+      logger.error('Error generating movement reference:', error);
       // Return fallback ID with timestamp
       const timestamp = Date.now().toString().substr(-8);
       return `MOV-FALLBACK-${timestamp}`;
@@ -106,13 +106,46 @@ export default class StockService extends ServiceDefinition {
    */
   getMovementTypePrefix(movementType: MovementType): string {
     switch (movementType) {
+      case 'INCOMING':
       case 'STOCK_IN':
         return 'IN';
+      case 'OUTGOING':
       case 'STOCK_OUT':
         return 'OUT';
+      case 'TRANSFER':
+        return 'TRF';
+      case 'ADJUSTMENT':
+        return 'ADJ';
+      case 'RETURN':
+        return 'RET';
       default:
         // TypeScript should catch this with exhaustive check
         return 'UNK'; // Unknown - fallback for runtime safety
+    }
+  }
+
+  /**
+   * Maps legacy MovementType to MovementReason
+   */
+  getMovementReasonFromType(
+    movementType: MovementType,
+    referenceType?: string
+  ): MovementReason {
+    switch (movementType) {
+      case 'INCOMING':
+      case 'STOCK_IN':
+        return 'PURCHASE';
+      case 'OUTGOING':
+      case 'STOCK_OUT':
+        return referenceType === 'ORDER' ? 'SALE' : 'CONSUMPTION';
+      case 'TRANSFER':
+        return 'TRANSFER';
+      case 'ADJUSTMENT':
+        return 'ADJUSTMENT_INVENTORY';
+      case 'RETURN':
+        return 'RETURN_FROM_CUSTOMER';
+      default:
+        return 'OTHER';
     }
   }
 
@@ -135,5 +168,15 @@ export default class StockService extends ServiceDefinition {
       logger.error('Error getting warehouse prefix:', error);
       return 'WH'; // Default warehouse code on error
     }
+  }
+
+  /**
+   * Calculate stock value based on quantity and unit cost
+   */
+  calculateStockValue(quantity: number, unitCost?: number): number | null {
+    if (unitCost === undefined || unitCost === null) {
+      return null;
+    }
+    return quantity * unitCost;
   }
 }

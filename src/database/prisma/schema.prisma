@@ -4,7 +4,7 @@ generator client {
 
 generator typescriptInterfaces {
   provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
-  // output   = "./dto/interfaces.ts"
+  output   = "./dto/interfaces.ts"
 }
 
 datasource db {
@@ -277,7 +277,7 @@ model Inventory {
   // Cost and valuation
   unitCost        Float? // Current unit cost of the inventory
   totalValue      Float? // Total value of inventory (quantity * unitCost)
-  valuationMethod ValuationMethod @default(FIFO) // Method used for inventory valuation
+  valuationMethod ValuationMethod @default(WAC) // Method used for inventory valuation
 
   // Reorder information
   reorderThreshold Float @default(5) // When to reorder

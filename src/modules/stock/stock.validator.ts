@@ -6,7 +6,7 @@ import { MovementType, ReferenceType } from '@prisma/client';
 export interface InventoryMetadata {
   quantity: number;
   availableQuantity?: number;
-  reorderThreshold?: number;
+  reorderThreshold: number;
   reorderQuantity?: number;
   inStock?: boolean;
   backOrderable?: boolean;
@@ -97,7 +97,8 @@ export class StockValidator {
       availableQuantity: metadata.availableQuantity ?? metadata.quantity,
       reorderThreshold: metadata.reorderThreshold ?? 5,
       reorderQuantity: metadata.reorderQuantity ?? 10,
-      inStock: metadata.inStock ?? metadata.quantity > 0,
+      inStock:
+        metadata.inStock ?? metadata.quantity > metadata.reorderThreshold,
       backOrderable: metadata.backOrderable ?? false,
     };
   }

@@ -74,6 +74,7 @@ class App {
   /**
    * Configures all routes for the application.
    */
+
   private routes() {
     // Test route to simulate an error for testing purposes
     this.express.get('/error', () => {

@@ -4,7 +4,7 @@ generator client {
 
 // generator typescriptInterfaces {
 //   provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
-//   output   = "./dto/interfaces.ts"
+//   // output   = "./dto/interfaces.ts"
 // }
 
 datasource db {
@@ -28,10 +28,11 @@ model User {
   password          String // User's password
   email_verified_at DateTime? // Timestamp for email verification
 
-  tokenFamilies TokenFamily[] // Relation to token families
-  recipes       Recipe[] // Relation to recipes created by the user
-  createdAt     DateTime      @default(now()) // Timestamp for creation
-  updatedAt     DateTime      @updatedAt // Timestamp for last update
+  tokenFamilies  TokenFamily[] // Relation to token families
+  recipes        Recipe[] // Relation to recipes created by the user
+  createdAt      DateTime        @default(now()) // Timestamp for creation
+  updatedAt      DateTime        @updatedAt // Timestamp for last update
+  stockMovements StockMovement[]
 
   @@index([username, id, email]) // Compound index for fast lookups
 }
@@ -100,21 +101,21 @@ model Origin {
 
 // Model for product categories
 model ProductCategory {
-  id            Int                  @id @default(autoincrement())
-  name          String               @unique // Unique category name
-  description   String? // Optional description
-  imageRef      String?              @unique // Reference to image file
-  imageUrl      String? // URL to the image
-  slug          String? // URL-friendly identifier
-  subcategories ProductSubcategory[] // Related subcategories
-  Product       Product[] // Related products
+  id          Int     @id @default(autoincrement())
+  name        String  @unique // Unique category name
+  description String? // Optional description
+  imageRef    String? @unique // Reference to image file
+  imageUrl    String? // URL to the image
+  slug        String? // URL-friendly identifier
+
+  Product Product[] // Related products
 
   createdAt DateTime @default(now()) // Creation timestamp
   updatedAt DateTime @updatedAt // Update timestamp
 }
 
 // Subcategory model for products
-model ProductSubcategory {
+model ProductTag {
   id          Int     @id @default(autoincrement())
   name        String // Subcategory name
   description String? // Optional description
@@ -123,14 +124,23 @@ model ProductSubcategory {
   imageUrl String? // URL to the image
   slug     String? // URL-friendly identifier
 
-  categoryId Int // Reference to parent category
-  category   ProductCategory @relation(fields: [categoryId], references: [id]) // Relation to parent category
-  products   Product[] // Related products
+  ProductTagLinks ProductTagLink[] // Related Product Tag link
+  createdAt       DateTime         @default(now()) // Creation timestamp
+  updatedAt       DateTime         @updatedAt // Update timestamp
 
-  createdAt DateTime @default(now()) // Creation timestamp
-  updatedAt DateTime @updatedAt // Update timestamp
+  @@unique([name]) // Unique constraint for category and name combination
+}
 
-  @@unique([categoryId, name]) // Unique constraint for category and name combination
+model ProductTagLink {
+  id           Int        @id @default(autoincrement())
+  productId    String // reference to Product
+  productTagId Int // reference to Product Tag
+  product      Product    @relation(fields: [productId], references: [id]) // Related to the Product
+  productTag   ProductTag @relation(fields: [productTagId], references: [id]) // Related TO ProductTag
+  createdAt    DateTime   @default(now()) // Creation timestamp
+  updatedAt    DateTime   @updatedAt // Update timestamp
+
+  @@unique([productTagId, productId])
 }
 
 // Supplier model for product providers
@@ -196,15 +206,13 @@ model Product {
   isGlutenFree Boolean // Indicates if the product is gluten-free
   isGMOFree    Boolean // Indicates if the product is GMO-free
   description  String? // Product description
+  sku          String  @unique // Stock Keeping Unit
 
-  isActive          Boolean        @default(false) // Indicates if the product is active
-  isPublic          Boolean        @default(false) // Indicates if the product is public
-  visibility        VisibilityType @default(DRAFT)
-  minimumStockLevel Float          @default(0) // Minimum stock level
-  quantity          Float          @default(0) // Current stock quantity
-
-  additionalCost Float?  @default(0) // Additional cost
-  imageRef       String? @unique // Reference to image file
+  isActive       Boolean        @default(false) // Indicates if the product is active
+  isArchived     Boolean        @default(false) // Indicates if the product is archived
+  visibility     VisibilityType @default(DRAFT)
+  isFeatured     Boolean        @default(false) // Indicates if the product is featured
+  additionalCost Float?         @default(0) // Additional cost
 
   costPerGramWhole   Float // Cost per gram (whole form)
   costPerGramGround  Float // Cost per gram (ground form)
@@ -217,16 +225,109 @@ model Product {
   supplierId    Int // Reference to supplier
   marginLevelId Int // Reference to margin level
 
-  ingredients Ingredient[] // Related ingredients in recipes
-  origin      Origin              @relation(fields: [originId], references: [id]) // Relation to origin
-  subCategory ProductSubcategory? @relation(fields: [subcategoryId], references: [id]) // Relation to subcategory
-  category    ProductCategory     @relation(fields: [categoryId], references: [id]) // Relation to category
-  supplier    Supplier            @relation(fields: [supplierId], references: [id]) // Relation to supplier
+  ingredients     Ingredient[] // Related ingredients in recipes
+  productTagLinks ProductTagLink[] // Related Product Tag link
+  inventory       Inventory?
+  // Media
+  images          ProductImage[]
+
+  origin Origin @relation(fields: [originId], references: [id]) // Relation to origin
+
+  category ProductCategory @relation(fields: [categoryId], references: [id]) // Relation to category
+  supplier Supplier        @relation(fields: [supplierId], references: [id]) // Relation to supplier
 
   marginLevel      MarginLevel       @relation(fields: [marginLevelId], references: [id]) // Relation to margin level
   createdAt        DateTime          @default(now()) // Creation timestamp
   updatedAt        DateTime          @updatedAt // Update timestamp
   volumeConversion VolumeConversion? // Relation to volume conversion
+}
+
+model ProductImage {
+  id         String  @id @default(uuid())
+  url        String
+  altText    String?
+  isFeatured Boolean @default(false)
+  sortOrder  Int     @default(0)
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Inventory {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Stock information
+  quantity          Float @default(0)
+  availableQuantity Float @default(0) // Accounts for reserved items
+  reservedQuantity  Float @default(0) // Items in carts or pending orders
+
+  // Reorder information
+  reorderThreshold Float @default(5)
+  reorderQuantity  Float @default(10)
+
+  // Stock status
+  inStock       Boolean @default(true)
+  backOrderable Boolean @default(false)
+
+  // Stock tracking
+  lastStockCheck     DateTime?
+  nextScheduledCheck DateTime?
+
+  // Relationships
+  productId String?  @unique
+  product   Product? @relation(fields: [productId], references: [id])
+
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+  // Stock movements
+  stockMovements StockMovement[]
+}
+
+model Warehouse {
+  id          String      @id @default(uuid())
+  name        String      @unique
+  location    String?
+  isDefault   Boolean     @default(false)
+  inventories Inventory[]
+}
+
+model StockMovement {
+  id String @id @default(uuid())
+
+  // Movement details
+  quantity Int
+  type     MovementType
+  notes    String?
+
+  // Reference to related documents
+  referenceType ReferenceType
+  referenceId   String? // ID of the related document
+
+  // Relationships
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id])
+  userId      String? // Who performed the operation
+  user        User?     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+enum MovementType {
+  STOCK_IN
+  STOCK_OUT
+}
+
+enum ReferenceType {
+  ORDER // Commande client
+  PURCHASE_ORDER // Bon d'achat / commande fournisseur
+  ADJUSTMENT // Ajustement manuel du stock
+  TRANSFER // Transfert entre entrepôts
+  RETURN // Retour de marchandise
+  DAMAGE // Produit endommagé
+  OTHER // Autres types non spécifiés
+  INVENTORY //
 }
 
 // Enumeration for unit of measure types
@@ -293,19 +394,21 @@ model Recipe {
 // Ingredient model for recipes
 model Ingredient {
   id            Int     @id @default(autoincrement())
+  name          String?
   quantity      Float // Quantity required
   grindRequired Boolean // Indicates if grinding is required
 
   recipeId        Int // Reference to recipe
-  productId       String // Reference to product
+  productId       String? // Reference to product
   unitOfMeasureId Int // Reference to unit of measure
   unitOfMeasure   UnitOfMeasure @relation(fields: [unitOfMeasureId], references: [id]) // Relation to unit of measure
-  product         Product       @relation(fields: [productId], references: [id]) // Relation to product
+  product         Product?      @relation(fields: [productId], references: [id]) // Relation to product
   recipe          Recipe        @relation(fields: [recipeId], references: [id], onDelete: Cascade) // Relation to recipe
   createdAt       DateTime      @default(now()) // Creation timestamp
   updatedAt       DateTime      @updatedAt // Update timestamp
 
   @@unique([recipeId, productId]) // Unique constraint for recipe-product pairs
+  @@unique([recipeId, name])
 }
 
 // Model for recipe steps

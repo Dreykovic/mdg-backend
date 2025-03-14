@@ -9,6 +9,7 @@ import colorTxt from 'ansi-colors';
 import { log } from 'console';
 import { seedDefaultUnits } from './unit.seeder';
 import { createOrFindDefaultUser } from './user.seeder';
+import { seedDefaultWareHouse } from './warehouse.seeder';
 
 const prisma = new PrismaClient();
 
@@ -16,6 +17,7 @@ async function main() {
   if (config.isDev || config.isTest) {
     await seedDefaultUnits(prisma);
     await createOrFindDefaultUser(prisma);
+    await seedDefaultWareHouse(prisma);
   } else if (config.isStage) {
     log('Good update');
   }

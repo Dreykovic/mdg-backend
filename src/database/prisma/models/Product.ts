@@ -5,12 +5,14 @@ import { Prisma } from '@prisma/client';
 const productSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().max(100),
+  sku: z.string(),
   isGlutenFree: z.boolean(),
   isGMOFree: z.boolean(),
   description: z.string().max(1000).nullable().optional(),
   barcode: z.string().optional(),
   isActive: z.boolean().optional(),
-  isPublic: z.boolean().optional(),
+  isArchived: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
   minimumStockLevel: z
     .number()
     .gte(0, 'Minimum stock level must be greater than or equal to 0')

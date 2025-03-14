@@ -80,7 +80,7 @@ export class InventoryController {
       res.status(response.httpStatusCode).json(response.data);
     }
   }
-
+  //TODO: Use this controller
   /**
    * Get inventory summary stats
    */
@@ -101,6 +101,7 @@ export class InventoryController {
       res.status(response.httpStatusCode).json(response.data);
     }
   }
+  //TODO: Use this controller
 
   /**
    * Update inventory quantity
@@ -141,6 +142,7 @@ export class InventoryController {
       res.status(response.httpStatusCode).json(response.data);
     }
   }
+  //TODO: Use this controller
 
   /**
    * Create a stock movement
@@ -171,6 +173,7 @@ export class InventoryController {
       res.status(response.httpStatusCode).json(response.data);
     }
   }
+  //TODO: Use this controller
 
   /**
    * Get a stock movement by ID
@@ -200,6 +203,7 @@ export class InventoryController {
       res.status(response.httpStatusCode).json(response.data);
     }
   }
+  //TODO: Use this controller
 
   /**
    * Get recent stock movements
@@ -225,6 +229,7 @@ export class InventoryController {
       res.status(response.httpStatusCode).json(response.data);
     }
   }
+  //TODO: Use this controller
 
   /**
    * Process a stock movement

@@ -26,12 +26,16 @@ export class InventoryController {
       // Parse and prepare inventory metadata
       const inventoryMetaData: InventoryMetadata = {
         ...req.body.inventoryMetaData,
-        inStock: StringUtil.parseBool(req.body.inStock),
-        backOrderable: StringUtil.parseBool(req.body.backOrderable),
+        inStock: StringUtil.parseBool(req.body.inventoryMetaData.inStock),
+        backOrderable: StringUtil.parseBool(
+          req.body.inventoryMetaData.backOrderable
+        ),
       };
 
-      log(`Get Create Inventory For Product ${sku} Request Received`);
-
+      log(
+        `Get Create Inventory For Product ${sku} Request Received `,
+        inventoryMetaData
+      );
       const inventory =
         await this.inventoryService.createInventoryWithStockMovement(
           sku,

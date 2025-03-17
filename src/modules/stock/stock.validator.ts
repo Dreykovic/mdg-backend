@@ -10,10 +10,10 @@ import {
  */
 export interface InventoryMetadata {
   quantity: number;
-  availableQuantity?: number;
+  availableQuantity: number;
   minimumQuantity?: number;
   maximumQuantity?: number;
-  safetyStockLevel?: number;
+  safetyStockLevel: number;
   economicOrderQuantity?: number;
   reorderThreshold: number;
   reorderQuantity?: number;
@@ -70,6 +70,13 @@ export class StockValidator {
     if (metadata.quantity === undefined) {
       throw new Error('Quantity is required');
     }
+    if (metadata.availableQuantity === undefined) {
+      throw new Error('Available quantity is required');
+    }
+
+    if (metadata.safetyStockLevel === undefined) {
+      throw new Error('Safety stock level is required');
+    }
 
     // Validate quantity is a number and not negative
     if (typeof metadata.quantity !== 'number' || isNaN(metadata.quantity)) {
@@ -77,6 +84,30 @@ export class StockValidator {
     }
 
     if (metadata.quantity < 0) {
+      throw new Error('Quantity cannot be negative');
+    }
+
+    // Validate availableQuantity is a number and not negative
+    if (
+      typeof metadata.availableQuantity !== 'number' ||
+      isNaN(metadata.availableQuantity)
+    ) {
+      throw new Error('Quantity must be a valid number');
+    }
+
+    if (metadata.availableQuantity < 0) {
+      throw new Error('Quantity cannot be negative');
+    }
+
+    // Validate safetyStockLevel is a number and not negative
+    if (
+      typeof metadata.safetyStockLevel !== 'number' ||
+      isNaN(metadata.safetyStockLevel)
+    ) {
+      throw new Error('Quantity must be a valid number');
+    }
+
+    if (metadata.safetyStockLevel < 0) {
       throw new Error('Quantity cannot be negative');
     }
 
@@ -97,14 +128,6 @@ export class StockValidator {
         metadata.reorderQuantity <= 0)
     ) {
       throw new Error('Reorder quantity must be a valid positive number');
-    }
-
-    if (
-      metadata.availableQuantity !== undefined &&
-      (typeof metadata.availableQuantity !== 'number' ||
-        isNaN(metadata.availableQuantity))
-    ) {
-      throw new Error('Available quantity must be a valid number');
     }
 
     // Validate unit cost
@@ -142,7 +165,8 @@ export class StockValidator {
       unitCost: metadata.unitCost ?? 0,
       valuationMethod: metadata.valuationMethod ?? ValuationMethod.FIFO,
       inStock:
-        metadata.inStock ?? metadata.quantity > metadata.reorderThreshold,
+        metadata.inStock ??
+        metadata.availableQuantity > metadata.safetyStockLevel,
       backOrderable: metadata.backOrderable ?? false,
       stockLocation: metadata.stockLocation ?? '',
       notes: metadata.notes ?? '',

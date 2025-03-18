@@ -164,7 +164,7 @@ export class StockValidator {
       reorderQuantity: metadata.reorderQuantity ?? 10,
       leadTimeInDays: metadata.leadTimeInDays ?? 0,
       unitCost: metadata.unitCost ?? 0,
-      valuationMethod: metadata.valuationMethod ?? ValuationMethod.FIFO,
+      valuationMethod: metadata.valuationMethod ?? ValuationMethod.WAC,
       inStock:
         metadata.inStock ??
         metadata.availableQuantity > metadata.safetyStockLevel,

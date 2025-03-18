@@ -282,4 +282,67 @@ export default class InventoryService extends StockService {
       }
     });
   }
+
+  /**
+   * Updates an existing inventory record (excluding quantity, availableQuantity, reservedQuantity)
+   * @param inventoryId ID of the inventory record to update
+   * @param updates Partial inventory fields to update
+   * @param userId Optional user ID performing the update
+   * @returns Updated inventory record
+   */
+  async updateInventory(
+    inventoryId: string,
+    updates: Partial<
+      Omit<Inventory, 'quantity' | 'availableQuantity' | 'reservedQuantity'>
+    >
+    // userId?: string
+  ): Promise<Inventory> {
+    return this.db.$transaction(async (tx) => {
+      try {
+        // Fetch current inventory
+        const existingInventory = await tx.inventory.findUniqueOrThrow({
+          where: { id: inventoryId },
+        });
+
+        // Filter out non-editable fields if present in update payload
+        const safeUpdates = { ...updates };
+        const bufferLevel =
+          updates.safetyStockLevel ?? existingInventory.safetyStockLevel;
+        // Optionally, validate updates if needed
+        const validatedUpdates =
+          StockValidator.validateInventoryUpdateData(safeUpdates);
+        validatedUpdates.inStock =
+          existingInventory.availableQuantity > bufferLevel &&
+          existingInventory.availableQuantity > 0;
+        // Perform update
+        const updatedInventory = await tx.inventory.update({
+          where: { id: inventoryId },
+          data: {
+            ...validatedUpdates,
+            updatedAt: new Date(), // Optional: Track update time
+          },
+        });
+
+        // Optionally log the update or track change history
+        // if (userId) {
+        //   await tx.inventoryLog.create({
+        //     data: {
+        //       inventoryId,
+        //       userId,
+        //       action: 'UPDATE',
+        //       description:
+        //         'Inventory fields updated (excluding quantity and availability)',
+        //       metadata: { updatedFields: Object.keys(validatedUpdates) },
+        //       createdAt: new Date(),
+        //     },
+        //   });
+        // }
+
+        return updatedInventory;
+      } catch (error) {
+        logger.error('Error updating inventory:', error);
+        throw this.handleError(error);
+      }
+    });
+  }
 }

@@ -60,6 +60,65 @@ export class InventoryController {
   }
 
   /**
+   * Update an existing inventory (excluding quantity, availableQuantity, reservedQuantity)
+   */
+  async updateInventory(req: Request, res: Response): Promise<void> {
+    try {
+      const inventoryId: string | undefined = req.params.modelId;
+
+      if (
+        !inventoryId ||
+        typeof inventoryId !== 'string' ||
+        inventoryId.trim() === ''
+      ) {
+        throw new Error(
+          'Inventory ID is required and must be a non-empty string.'
+        );
+      }
+
+      // const userId = (req as any).user.id;
+
+      // Parse and sanitize update payload
+      const updatePayload = {
+        ...req.body,
+        inStock:
+          req.body.inStock !== undefined
+            ? StringUtil.parseBool(req.body.inStock)
+            : undefined,
+        backOrderable:
+          req.body.backOrderable !== undefined
+            ? StringUtil.parseBool(req.body.backOrderable)
+            : undefined,
+      };
+
+      log(
+        `Received Update Inventory Request for ID: ${inventoryId}`,
+        updatePayload
+      );
+
+      // Update the inventory
+      const updatedInventory = await this.inventoryService.updateInventory(
+        inventoryId,
+        updatePayload
+        // userId
+      );
+
+      const payload = { inventory: updatedInventory };
+      const response = ApiResponse.http200(payload);
+      res.status(response.httpStatusCode).json(response.data);
+    } catch (error) {
+      log(error);
+
+      const response = ApiResponse.http400({
+        message:
+          (error as Error).message ||
+          'An error occurred while updating inventory.',
+      });
+      res.status(response.httpStatusCode).json(response.data);
+    }
+  }
+
+  /**
    * Get inventory details for a product
    */
   async getInventory(req: Request, res: Response): Promise<void> {

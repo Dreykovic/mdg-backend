@@ -3,6 +3,7 @@ import {
   MovementReason,
   MovementStatus,
   ValuationMethod,
+  Inventory,
 } from '@prisma/client';
 
 /**
@@ -171,6 +172,139 @@ export class StockValidator {
       stockLocation: metadata.stockLocation ?? '',
       notes: metadata.notes ?? '',
     };
+  }
+  /**
+   * Validates inventory update payload (excluding quantity, availableQuantity, reservedQuantity)
+   * @param updates Partial inventory fields to validate
+   * @returns Validated and normalized update fields
+   * @throws Error if validation fails
+   */
+  static validateInventoryUpdateData(
+    updates: Partial<
+      Omit<Inventory, 'quantity' | 'availableQuantity' | 'reservedQuantity'>
+    >
+  ): Partial<
+    Omit<Inventory, 'quantity' | 'availableQuantity' | 'reservedQuantity'>
+  > {
+    const validated: Partial<
+      Omit<Inventory, 'quantity' | 'availableQuantity' | 'reservedQuantity'>
+    > = {};
+
+    if (updates.minimumQuantity !== undefined) {
+      if (
+        typeof updates.minimumQuantity !== 'number' ||
+        updates.minimumQuantity < 0
+      ) {
+        throw new Error('Minimum quantity must be a non-negative number');
+      }
+      validated.minimumQuantity = updates.minimumQuantity;
+    }
+
+    if (updates.maximumQuantity !== undefined) {
+      if (
+        typeof updates.maximumQuantity !== 'number' ||
+        updates.maximumQuantity < 0
+      ) {
+        throw new Error('Maximum quantity must be a non-negative number');
+      }
+      validated.maximumQuantity = updates.maximumQuantity;
+    }
+
+    if (updates.safetyStockLevel !== undefined) {
+      if (
+        typeof updates.safetyStockLevel !== 'number' ||
+        updates.safetyStockLevel < 0
+      ) {
+        throw new Error('Safety stock level must be a non-negative number');
+      }
+      validated.safetyStockLevel = updates.safetyStockLevel;
+    }
+
+    if (updates.economicOrderQuantity !== undefined) {
+      if (
+        typeof updates.economicOrderQuantity !== 'number' ||
+        updates.economicOrderQuantity < 0
+      ) {
+        throw new Error(
+          'Economic order quantity must be a non-negative number'
+        );
+      }
+      validated.economicOrderQuantity = updates.economicOrderQuantity;
+    }
+
+    if (updates.reorderThreshold !== undefined) {
+      if (
+        typeof updates.reorderThreshold !== 'number' ||
+        updates.reorderThreshold < 0
+      ) {
+        throw new Error('Reorder threshold must be a non-negative number');
+      }
+      validated.reorderThreshold = updates.reorderThreshold;
+    }
+
+    if (updates.reorderQuantity !== undefined) {
+      if (
+        typeof updates.reorderQuantity !== 'number' ||
+        updates.reorderQuantity <= 0
+      ) {
+        throw new Error('Reorder quantity must be a positive number');
+      }
+      validated.reorderQuantity = updates.reorderQuantity;
+    }
+
+    if (updates.leadTimeInDays !== undefined) {
+      if (
+        typeof updates.leadTimeInDays !== 'number' ||
+        updates.leadTimeInDays < 0
+      ) {
+        throw new Error('Lead time must be a non-negative number');
+      }
+      validated.leadTimeInDays = updates.leadTimeInDays;
+    }
+
+    if (updates.unitCost !== undefined) {
+      if (typeof updates.unitCost !== 'number' || updates.unitCost < 0) {
+        throw new Error('Unit cost must be a non-negative number');
+      }
+      validated.unitCost = updates.unitCost;
+    }
+
+    if (updates.valuationMethod !== undefined) {
+      if (!Object.values(ValuationMethod).includes(updates.valuationMethod)) {
+        throw new Error(`Invalid valuation method: ${updates.valuationMethod}`);
+      }
+      validated.valuationMethod = updates.valuationMethod;
+    }
+
+    if (updates.inStock !== undefined) {
+      if (typeof updates.inStock !== 'boolean') {
+        throw new Error('inStock must be a boolean');
+      }
+      validated.inStock = updates.inStock;
+    }
+
+    if (updates.backOrderable !== undefined) {
+      if (typeof updates.backOrderable !== 'boolean') {
+        throw new Error('backOrderable must be a boolean');
+      }
+      validated.backOrderable = updates.backOrderable;
+    }
+
+    if (updates.stockLocation !== undefined) {
+      if (typeof updates.stockLocation !== 'string') {
+        throw new Error('Stock location must be a string');
+      }
+      validated.stockLocation = updates.stockLocation.trim();
+    }
+
+    if (updates.notes !== undefined) {
+      if (typeof updates.notes !== 'string') {
+        throw new Error('Notes must be a string');
+      }
+      validated.notes = updates.notes.trim();
+    }
+
+    return validated;
   }
 
   /**

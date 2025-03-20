@@ -8,7 +8,7 @@ import { InventoryMetadata } from './stock.validator';
 import StringUtil from '@/core/utils/string.util';
 
 @Service()
-export class InventoryController {
+export class StockController {
   constructor(
     private readonly inventoryService: InventoryService,
     private readonly stockMvtService: StockMvtService

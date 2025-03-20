@@ -1,4 +1,5 @@
 // Import the router from the 'Catalog.routes' file
+
 import router from './stock.routes';
 
 // Define the 'stockModule' object which contains the router under the 'controller' key

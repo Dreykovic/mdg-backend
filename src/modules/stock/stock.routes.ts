@@ -1,26 +1,12 @@
-import express from 'express';
-import Container from 'typedi';
-import prefixRoutes from '@/core/middlewares/prefixRoutes.middleware';
-import { rbacMiddleware } from '@/core/middlewares/rbac.middleware';
-import verifyJWT from '@/core/middlewares/jwt.middleware';
+import express from 'express'; // Importing the Express framework for creating routes and handling HTTP requests.
 
-import { InventoryController } from './stock.controller';
+import inventoryRouter from './inventory.routes';
+import stockMvtRouter from './stockMvt.routes';
 
-const inventoryController = Container.get(InventoryController);
-const inventoryRouter = express.Router();
-prefixRoutes(inventoryRouter, '/inventory');
+// Create a new router instance to organize and manage catalog-related routes.
+const router = express.Router();
+router.use('/stock', inventoryRouter);
+router.use('/stock', stockMvtRouter);
 
-inventoryRouter.post(
-  '/create',
-  verifyJWT,
-  rbacMiddleware(['ADMIN']),
-  (req, res) => inventoryController.createInventory(req, res)
-);
-inventoryRouter.get(
-  '/get/:modelId',
-  verifyJWT,
-  rbacMiddleware(['ADMIN']),
-  (req, res) => inventoryController.getInventory(req, res)
-);
-
-export default inventoryRouter;
+// Export the router so it can be used in the main application.
+export default router;

@@ -1,15 +1,30 @@
-import { MovementType, ReferenceType } from '@prisma/client';
+import {
+  MovementType,
+  MovementReason,
+  MovementStatus,
+  ValuationMethod,
+  Inventory,
+} from '@prisma/client';
 
 /**
  * Interface for inventory metadata validation
  */
 export interface InventoryMetadata {
   quantity: number;
-  availableQuantity?: number;
+  availableQuantity: number;
+  minimumQuantity?: number;
+  maximumQuantity?: number;
+  safetyStockLevel: number;
+  economicOrderQuantity?: number;
   reorderThreshold: number;
   reorderQuantity?: number;
+  leadTimeInDays?: number;
+  unitCost?: number;
+  valuationMethod?: ValuationMethod;
   inStock?: boolean;
   backOrderable?: boolean;
+  stockLocation?: string;
+  notes?: string;
 }
 
 /**
@@ -17,13 +32,26 @@ export interface InventoryMetadata {
  */
 export interface StockMovementData {
   inventoryId: string;
+  productId: string;
   quantity: number;
-  type: MovementType;
+  unitCost?: number;
+  movementType: MovementType;
+  reason?: MovementReason;
+  status?: MovementStatus;
   notes?: string;
-  referenceType: ReferenceType;
-  referenceId?: string;
-  userId?: string;
-  warehouseId?: string;
+  lotNumber?: string;
+  expiryDate?: Date;
+  batchId?: string;
+  isAdjustment?: boolean;
+  documentNumber?: string;
+  metadata?: Record<string, any>;
+  scheduledAt?: Date;
+  sourceWarehouseId?: string;
+  destinationWarehouseId?: string;
+  createdById: string;
+  approvedById?: string;
+  referenceType?: string; // Legacy support
+  referenceId?: string; // Legacy support or document reference
 }
 
 /**
@@ -43,6 +71,13 @@ export class StockValidator {
     if (metadata.quantity === undefined) {
       throw new Error('Quantity is required');
     }
+    if (metadata.availableQuantity === undefined) {
+      throw new Error('Available quantity is required');
+    }
+
+    if (metadata.safetyStockLevel === undefined) {
+      throw new Error('Safety stock level is required');
+    }
 
     // Validate quantity is a number and not negative
     if (typeof metadata.quantity !== 'number' || isNaN(metadata.quantity)) {
@@ -50,6 +85,30 @@ export class StockValidator {
     }
 
     if (metadata.quantity < 0) {
+      throw new Error('Quantity cannot be negative');
+    }
+
+    // Validate availableQuantity is a number and not negative
+    if (
+      typeof metadata.availableQuantity !== 'number' ||
+      isNaN(metadata.availableQuantity)
+    ) {
+      throw new Error('Quantity must be a valid number');
+    }
+
+    if (metadata.availableQuantity < 0) {
+      throw new Error('Quantity cannot be negative');
+    }
+
+    // Validate safetyStockLevel is a number and not negative
+    if (
+      typeof metadata.safetyStockLevel !== 'number' ||
+      isNaN(metadata.safetyStockLevel)
+    ) {
+      throw new Error('Quantity must be a valid number');
+    }
+
+    if (metadata.safetyStockLevel < 0) {
       throw new Error('Quantity cannot be negative');
     }
 
@@ -72,12 +131,14 @@ export class StockValidator {
       throw new Error('Reorder quantity must be a valid positive number');
     }
 
+    // Validate unit cost
     if (
-      metadata.availableQuantity !== undefined &&
-      (typeof metadata.availableQuantity !== 'number' ||
-        isNaN(metadata.availableQuantity))
+      metadata.unitCost !== undefined &&
+      (typeof metadata.unitCost !== 'number' ||
+        isNaN(metadata.unitCost) ||
+        metadata.unitCost < 0)
     ) {
-      throw new Error('Available quantity must be a valid number');
+      throw new Error('Unit cost must be a valid non-negative number');
     }
 
     // For backOrderable false, available quantity can't be negative
@@ -95,12 +156,155 @@ export class StockValidator {
     return {
       quantity: metadata.quantity,
       availableQuantity: metadata.availableQuantity ?? metadata.quantity,
+      minimumQuantity: metadata.minimumQuantity ?? 0,
+      maximumQuantity: metadata.maximumQuantity ?? 0,
+      safetyStockLevel: metadata.safetyStockLevel ?? 0,
+      economicOrderQuantity: metadata.economicOrderQuantity ?? 0,
       reorderThreshold: metadata.reorderThreshold ?? 5,
       reorderQuantity: metadata.reorderQuantity ?? 10,
+      leadTimeInDays: metadata.leadTimeInDays ?? 0,
+      unitCost: metadata.unitCost ?? 0,
+      valuationMethod: metadata.valuationMethod ?? ValuationMethod.WAC,
       inStock:
-        metadata.inStock ?? metadata.quantity > metadata.reorderThreshold,
+        metadata.inStock ??
+        metadata.availableQuantity > metadata.safetyStockLevel,
       backOrderable: metadata.backOrderable ?? false,
+      stockLocation: metadata.stockLocation ?? '',
+      notes: metadata.notes ?? '',
     };
+  }
+  /**
+   * Validates inventory update payload (excluding quantity, availableQuantity, reservedQuantity)
+   * @param updates Partial inventory fields to validate
+   * @returns Validated and normalized update fields
+   * @throws Error if validation fails
+   */
+  static validateInventoryUpdateData(
+    updates: Partial<
+      Omit<Inventory, 'quantity' | 'availableQuantity' | 'reservedQuantity'>
+    >
+  ): Partial<
+    Omit<Inventory, 'quantity' | 'availableQuantity' | 'reservedQuantity'>
+  > {
+    const validated: Partial<
+      Omit<Inventory, 'quantity' | 'availableQuantity' | 'reservedQuantity'>
+    > = {};
+
+    if (updates.minimumQuantity !== undefined) {
+      if (
+        typeof updates.minimumQuantity !== 'number' ||
+        updates.minimumQuantity < 0
+      ) {
+        throw new Error('Minimum quantity must be a non-negative number');
+      }
+      validated.minimumQuantity = updates.minimumQuantity;
+    }
+
+    if (updates.maximumQuantity !== undefined) {
+      if (
+        typeof updates.maximumQuantity !== 'number' ||
+        updates.maximumQuantity < 0
+      ) {
+        throw new Error('Maximum quantity must be a non-negative number');
+      }
+      validated.maximumQuantity = updates.maximumQuantity;
+    }
+
+    if (updates.safetyStockLevel !== undefined) {
+      if (
+        typeof updates.safetyStockLevel !== 'number' ||
+        updates.safetyStockLevel < 0
+      ) {
+        throw new Error('Safety stock level must be a non-negative number');
+      }
+      validated.safetyStockLevel = updates.safetyStockLevel;
+    }
+
+    if (updates.economicOrderQuantity !== undefined) {
+      if (
+        typeof updates.economicOrderQuantity !== 'number' ||
+        updates.economicOrderQuantity < 0
+      ) {
+        throw new Error(
+          'Economic order quantity must be a non-negative number'
+        );
+      }
+      validated.economicOrderQuantity = updates.economicOrderQuantity;
+    }
+
+    if (updates.reorderThreshold !== undefined) {
+      if (
+        typeof updates.reorderThreshold !== 'number' ||
+        updates.reorderThreshold < 0
+      ) {
+        throw new Error('Reorder threshold must be a non-negative number');
+      }
+      validated.reorderThreshold = updates.reorderThreshold;
+    }
+
+    if (updates.reorderQuantity !== undefined) {
+      if (
+        typeof updates.reorderQuantity !== 'number' ||
+        updates.reorderQuantity <= 0
+      ) {
+        throw new Error('Reorder quantity must be a positive number');
+      }
+      validated.reorderQuantity = updates.reorderQuantity;
+    }
+
+    if (updates.leadTimeInDays !== undefined) {
+      if (
+        typeof updates.leadTimeInDays !== 'number' ||
+        updates.leadTimeInDays < 0
+      ) {
+        throw new Error('Lead time must be a non-negative number');
+      }
+      validated.leadTimeInDays = updates.leadTimeInDays;
+    }
+
+    if (updates.unitCost !== undefined) {
+      if (typeof updates.unitCost !== 'number' || updates.unitCost < 0) {
+        throw new Error('Unit cost must be a non-negative number');
+      }
+      validated.unitCost = updates.unitCost;
+    }
+
+    if (updates.valuationMethod !== undefined) {
+      if (!Object.values(ValuationMethod).includes(updates.valuationMethod)) {
+        throw new Error(`Invalid valuation method: ${updates.valuationMethod}`);
+      }
+      validated.valuationMethod = updates.valuationMethod;
+    }
+
+    if (updates.inStock !== undefined) {
+      if (typeof updates.inStock !== 'boolean') {
+        throw new Error('inStock must be a boolean');
+      }
+      validated.inStock = updates.inStock;
+    }
+
+    if (updates.backOrderable !== undefined) {
+      if (typeof updates.backOrderable !== 'boolean') {
+        throw new Error('backOrderable must be a boolean');
+      }
+      validated.backOrderable = updates.backOrderable;
+    }
+
+    if (updates.stockLocation !== undefined) {
+      if (typeof updates.stockLocation !== 'string') {
+        throw new Error('Stock location must be a string');
+      }
+      validated.stockLocation = updates.stockLocation.trim();
+    }
+
+    if (updates.notes !== undefined) {
+      if (typeof updates.notes !== 'string') {
+        throw new Error('Notes must be a string');
+      }
+      validated.notes = updates.notes.trim();
+    }
+
+    return validated;
   }
 
   /**
@@ -113,6 +317,14 @@ export class StockValidator {
     // Check for required fields
     if (!data.inventoryId) {
       throw new Error('Inventory ID is required');
+    }
+
+    if (!data.productId) {
+      throw new Error('Product ID is required');
+    }
+
+    if (!data.createdById) {
+      throw new Error('User ID is required');
     }
 
     if (data.quantity === undefined) {
@@ -128,17 +340,75 @@ export class StockValidator {
       throw new Error('Quantity must be a positive number');
     }
 
-    // Validate movement type
-    if (!Object.values(MovementType).includes(data.type)) {
-      throw new Error(`Invalid movement type: ${data.type}`);
-    }
-    // Validate movement reference type
-    if (!Object.values(ReferenceType).includes(data.referenceType)) {
-      throw new Error(`Invalid movement referencetype: ${data.referenceType}`);
+    // Validate unit cost if provided
+    if (
+      data.unitCost !== undefined &&
+      (typeof data.unitCost !== 'number' ||
+        isNaN(data.unitCost) ||
+        data.unitCost < 0)
+    ) {
+      throw new Error('Unit cost must be a valid non-negative number');
     }
 
-    // Return validated data
-    return data;
+    // Validate movement type
+    if (!Object.values(MovementType).includes(data.movementType)) {
+      throw new Error(`Invalid movement type: ${data.movementType}`);
+    }
+
+    // Validate scheduled date
+    if (data.scheduledAt && !(data.scheduledAt instanceof Date)) {
+      throw new Error('Scheduled date must be a valid date');
+    }
+
+    // Validate expiry date
+    if (data.expiryDate && !(data.expiryDate instanceof Date)) {
+      throw new Error('Expiry date must be a valid date');
+    }
+
+    // Validate warehouse IDs if transfer
+    if (data.movementType === 'TRANSFER') {
+      if (!data.sourceWarehouseId) {
+        throw new Error('Source warehouse ID is required for transfers');
+      }
+      if (!data.destinationWarehouseId) {
+        throw new Error('Destination warehouse ID is required for transfers');
+      }
+      if (data.sourceWarehouseId === data.destinationWarehouseId) {
+        throw new Error('Source and destination warehouses must be different');
+      }
+    }
+
+    // Return validated data with defaults
+    return {
+      ...data,
+      reason:
+        data.reason ||
+        this.getDefaultReasonForType(data.movementType, data.referenceType),
+      status: data.status || MovementStatus.COMPLETED,
+    };
+  }
+
+  /**
+   * Get default reason based on movement type and reference type
+   */
+  private static getDefaultReasonForType(
+    movementType: MovementType,
+    referenceType?: string
+  ): MovementReason {
+    switch (movementType) {
+      case 'INCOMING':
+        return 'PURCHASE';
+      case 'OUTGOING':
+        return referenceType === 'ORDER' ? 'SALE' : 'CONSUMPTION';
+      case 'TRANSFER':
+        return 'TRANSFER';
+      case 'ADJUSTMENT':
+        return 'ADJUSTMENT_INVENTORY';
+      case 'RETURN':
+        return 'RETURN_FROM_CUSTOMER';
+      default:
+        return 'OTHER';
+    }
   }
 
   /**

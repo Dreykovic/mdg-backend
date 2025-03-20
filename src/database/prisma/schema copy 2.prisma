@@ -2,10 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator typescriptInterfaces {
-  provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
-  output   = "./dto/interfaces.ts"
-}
+// generator typescriptInterfaces {
+//   provider = "prisma-generator-typescript-interfaces" // Specifies the generator to create TypeScript interfaces for the Prisma schema.
+//   // output   = "./dto/interfaces.ts"
+// }
 
 datasource db {
   provider = "postgresql" // Default database provider is PostgreSQL. Adjust as needed.
@@ -28,15 +28,11 @@ model User {
   password          String // User's password
   email_verified_at DateTime? // Timestamp for email verification
 
-  tokenFamilies TokenFamily[] // Relation to token families
-  recipes       Recipe[] // Relation to recipes created by the user
-  createdAt     DateTime      @default(now()) // Timestamp for creation
-  updatedAt     DateTime      @updatedAt // Timestamp for last update
-
-  // Stocks movements relations
-  createdStockMovements  StockMovement[] @relation("CreatedStockMovements")
-  approvedStockMovements StockMovement[] @relation("ApprovedStockMovements")
-  executedStockMovements StockMovement[] @relation("ExecutedStockMovements")
+  tokenFamilies  TokenFamily[] // Relation to token families
+  recipes        Recipe[] // Relation to recipes created by the user
+  createdAt      DateTime        @default(now()) // Timestamp for creation
+  updatedAt      DateTime        @updatedAt // Timestamp for last update
+  stockMovements StockMovement[]
 
   @@index([username, id, email]) // Compound index for fast lookups
 }
@@ -234,7 +230,6 @@ model Product {
   inventory       Inventory?
   // Media
   images          ProductImage[]
-  stockMovements  StockMovement[] // Related stock movements
 
   origin Origin @relation(fields: [originId], references: [id]) // Relation to origin
 
@@ -257,61 +252,37 @@ model ProductImage {
   product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
-// Improved Inventory model
 model Inventory {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Stock information
-  quantity          Float @default(0) // Total quantity in stock
+  quantity          Float @default(0)
   availableQuantity Float @default(0) // Accounts for reserved items
   reservedQuantity  Float @default(0) // Items in carts or pending orders
 
-  // Added attributes
-  minimumQuantity       Float  @default(0) // Minimum quantity to keep in stock
-  maximumQuantity       Float? // Maximum quantity to keep (optional, for storage limits)
-  safetyStockLevel      Float  @default(0) // Buffer stock to prevent stockouts
-  economicOrderQuantity Float? // Optimal order quantity based on costs
-
-  // Cost and valuation
-  unitCost        Float? // Current unit cost of the inventory
-  totalValue      Float? // Total value of inventory (quantity * unitCost)
-  valuationMethod ValuationMethod @default(WAC) // Method used for inventory valuation
-
   // Reorder information
-  reorderThreshold Float @default(5) // When to reorder
-  reorderQuantity  Float @default(10) // How much to reorder
-  leadTimeInDays   Int? // Expected days between order and receipt
+  reorderThreshold Float @default(5)
+  reorderQuantity  Float @default(10)
 
   // Stock status
-  inStock       Boolean @default(true) // Is the item in stock?
-  backOrderable Boolean @default(false) // Can be back-ordered?
-  isActive      Boolean @default(true) // Is this inventory active?
+  inStock       Boolean @default(true)
+  backOrderable Boolean @default(false)
 
   // Stock tracking
-  lastStockCheck     DateTime? // Last physical inventory check
-  nextScheduledCheck DateTime? // Next scheduled check
-  lastReceivedDate   DateTime? // Date when last received stock
-  expiryDate         DateTime? // Expiration date if applicable
-
-  // Additional attributes
-  stockLocation String? // Specific location within warehouse (e.g., "Aisle 5, Bin 3")
-  notes         String? // General notes about this inventory
-  turnoverRate  Float? // Historical turnover rate
+  lastStockCheck     DateTime?
+  nextScheduledCheck DateTime?
 
   // Relationships
-  productId String  @unique // Reference to product
-  product   Product @relation(fields: [productId], references: [id])
+  productId String?  @unique
+  product   Product? @relation(fields: [productId], references: [id])
 
-  warehouseId String // Reference to warehouse
+  warehouseId String
   warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
 
   // Stock movements
-  stockMovements StockMovement[] // Relation to stock movements
-
-  @@index([productId, warehouseId]) // Index for fast lookup by product and warehouse
-  @@index([inStock, isActive]) // Index for status lookup
+  stockMovements StockMovement[]
 }
 
 model Warehouse {
@@ -320,135 +291,43 @@ model Warehouse {
   location    String?
   isDefault   Boolean     @default(false)
   inventories Inventory[]
-
-  // Added attributes for warehouses
-  address    String?
-  city       String?
-  postalCode String?
-  country    String?
-  capacity   Float? // Storage capacity 
-  isActive   Boolean @default(true)
-
-  // Relationships for source/destination in stock movements
-  sourceMovements      StockMovement[] @relation("SourceWarehouse")
-  destinationMovements StockMovement[] @relation("DestinationWarehouse")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
-// Enhanced StockMovement model
 model StockMovement {
-  id        String @id @default(uuid())
-  reference String @unique // Reference number for tracking
+  id String @id @default(uuid())
 
   // Movement details
-  quantity   Float // Changed from Int to Float for partial quantities
-  unitCost   Float? // Cost per unit at time of movement
-  totalValue Float? // Total value of the movement (quantity * unitCost)
+  quantity Int
+  type     MovementType
+  notes    String?
 
-  // Expanded type and reason fields
-  movementType MovementType
-  reason       MovementReason
-  status       MovementStatus @default(COMPLETED)
+  // Reference to related documents
+  referenceType ReferenceType
+  referenceId   String? // ID of the related document
 
-  // Traceability
-  lotNumber    String? // Lot/batch number for tracking
-  expiryDate   DateTime? // Expiration date for perishable items
-  batchId      String? // Group ID for related movements
-  isAdjustment Boolean   @default(false) // Whether this is an inventory adjustment
-
-  // Document references
-  documentNumber String? // Reference document (invoice, PO, etc.)
-  notes          String? // Additional information
-  metadata       Json? // Flexible JSON field for additional data
-
-  // Temporal data
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  scheduledAt DateTime? // When movement is scheduled to occur
-  executedAt  DateTime? // When movement actually occurred
-  deletedAt   DateTime? // For soft delete
-  version     Int       @default(0) // For optimistic concurrency control
-
-  // Relationships - main entities
+  // Relationships
   inventoryId String
   inventory   Inventory @relation(fields: [inventoryId], references: [id])
-  productId   String
-  product     Product   @relation(fields: [productId], references: [id])
+  userId      String? // Who performed the operation
+  user        User?     @relation(fields: [userId], references: [id])
 
-  // Relationships - warehouses
-  sourceWarehouseId      String?
-  sourceWarehouse        Warehouse? @relation("SourceWarehouse", fields: [sourceWarehouseId], references: [id])
-  destinationWarehouseId String?
-  destinationWarehouse   Warehouse? @relation("DestinationWarehouse", fields: [destinationWarehouseId], references: [id])
-
-  // Relationships - users
-  createdById  String
-  createdBy    User    @relation("CreatedStockMovements", fields: [createdById], references: [id])
-  approvedById String?
-  approvedBy   User?   @relation("ApprovedStockMovements", fields: [approvedById], references: [id])
-  executedById String?
-  executedBy   User?   @relation("ExecutedStockMovements", fields: [executedById], references: [id])
-
-  // Hierarchical relationships
-  parentMovementId String?
-  parentMovement   StockMovement?  @relation("MovementRelation", fields: [parentMovementId], references: [id])
-  childMovements   StockMovement[] @relation("MovementRelation")
-
-  // Indexes for performance
-  @@index([productId])
-  @@index([inventoryId])
-  @@index([movementType])
-  @@index([status])
-  @@index([createdAt])
-  @@index([scheduledAt])
-  @@index([executedAt])
-  @@index([sourceWarehouseId])
-  @@index([destinationWarehouseId])
-  @@index([lotNumber])
-  @@index([batchId])
+  createdAt DateTime @default(now())
 }
 
-// Enhanced enums for stock movement
 enum MovementType {
-  INCOMING // Stock arriving in the system
-  OUTGOING // Stock leaving the system
-  TRANSFER // Stock moving between locations
-  ADJUSTMENT // Correction of inventory discrepancies
-  RETURN // Customer returns
+  STOCK_IN
+  STOCK_OUT
 }
 
-enum MovementReason {
-  PURCHASE // Bought from supplier
-  SALE // Sold to customer
-  TRANSFER // Moving between locations
-  ADJUSTMENT_INVENTORY // Reconciliation after count
-  ADJUSTMENT_DAMAGE // Write-off due to damage
-  ADJUSTMENT_EXPIRY // Write-off due to expiration
-  RETURN_FROM_CUSTOMER // Customer returned product
-  RETURN_TO_SUPPLIER // Returning to supplier
-  PRODUCTION // Used in production process
-  CONSUMPTION // Used internally
-  ORDER // For customer order
-  PURCHASE_ORDER // For supplier order
-  INVENTORY // From inventory check
-  OTHER // Miscellaneous reason
-}
-
-enum MovementStatus {
-  DRAFT // Initially created
-  PLANNED // Scheduled for future
-  IN_PROGRESS // Currently being processed
-  COMPLETED // Fully processed
-  CANCELLED // Cancelled movement
-}
-
-enum ValuationMethod {
-  FIFO // First In, First Out
-  LIFO // Last In, First Out
-  WAC // Weighted Average Cost
-  FEFO // First Expired, First Out (for perishables)
+enum ReferenceType {
+  ORDER // Commande client
+  PURCHASE_ORDER // Bon d'achat / commande fournisseur
+  ADJUSTMENT // Ajustement manuel du stock
+  TRANSFER // Transfert entre entrepôts
+  RETURN // Retour de marchandise
+  DAMAGE // Produit endommagé
+  OTHER // Autres types non spécifiés
+  INVENTORY //
 }
 
 // Enumeration for unit of measure types

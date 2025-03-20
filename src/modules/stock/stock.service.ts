@@ -107,10 +107,8 @@ export default class StockService extends ServiceDefinition {
   getMovementTypePrefix(movementType: MovementType): string {
     switch (movementType) {
       case 'INCOMING':
-      case 'STOCK_IN':
         return 'IN';
       case 'OUTGOING':
-      case 'STOCK_OUT':
         return 'OUT';
       case 'TRANSFER':
         return 'TRF';
@@ -133,10 +131,8 @@ export default class StockService extends ServiceDefinition {
   ): MovementReason {
     switch (movementType) {
       case 'INCOMING':
-      case 'STOCK_IN':
         return 'PURCHASE';
       case 'OUTGOING':
-      case 'STOCK_OUT':
         return referenceType === 'ORDER' ? 'SALE' : 'CONSUMPTION';
       case 'TRANSFER':
         return 'TRANSFER';

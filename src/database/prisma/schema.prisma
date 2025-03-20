@@ -417,8 +417,6 @@ enum MovementType {
   TRANSFER // Stock moving between locations
   ADJUSTMENT // Correction of inventory discrepancies
   RETURN // Customer returns
-  STOCK_IN // Legacy value (kept for backward compatibility) 
-  STOCK_OUT // Legacy value (kept for backward compatibility)
 }
 
 enum MovementReason {
@@ -435,7 +433,6 @@ enum MovementReason {
   ORDER // For customer order
   PURCHASE_ORDER // For supplier order
   INVENTORY // From inventory check
-  DAMAGE // Legacy value (kept for backward compatibility)
   OTHER // Miscellaneous reason
 }
 

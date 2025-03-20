@@ -112,13 +112,11 @@ export default class StockMvtService extends StockService {
       // Update inventory based on movement type
       switch (movement.movementType) {
         case 'INCOMING':
-        case 'STOCK_IN':
           updatedQuantity += movement.quantity;
           updatedAvailableQuantity += movement.quantity;
           break;
 
         case 'OUTGOING':
-        case 'STOCK_OUT':
           // Validate we have enough available quantity
           if (
             !inventory.backOrderable &&

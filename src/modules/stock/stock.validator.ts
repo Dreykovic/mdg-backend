@@ -397,10 +397,8 @@ export class StockValidator {
   ): MovementReason {
     switch (movementType) {
       case 'INCOMING':
-      case 'STOCK_IN':
         return 'PURCHASE';
       case 'OUTGOING':
-      case 'STOCK_OUT':
         return referenceType === 'ORDER' ? 'SALE' : 'CONSUMPTION';
       case 'TRANSFER':
         return 'TRANSFER';

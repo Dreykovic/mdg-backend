@@ -384,7 +384,7 @@ export class StockValidator {
       reason:
         data.reason ||
         this.getDefaultReasonForType(data.movementType, data.referenceType),
-      status: data.status || MovementStatus.DRAFT,
+      status: data.status || MovementStatus.COMPLETED,
     };
   }
 

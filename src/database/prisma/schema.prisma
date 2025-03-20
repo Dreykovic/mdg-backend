@@ -350,7 +350,7 @@ model StockMovement {
   // Expanded type and reason fields
   movementType MovementType
   reason       MovementReason
-  status       MovementStatus @default(DRAFT)
+  status       MovementStatus @default(COMPLETED)
 
   // Traceability
   lotNumber    String? // Lot/batch number for tracking

@@ -166,7 +166,7 @@ export default class StockMvtService extends StockService {
           quantity: updatedQuantity,
           availableQuantity: updatedAvailableQuantity,
           totalValue,
-          inStock: updatedQuantity > 0,
+          inStock: updatedAvailableQuantity > inventory.safetyStockLevel,
           lastStockCheck: new Date(),
         },
       });

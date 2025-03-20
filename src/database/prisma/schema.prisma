@@ -301,8 +301,8 @@ model Inventory {
   turnoverRate  Float? // Historical turnover rate
 
   // Relationships
-  productId String?  @unique // Reference to product
-  product   Product? @relation(fields: [productId], references: [id])
+  productId String  @unique // Reference to product
+  product   Product @relation(fields: [productId], references: [id])
 
   warehouseId String // Reference to warehouse
   warehouse   Warehouse @relation(fields: [warehouseId], references: [id])

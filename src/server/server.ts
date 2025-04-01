@@ -117,8 +117,31 @@ class Server extends http.Server {
 
     this.startTime = new Date();
     const protocol = config.ssl.isHttps && config.isProd ? 'https' : 'http';
-    const serverInfo = `${protocol}://${host}:${port}${config.ssl.isHttps && config.isProd ? ' (SSL)' : ''}`;
 
+    // Log the actual port being used (may differ from config if port was busy)
+    const actualPort =
+      this.address() && typeof this.address() === 'object'
+        ? (this.address() as { port: number }).port
+        : port;
+
+    // In cluster mode as a worker, send port info to master instead of logging
+    if (config.cluster && cluster.isWorker) {
+      process.send?.({
+        type: 'SERVER_LISTENING',
+        port: actualPort,
+        workerId: cluster.worker?.id,
+      });
+    }
+
+    if (actualPort !== port) {
+      logger.info(
+        colorTxt.yellow(
+          `-> Note: Server running on port ${actualPort} (different from configured port ${port})`
+        )
+      );
+    }
+
+    const serverInfo = `${protocol}://${host}:${actualPort}${config.ssl.isHttps && config.isProd ? ' (SSL)' : ''}`;
     logger.info(colorTxt.white(`-> Server listening on ${serverInfo}`));
 
     // Log CPU and memory info
@@ -132,10 +155,10 @@ class Server extends http.Server {
       )
     );
 
-    if (protocol === 'http') {
+    if (protocol === 'http' && (!config.cluster || !cluster.isWorker)) {
       logger.info(
         colorTxt.green(
-          `-> Documentation available at http://${host}:${port}/api-docs`
+          `-> Documentation available at http://${host}:${actualPort}/api-docs`
         )
       );
     }
@@ -265,12 +288,39 @@ class Server extends http.Server {
     if (config.cluster && cluster.isPrimary) {
       const numCPUs = os.cpus().length;
       const workerCount = config.clusterWorkers || numCPUs;
+      const protocol = config.ssl.isHttps && config.isProd ? 'https' : 'http';
 
       logger.info(
         colorTxt.cyan(
           `Starting server in cluster mode with ${workerCount} workers`
         )
       );
+
+      // Log the master process server details
+      logger.info(
+        colorTxt.white(
+          `-> Primary process managing server on ${protocol}://${serverHost}:${serverPort}`
+        )
+      );
+
+      if (protocol === 'http') {
+        logger.info(
+          colorTxt.green(
+            `-> Documentation available at http://${serverHost}:${serverPort}/api-docs`
+          )
+        );
+      }
+
+      // Setup worker message handling to get port information
+      cluster.on('message', (worker, message) => {
+        if (message.type === 'SERVER_LISTENING' && message.port) {
+          logger.info(
+            colorTxt.white(
+              `-> Worker ${worker.id} listening on port ${message.port}`
+            )
+          );
+        }
+      });
 
       // Fork workers
       for (let i = 0; i < workerCount; i++) {

@@ -2,6 +2,8 @@
  * http-logger.middleware.ts
  *
  * Middleware Express pour logger les requêtes HTTP avec Pino
+ * - Affiche le minimum dans la console
+ * - Enregistre les détails complets dans les fichiers de log
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -18,31 +20,54 @@ const httpLogger = pinoHttp({
 
   // Personnaliser les données de requête à logger
   serializers: {
-    req: (req) => ({
-      id: req.id,
-      method: req.method,
-      url: req.url,
-      path: req.path,
-      parameters: {
-        query: req.query,
-        params: req.params,
-      },
-      headers: {
-        'user-agent': req.headers['user-agent'],
-        'content-type': req.headers['content-type'],
-        'x-forwarded-for':
-          req.headers['x-forwarded-for'] || req.socket.remoteAddress,
-      },
-      // Ne pas logger les corps de requête en production pour des raisons de sécurité
-      ...(config.isDev && { body: req.body }),
-    }),
-    res: (res) => ({
-      statusCode: res.statusCode,
-      headers: {
-        'content-type': res.getHeader('content-type'),
-        'content-length': res.getHeader('content-length'),
-      },
-    }),
+    req: (req) => {
+      // Version minimale pour l'affichage console
+      const minimalInfo = {
+        method: req.method,
+        url: req.url,
+      };
+
+      // Informations détaillées pour les fichiers de log
+      const detailedInfo = {
+        id: req.id,
+        method: req.method,
+        url: req.url,
+        path: req.path,
+        parameters: {
+          query: req.query,
+          params: req.params,
+        },
+        headers: {
+          'user-agent': req.headers['user-agent'],
+          'content-type': req.headers['content-type'],
+          'x-forwarded-for':
+            req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+        },
+        // Ne pas logger les corps de requête en production pour des raisons de sécurité
+        ...(config.isDev && { body: req.body }),
+      };
+
+      // Retourner les informations appropriées selon le niveau de log
+      return process.stdout.isTTY ? minimalInfo : detailedInfo;
+    },
+    res: (res) => {
+      // Version minimale pour l'affichage console
+      const minimalInfo = {
+        statusCode: res.statusCode,
+      };
+
+      // Informations détaillées pour les fichiers de log
+      const detailedInfo = {
+        statusCode: res.statusCode,
+        headers: {
+          'content-type': res.getHeader('content-type'),
+          'content-length': res.getHeader('content-length'),
+        },
+      };
+
+      // Retourner les informations appropriées selon le niveau de log
+      return process.stdout.isTTY ? minimalInfo : detailedInfo;
+    },
   },
 
   // Configurer quand générer les logs de réponse
@@ -68,15 +93,26 @@ const httpLogger = pinoHttp({
     if (res.statusCode >= 300) {
       return 'info';
     }
-    return 'debug';
+    // En mode console, utiliser 'info' pour les requêtes réussies,
+    // sinon 'debug' pour les fichiers de log
+    return process.stdout.isTTY ? 'info' : 'debug';
   },
 
   // Ajouter des métadonnées personnalisées
   customProps: (req) => {
-    return {
-      userAgent: req.headers['user-agent'],
+    const props = {
       correlationId: req.headers['x-correlation-id'] || req.id,
     };
+
+    // Ajouter userAgent uniquement dans les logs détaillés
+    if (!process.stdout.isTTY) {
+      return {
+        ...props,
+        userAgent: req.headers['user-agent'],
+      };
+    }
+
+    return props;
   },
 });
 

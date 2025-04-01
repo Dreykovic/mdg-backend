@@ -116,11 +116,3 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Export the logger
 export default logger;
-
-// Export convenience methods for direct usage
-export const info = logger.info.bind(logger);
-export const error = logger.error.bind(logger);
-export const warn = logger.warn.bind(logger);
-export const debug = logger.debug.bind(logger);
-export const trace = logger.trace.bind(logger);
-export const fatal = logger.fatal.bind(logger);

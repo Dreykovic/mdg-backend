@@ -8,106 +8,135 @@ import expressInstance from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import swaggerUi from 'swagger-ui-express';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import { Service } from 'typedi';
+import logger from '@/core/utils/logger.util';
 
-import errorHandler from '@/core/middlewares/error.middleware'; // Middleware for global error handling
-import morganMiddleware from '@/core/middlewares/morgan.middleware'; // Middleware to log HTTP requests
-import preventCrossSiteScripting from '@/core/middlewares/preventCrossScripting.middleware'; // Middleware to prevent XSS attacks
-import { rateLimiter } from '@/core/middlewares/rateLimiter.middleware'; // Middleware to limit request rate and avoid abuse
-import xssMiddleware from '@/core/middlewares/xss.middleware'; // Middleware to filter out malicious scripts from inputs
+// Middlewares
+import errorHandler from '@/core/middlewares/error.middleware';
+import morganMiddleware from '@/core/middlewares/morgan.middleware';
+import preventCrossSiteScripting from '@/core/middlewares/preventCrossScripting.middleware';
+import { rateLimiter } from '@/core/middlewares/rateLimiter.middleware';
+import xssMiddleware from '@/core/middlewares/xss.middleware';
+import { clientInfoMiddleware } from '@/core/middlewares/clientInfo.middleware';
 
-import corsOptions from '@/config/cors.config'; // Custom CORS configuration
-import cookieParser from 'cookie-parser'; // Middleware for parsing cookies
-import helmet from 'helmet'; // Middleware to secure the application by setting various HTTP headers
-import { MailModule } from '@/integrations/nodemailer/nodemailer.module'; // Module for handling email sending
-import { MailConfig } from '@/integrations/nodemailer'; // Configuration for the mail service
-import { Service } from 'typedi'; // Decorator to manage dependencies with Typedi
-import config from '@/config'; // General application configuration
-import { generateSwaggerDocument } from './swaggerLoader'; // Swagger documentation generator
-import apiRouter from './routes'; // API routes handler
-import { log } from 'console';
-import { clientInfoMiddleware } from '@/core/middlewares/clientInfo.middleware'; // Middleware to capture client info
+// Configurations
+import corsOptions from '@/config/cors.config';
+import config from '@/config';
+
+// Routes and documentation
+import { generateSwaggerDocument } from './swaggerLoader';
+import apiRouter from './routes';
 
 /**
- * Main class that sets up and configures the Express application. It is configured
- * as a service for dependency injection using Typedi.
+ * Main class that sets up and configures the Express application
  */
 @Service()
 class App {
-  public express: expressInstance.Application; // Express application instance
-  private baseApiUrl: string; // Base URL for API routes
+  public express: expressInstance.Application;
+  private readonly baseApiUrl: string;
+  private swaggerInitialized = false;
 
   /**
    * Constructor to initialize the Express application and configure middlewares and routes.
    */
   constructor() {
-    // Set up the base API URL using the configuration's prefix
-    this.baseApiUrl = '/' + config.api.prefix.replace('/', '');
-    this.express = expressInstance(); // Initialize Express application
+    this.baseApiUrl = '/' + config.api.prefix.replace(/^\/+/, '');
+    this.express = expressInstance();
 
-    this.middleware(); // Set up application middlewares
-    this.routes(); // Set up routes for the application
-    this.express.use(errorHandler); // Add global error handler as the last middleware
+    // Initialize the application in the proper order
+    this.setupSecurity();
+    this.setupParsers();
+    this.setupAPIRoutes();
+
+    // Always add error handler last
+    this.express.use(errorHandler);
   }
 
   /**
-   * Configures all middlewares used in the application.
+   * Set up security-related middlewares
    */
-  private middleware() {
-    this.express.use(clientInfoMiddleware); // Middleware to capture client information
-    this.express.use(helmet()); // Adds HTTP security protections
-    this.express.use(morganMiddleware); // Log HTTP requests
-    this.express.use(cors(corsOptions)); // Enable CORS with custom options
+  private setupSecurity(): void {
+    // Capture client information
+    this.express.use(clientInfoMiddleware);
 
-    this.express.use(preventCrossSiteScripting); // Prevent XSS attacks
-    this.express.use(rateLimiter); // Rate limiter to prevent abuse
-    this.express.use(xssMiddleware()); // Sanitize inputs to remove any malicious scripts
-
-    // Parse JSON request bodies with a size limit
-    this.express.use(bodyParser.json({ limit: config.api.jsonLimit }));
-    // Parse URL-encoded request bodies
+    // Security headers
     this.express.use(
-      bodyParser.urlencoded({ extended: config.api.extUrlencoded })
+      helmet({
+        contentSecurityPolicy: config.isProd ? undefined : false,
+      })
     );
-    this.express.use(cookieParser()); // Parse cookies from requests
+
+    // CORS configuration
+    this.express.use(cors(corsOptions));
+
+    // XSS protection (combined middleware approach)
+    this.express.use(preventCrossSiteScripting);
+    this.express.use(xssMiddleware());
+
+    // Rate limiting to prevent abuse
+    this.express.use(rateLimiter);
+
+    // Request logging (only in non-testing environments)
+    if (!config.isTest) {
+      this.express.use(morganMiddleware);
+    }
   }
 
   /**
-   * Configures all routes for the application.
+   * Set up request parsers and body processing middlewares
    */
+  private setupParsers(): void {
+    // Optimize JSON parsing with appropriate limits
+    this.express.use(
+      bodyParser.json({
+        limit: config.api.jsonLimit,
+        strict: true,
+        type: 'application/json', // Type de contenu spécifique accepté
+      })
+    );
 
-  private routes() {
-    // Test route to simulate an error for testing purposes
+    // URL-encoded data parsing
+    this.express.use(
+      bodyParser.urlencoded({
+        extended: config.api.extUrlencoded,
+        limit: config.api.jsonLimit,
+      })
+    );
+
+    // Cookie parsing
+    this.express.use(cookieParser());
+  }
+
+  /**
+   * Set up API routes and documentation
+   */
+  private setupAPIRoutes(): void {
+    // Test error route
     this.express.get('/error', () => {
       throw new Error('This is a test error!');
     });
 
-    // Generate and serve Swagger documentation at the `/api-docs` endpoint
-    const swaggerDocs = generateSwaggerDocument();
-    this.express.use(
-      '/api-docs', // URL to access Swagger documentation
-      swaggerUi.serve,
-      swaggerUi.setup(swaggerDocs)
-    );
+    // Initialize Swagger documentation lazily
+    this.express.use('/api-docs', (req, res, next) => {
+      if (!this.swaggerInitialized) {
+        const swaggerDocs = generateSwaggerDocument();
+        const swaggerSetup = swaggerUi.setup(swaggerDocs);
 
-    // Log the base API URL and attach the API routes
-    log(this.baseApiUrl); // Log the base API URL
-    this.express.use(this.baseApiUrl, apiRouter); // Associate the routes with the base URL
-  }
+        // Attach to express instance
+        this.express.use('/api-docs', swaggerUi.serve);
+        this.swaggerInitialized = true;
 
-  /**
-   * Initializes external modules (example with the mail service).
-   */
-  private initializeModules() {
-    const smtpConfig: MailConfig = {
-      service: 'smtp', // Type of mail service
-      host: 'smtp.gmail.com', // SMTP host
-      port: 587, // SMTP port
-      user: 'your_smtp_username', // SMTP username (to be replaced)
-      pass: 'your_smtp_password', // SMTP password (to be replaced)
-    };
+        // Continue with the setup
+        return swaggerSetup(req, res, next);
+      }
+      next();
+    });
 
-    // Initialize the mail module with SMTP configuration
-    MailModule.init(smtpConfig);
+    // Set up API routes
+    logger.debug(`API base URL: ${this.baseApiUrl}`);
+    this.express.use(this.baseApiUrl, apiRouter);
   }
 }
 

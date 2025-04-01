@@ -6,29 +6,50 @@
  * - Security configurations (CORS, JWT, bcrypt, SSL, etc.)
  * - Rate limiting and debugging options
  * - Default user settings
- *
- * The configuration values are derived from environment variables and include sensible defaults
- * to ensure smooth application functionality even when certain variables are missing.
+ * - Clustering and performance settings
  */
 
-import { env, nodeEnv } from './env.config'; // Importing environment variables and the current node environment
-import { parseAllowedOrigins } from '@/core/utils/cors.util'; // Utility function to parse allowed CORS origins
-import { EnvConfig } from './types'; // Importing the type definition for environment configuration
-import { ProfileName } from '@prisma/client'; // Importing the ProfileName type from Prisma client
-import { log } from 'console'; // Importing the logging utility
+import { env, nodeEnv } from './env.config';
+import { parseAllowedOrigins } from '@/core/utils/cors.util';
+import { EnvConfig } from './types';
+import { ProfileName } from '@prisma/client';
+import os from 'os';
+import { log } from 'console';
+
+// Helper to parse numeric environment variables safely
+const parseNumericEnv = (
+  value: string | undefined,
+  defaultValue: number
+): number => {
+  if (!value) {
+    return defaultValue;
+  }
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+
+// Helper to parse boolean environment variables safely
+const parseBooleanEnv = (
+  value: string | undefined,
+  defaultValue: boolean
+): boolean => {
+  if (!value) {
+    return defaultValue;
+  }
+  return value.toLowerCase() === 'true';
+};
 
 // Configuration object with strongly typed properties
 const config: EnvConfig = {
   // Node environment configuration
   nodeEnv,
-  isTest: nodeEnv === 'test', // Check if the environment is set to 'test'
-  isDev: nodeEnv === 'development', // Check if the environment is 'development'
-  isStage: nodeEnv === 'staging', // Check if the environment is 'staging'
-  isProd: nodeEnv === 'production', // Check if the environment is 'production'
+  isTest: nodeEnv === 'test',
+  isDev: nodeEnv === 'development',
+  isStage: nodeEnv === 'staging',
+  isProd: nodeEnv === 'production',
 
   // Country-specific configuration
   country: {
-    // Base URL for fetching country flag icons
     flagUrlBase:
       env.COUNTRY_FLAG_URL ??
       'https://purecatamphetamine.github.io/country-flag-icons/3x2/',
@@ -36,7 +57,6 @@ const config: EnvConfig = {
 
   // Cryptography-related configuration
   crypto: {
-    // Secret key for cryptographic operations, with a default fallback
     cryptoSecretKey:
       env.CRYPTO_SECRET_KEY ??
       'd0f8a6e9c417f45dbfe5d31942e7d9346c44d46a9799d5cf4c2253ac44d899cd',
@@ -44,82 +64,137 @@ const config: EnvConfig = {
 
   // Application server configuration
   app: {
-    host: env.APP_URL_HOST ?? 'localhost', // Host for the application
-    port: (env.APP_URL_PORT && parseInt(env.APP_URL_PORT, 10)) || 8080, // Port with a default of 8080
+    host: env.APP_URL_HOST ?? 'localhost',
+    port: parseNumericEnv(env.APP_URL_PORT, 8080),
   },
 
   // Password-related configuration
   pwd: {
-    pwdLength: parseInt(env.PWD_LENGTH ?? '') ?? 8, // Minimum password length, default is 8
+    pwdLength: parseNumericEnv(env.PWD_LENGTH, 8),
   },
 
   // SSL/TLS configuration
   ssl: {
-    isHttps: env.SSL_ALLOW === 'true' || false, // Enable HTTPS if explicitly allowed
-    privateKey: env.SSL_PRIVATE_KEY ?? '', // Path to the SSL private key
-    certificate: env.SSL_CERTIFICATE ?? '', // Path to the SSL certificate
+    isHttps: parseBooleanEnv(env.SSL_ALLOW, false),
+    privateKey: env.SSL_PRIVATE_KEY ?? '',
+    certificate: env.SSL_CERTIFICATE ?? '',
+    ca: env.SSL_CA_CERTIFICATE, // Optional CA certificate
+    ciphers: env.SSL_CIPHERS, // Optional custom ciphers
+    secureProtocol: env.SSL_SECURE_PROTOCOL || 'TLSv1_2_method', // TLS protocol version
+    dhparam: env.SSL_DHPARAM, // Optional Diffie-Hellman parameters
+    preferServerCiphers: parseBooleanEnv(env.SSL_PREFER_SERVER_CIPHERS, true),
+    sessionTimeout: parseNumericEnv(env.SSL_SESSION_TIMEOUT, 300), // in seconds
   },
 
   // API configuration
   api: {
-    prefix: env.API_PREFIX ?? 'api', // API base prefix
-    version: env.API_VERSION ?? 'v1', // API version
-    jsonLimit: env.API_JSON_LIMIT ?? '5mb', // Maximum JSON payload size
-    extUrlencoded: env.API_EXT_URLENCODED === 'false' || true, // Extended URL encoding setting
+    prefix: env.API_PREFIX ?? 'api',
+    version: env.API_VERSION ?? 'v1',
+    jsonLimit: env.API_JSON_LIMIT ?? '1mb',
+    extUrlencoded: parseBooleanEnv(env.API_EXT_URLENCODED, true),
   },
 
   // CORS configuration
   cors: {
-    allowOrigins: parseAllowedOrigins(env.CORS_ALLOW_ORIGINS as string), // Allowed origins for CORS requests
+    allowOrigins: parseAllowedOrigins(env.CORS_ALLOW_ORIGINS as string),
+    credentials: parseBooleanEnv(env.CORS_CREDENTIALS, true),
+    methods: env.CORS_METHODS?.split(',').map((m) => m.trim()) || [
+      'GET',
+      'POST',
+      'PUT',
+      'DELETE',
+      'PATCH',
+      'OPTIONS',
+    ],
+    maxAge: parseNumericEnv(env.CORS_MAX_AGE, 86400), // 24 hours in seconds
   },
 
   // JWT (JSON Web Token) configuration
   jwt: {
-    secretUser: env.JWT_SECRET_USER ?? '', // Secret for user-related tokens
-    secretAdmin: env.JWT_SECRET_ADMIN ?? '', // Secret for admin-related tokens
-    secretApp: env.JWT_SECRET_APP ?? '', // Secret for app-related tokens
-    expiredIn: env.JWT_EXPIRED_IN ?? '24h', // Expiration time for access tokens
-    refreshToken: env.JWT_REFRESH_TOKEN_SECRET ?? '', // Secret for refresh tokens
-    refreshExpiresIn: env.JWT_REFRSH_EXPIRED_IN ?? '1d', // Expiration time for refresh tokens
-    accessToken: env.JWT_ACCESS_TOKEN_SECRET ?? '', // Secret for access tokens
-    mobileExpiredIn: env.JWT_MOBILE_EXPIRED_IN ?? '30d', // Expiration for mobile-specific tokens
-    maxConnexions: parseInt(env.JWT_MAX_CONNEXION ?? '') ?? 2, // Maximum allowed simultaneous connections
+    secretUser: env.JWT_SECRET_USER ?? '',
+    secretAdmin: env.JWT_SECRET_ADMIN ?? '',
+    secretApp: env.JWT_SECRET_APP ?? '',
+    expiredIn: env.JWT_EXPIRED_IN ?? '24h',
+    refreshToken: env.JWT_REFRESH_TOKEN_SECRET ?? '',
+    refreshExpiresIn: env.JWT_REFRESH_EXPIRED_IN ?? '1d',
+    accessToken: env.JWT_ACCESS_TOKEN_SECRET ?? '',
+    mobileExpiredIn: env.JWT_MOBILE_EXPIRED_IN ?? '30d',
+    maxConnexions: parseNumericEnv(env.JWT_MAX_CONNEXION, 2),
+    algorithm: env.JWT_ALGORITHM || 'HS256', // Algorithm used for JWT signing
   },
 
   // OTP (One-Time Password) configuration
   otp: {
-    expiredIn: env.OTP_EXPIRED_IN ?? '3min', // OTP expiration time
-    hashSecret: env.OTP_HASH_SECRET ?? '', // Secret for hashing OTPs
+    expiredIn: env.OTP_EXPIRED_IN ?? '3min',
+    hashSecret: env.OTP_HASH_SECRET ?? '',
   },
 
   // Bcrypt configuration
   bcrypt: {
-    saltRounds: parseInt(env.BCRYPT_SALTROUNDS ?? '') ?? 10, // Number of bcrypt salt rounds for hashing passwords
+    saltRounds: parseNumericEnv(env.BCRYPT_SALTROUNDS, 10),
   },
 
   // Rate limiter configuration
   rateLimiter: {
-    max: env.RATE_LIMIT_MAX ?? '100', // Maximum requests allowed per window
-    window: env.RATE_LIMIT_WINDOW ?? '15', // Time window in minutes for rate limiting
+    max: env.RATE_LIMIT_MAX ?? '100',
+    window: env.RATE_LIMIT_WINDOW ?? '15',
+    skipSuccessfulRequests: parseBooleanEnv(env.RATE_LIMIT_SKIP_SUCCESS, false),
+    trustProxy: parseBooleanEnv(env.RATE_LIMIT_TRUST_PROXY, true),
   },
 
   // Debugging configuration
   debug: {
-    http_request: env.DEBUG_HTTP_REQUEST === 'true' || true, // Enable HTTP request debugging
-    http_connection: env.DEBUG_HTTP_CONNECTION === 'true' || false, // Enable HTTP connection debugging
+    http_request: parseBooleanEnv(env.DEBUG_HTTP_REQUEST, true),
+    http_connection: parseBooleanEnv(env.DEBUG_HTTP_CONNECTION, false),
+    monitor_interval: parseNumericEnv(env.DEBUG_MONITOR_INTERVAL, 30000), // Monitoring interval in ms
   },
 
   // Default user configuration
   defaultUser: {
-    name: env.DEFAULT_USER_NAME ?? 'Birewa', // Default user name
-    contact: env.DEFAULT_USER_CONTACT ?? '22870478925', // Default user contact
-    password: env.DEFAULT_USER_PASSWORD ?? 'secret', // Default user password
-    email: env.DEFAULT_USER_EMAIL ?? 'amonaaudrey16@gmail.com', // Default user email
-    profiles: (env.DEFAULT_USER_PROFILES as ProfileName) ?? 'ADMIN', // Default user profile
+    name: env.DEFAULT_USER_NAME ?? 'Birewa',
+    contact: env.DEFAULT_USER_CONTACT ?? '22870478925',
+    password: env.DEFAULT_USER_PASSWORD ?? 'secret',
+    email: env.DEFAULT_USER_EMAIL ?? 'amonaaudrey16@gmail.com',
+    profiles: (env.DEFAULT_USER_PROFILES as ProfileName) ?? 'ADMIN',
+  },
+
+  // Server clustering and performance
+  cluster: parseBooleanEnv(env.ENABLE_CLUSTER, false), // Enable clustering
+  clusterWorkers: parseNumericEnv(env.CLUSTER_WORKERS, os.cpus().length), // Number of workers
+
+  // Server connection settings
+  keepAliveTimeout: parseNumericEnv(env.KEEP_ALIVE_TIMEOUT, 5000), // TCP keep-alive in ms
+  headerTimeout: parseNumericEnv(env.HEADER_TIMEOUT, 60000), // Header timeout in ms
+  maxRequestSize: env.MAX_REQUEST_SIZE || '50mb', // Max request body size
+  trustProxy: parseBooleanEnv(env.TRUST_PROXY, true), // Trust proxy headers
+
+  // Database settings
+  database: {
+    connectionPoolSize: parseNumericEnv(env.DATABASE_POOL_SIZE, 10),
+    connectionTimeout: parseNumericEnv(env.DATABASE_TIMEOUT, 30000),
+    queryTimeout: parseNumericEnv(env.DATABASE_QUERY_TIMEOUT, 60000),
+  },
+
+  // Mail configuration
+  mail: {
+    enabled: parseBooleanEnv(env.MAIL_ENABLED, false),
+    service: env.EMAIL_SMTP_SERVICE || 'gmail',
+    host: env.EMAIL_SMTP_HOST || 'smtp.gmail.com',
+    port: parseNumericEnv(env.EMAIL_SMTP_PORT, 587),
+    secure: parseBooleanEnv(env.EMAIL_SMTP_SECURE, false),
+    user: env.EMAIL_SMTP_USER,
+    pass: env.EMAIL_SMTP_PASSWORD,
   },
 };
 
-// Log the parsed CORS allowed origins to the console
-log('Allowed Origins :', config.cors.allowOrigins);
+// Log configuration info in development
+if (config.isDev) {
+  log(`Server configuration loaded for ${config.nodeEnv} environment`);
+  log(`SSL enabled: ${config.ssl.isHttps}`);
+  log(
+    `Clustering enabled: ${config.cluster} (${config.clusterWorkers} workers)`
+  );
+  log('Allowed Origins:', config.cors.allowOrigins);
+}
 
-export default config; // Exporting the configuration object
+export default config;

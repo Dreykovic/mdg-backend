@@ -4,30 +4,67 @@
  * This class uses the Express app and Prisma service for database interaction.
  */
 
-import http from 'http'; // Importing the http module for creating an HTTP server
-import fs from 'fs'; // Importing the fs module to read files (e.g., SSL certificates)
-import expressInstance from 'express'; // Importing Express for creating the web application
-import https from 'https'; // Importing the https module for creating an HTTPS server
-import colorTxt from 'ansi-colors'; // Importing ansi-colors for colored console output
-import logger from '@/core/utils/logger.util'; // Importing a utility for logging
-import { format } from 'date-fns'; // Importing date-fns for date formatting
-import pkg from '@packages'; // Importing package information (name and version)
-import { log } from 'console'; // Importing the console log function
-import { Service } from 'typedi'; // Importing Typedi for dependency injection
-import App from './app'; // Importing the application instance
-import { PrismaService } from '@/database/prisma/prisma.service'; // Importing Prisma service for database interaction
-import config from '@/config'; // Importing the application configuration
+import http from 'http';
+import fs from 'fs';
+import expressInstance from 'express';
+import https from 'https';
+import colorTxt from 'ansi-colors';
+import logger from '@/core/utils/logger.util';
+import { format } from 'date-fns';
+import pkg from '@packages';
+import { Service } from 'typedi';
+import App from './app';
+import { PrismaService } from '@/database/prisma/prisma.service';
+import config from '@/config';
+import cluster from 'cluster';
+import os from 'os';
 
-@Service() // Typedi decorator to mark the class as a service
+// Types
+type ServerConnections = Set<any>;
+type ServerErrorCode = 'EACCES' | 'EADDRINUSE' | 'EADDRNOTAVAIL';
+type ErrorMessageMap = Record<ServerErrorCode, string>;
+
+@Service()
 class Server extends http.Server {
-  private readonly app: expressInstance.Application; // Express application instance
+  private readonly app: expressInstance.Application;
+  private serverConnections: ServerConnections = new Set();
+  private isShuttingDown = false;
+  private startTime: Date | null = null;
+
+  // Map error codes to messages for better maintenance
+  private static readonly ERROR_MESSAGES: ErrorMessageMap = {
+    EACCES: 'requires elevated privileges',
+    EADDRINUSE: 'is already in use',
+    EADDRNOTAVAIL: 'not available',
+  };
 
   constructor(
-    private readonly appInstance: App, // Application instance to wrap
-    public readonly prismaService: PrismaService // Prisma service for database connection
+    private readonly appInstance: App,
+    public readonly prismaService: PrismaService
   ) {
-    super(appInstance.express); // Initialize the HTTP server with the Express app
+    super(appInstance.express);
     this.app = appInstance.express;
+
+    // Setup process uncaught exception handler
+    process.on('uncaughtException', this.handleUncaughtException.bind(this));
+  }
+
+  /**
+   * Handle uncaught exceptions to prevent server crashes
+   */
+  private handleUncaughtException(error: Error): void {
+    logger.error(colorTxt.red(`Uncaught exception: ${error.message}`));
+    logger.error(error.stack || 'No stack trace available');
+
+    // Only shutdown in production
+    if (config.isProd) {
+      logger.warn(
+        colorTxt.yellow(
+          'Uncaught exception in production, initiating graceful shutdown'
+        )
+      );
+      this.shutDown();
+    }
   }
 
   /**
@@ -35,180 +72,265 @@ class Server extends http.Server {
    * If HTTPS is enabled in production, it loads SSL certificates.
    * @returns {http.Server | https.Server} - The server instance.
    */
-  private readonly createServer = () => {
-    let options;
-
+  private createServer(): http.Server | https.Server {
     if (config.ssl.isHttps && config.isProd) {
-      // Load SSL certificates if HTTPS is enabled and running in production
       try {
-        options = {
-          key: fs.readFileSync(`${config.ssl.privateKey}`),
-          cert: fs.readFileSync(`${config.ssl.certificate}`),
-        };
+        // Load SSL certificates with content verification
+        const key = fs.readFileSync(config.ssl.privateKey);
+        const cert = fs.readFileSync(config.ssl.certificate);
+
+        if (!key || !cert) {
+          throw new Error('SSL certificates are empty');
+        }
+
+        const options = { key, cert };
+
+        // Add optional CA certificates if configured
+        if (config.ssl.ca && fs.existsSync(config.ssl.ca)) {
+          Object.assign(options, { ca: fs.readFileSync(config.ssl.ca) });
+        }
+
+        return https.createServer(options, this.app);
       } catch (err) {
-        log(err);
-        process.exit(0); // Exit if SSL certificates are not available
+        logger.error(
+          colorTxt.red(
+            `SSL certificate error: ${err instanceof Error ? err.message : String(err)}`
+          )
+        );
+        process.exit(1);
       }
-      return https.createServer(options, this.app); // Return HTTPS server
-    } else {
-      return http.createServer(this.app); // Use HTTP server if HTTPS is not enabled
     }
-  };
+
+    return http.createServer(this.app);
+  }
 
   /**
    * Logs a message when the server starts listening.
-   * Displays the protocol (HTTP or HTTPS) and the server host/port.
    * @param {string} host - The host of the server.
    * @param {number} port - The port the server is listening on.
    * @param {boolean} silent - If true, suppress log output.
    */
-  private readonly onListening = (
-    host: string,
-    port: number,
-    silent: boolean
-  ) => {
-    if (!silent) {
-      if (config.ssl.isHttps && config.isProd) {
-        log(colorTxt.white(`-> Listening on https://${host}:${port} (SSL)`));
-      } else {
-        log(colorTxt.white(`-> Listening on http://${host}:${port}`));
-        log(
-          colorTxt.green(`-> Documentation on http://${host}:${port}/api-docs`)
-        );
-      }
+  private onListening(host: string, port: number, silent: boolean): void {
+    if (silent) {
+      return;
     }
-  };
+
+    this.startTime = new Date();
+    const protocol = config.ssl.isHttps && config.isProd ? 'https' : 'http';
+    const serverInfo = `${protocol}://${host}:${port}${config.ssl.isHttps && config.isProd ? ' (SSL)' : ''}`;
+
+    logger.info(colorTxt.white(`-> Server listening on ${serverInfo}`));
+
+    // Log CPU and memory info
+    const cpuCount = os.cpus().length;
+    const memoryUsage = process.memoryUsage();
+    const memoryUsageMB = Math.round(memoryUsage.rss / 1024 / 1024);
+
+    logger.info(
+      colorTxt.white(
+        `-> Server running on ${cpuCount} CPU cores, using ${memoryUsageMB}MB memory`
+      )
+    );
+
+    if (protocol === 'http') {
+      logger.info(
+        colorTxt.green(
+          `-> Documentation available at http://${host}:${port}/api-docs`
+        )
+      );
+    }
+  }
 
   /**
    * Handles server errors and logs appropriate messages.
-   * Handles common error cases such as permission issues or address already in use.
-   * @param {any} error - The error object.
+   * @param {Error} error - The error object.
    * @param {string} host - The host of the server.
    * @param {number} port - The port the server is running on.
-   * @param {Array<string>} connections - Active connections to the server.
    */
-  private readonly onError = (
-    error: any,
+  private onError(
+    error: NodeJS.ErrnoException,
     host: string,
-    port: number,
-    connections: Array<string>
-  ) => {
+    port: number
+  ): void {
     if (error.syscall !== 'listen') {
       throw error;
     }
 
-    // Handle specific error codes
-    switch (error.code) {
-      case 'EACCES':
-        logger.error(
-          `Http server error - Host ${host}:${port} requires elevated privileges (${error.code})`
-        );
-        this.shutDown(connections);
-        break;
-      case 'EADDRINUSE':
-        logger.error(
-          `Http server error - Host ${host}:${port} is already in use (${error.code})`
-        );
-        this.shutDown(connections);
-        break;
-      case 'EADDRNOTAVAIL':
-        logger.error(
-          `Http server error - Host ${host}:${port} not available (${error.code})`
-        );
-        this.shutDown(connections);
-        break;
-      default:
-        logger.error(`Http server error: ${error.message}`);
-        throw error;
+    const errorCode = error.code as ServerErrorCode;
+    const errorMessage =
+      Server.ERROR_MESSAGES[errorCode] || `Unknown error: ${error.message}`;
+
+    logger.error(
+      colorTxt.red(
+        `HTTP server error - Host ${host}:${port} ${errorMessage} (${errorCode})`
+      )
+    );
+
+    if (Object.keys(Server.ERROR_MESSAGES).includes(errorCode)) {
+      this.shutDown();
+    } else {
+      throw error;
     }
-  };
+  }
 
   /**
    * Gracefully shuts down the server, closing active connections.
-   * @param {Array<any>} connections - List of active connections.
    */
-  private readonly shutDown = (connections: any) => {
-    log(
-      'Http server error - Received kill signal, shutting down gracefully (SHUTDOWN)'
-    );
+  private shutDown(): void {
+    if (this.isShuttingDown) {
+      return;
+    }
+    this.isShuttingDown = true;
 
-    logger.error(
-      'Http server error - Received kill signal, shutting down gracefully (SHUTDOWN)'
-    );
-    this.close(() => {
-      log('Http server error - Closed out remaining connections (SHUTDOWN)');
-      process.exit(0); // Exit process after closing connections
+    logger.warn(colorTxt.yellow('Server shutting down gracefully'));
+
+    // Calculate uptime if server was started
+    if (this.startTime) {
+      const uptime = (new Date().getTime() - this.startTime.getTime()) / 1000;
+      logger.info(
+        colorTxt.white(
+          `-> Server uptime: ${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`
+        )
+      );
+    }
+
+    // Close database connection first
+    this.prismaService.onApplicationShutdown().catch((err) => {
+      logger.error(
+        colorTxt.red(`Error disconnecting from database: ${err.message}`)
+      );
     });
 
+    // Close the server to prevent new connections
+    this.close(() => {
+      logger.info(colorTxt.white('Successfully closed all connections'));
+
+      // Exit with success code after cleanup
+      setTimeout(() => process.exit(0), 100);
+    });
+
+    // End all connections gracefully
+    this.serverConnections.forEach((connection) => connection.end());
+
+    // Set a timeout to forcefully close connections if they don't close gracefully
     setTimeout(() => {
-      log(
-        'Http server error - Could not close connections in time, forcefully shutting down (SHUTDOWN)'
+      logger.error(
+        colorTxt.red(
+          'Could not close connections in time, forcefully shutting down'
+        )
       );
-      process.exit(1); // Force exit after timeout
-    }, 10000);
+      this.serverConnections.forEach((connection) => connection.destroy());
 
-    // End all active connections
-    connections.forEach((curr: any) => curr.end());
-    setTimeout(() => connections.forEach((curr: any) => curr.destroy()), 5000);
-  };
+      // Final timeout before forced exit
+      setTimeout(() => process.exit(1), 1000);
+    }, 5000);
+  }
 
   /**
-   * Periodically logs the number of open connections to the server.
+   * Logs the number of open connections and resource usage at a specified interval.
+   * @param {number} interval - Interval in milliseconds.
    */
-  private readonly getServerConnections = () => {
-    setInterval(
-      () =>
-        this.getConnections((err: any, count: any) => {
-          if (err) {
-            logger.error(`Http server connections logs error: ${err}`);
-          }
-          if (!err) {
-            log(`${count} connections currently open`);
-          }
-        }),
-      1000
-    );
-  };
+  private monitorResources(interval: number = 30000): void {
+    setInterval(() => {
+      // Connection info
+      const connectionCount = this.serverConnections.size;
+
+      // Memory usage
+      const memoryUsage = process.memoryUsage();
+      const heapUsed = Math.round(memoryUsage.heapUsed / 1024 / 1024);
+      const heapTotal = Math.round(memoryUsage.heapTotal / 1024 / 1024);
+      const rss = Math.round(memoryUsage.rss / 1024 / 1024);
+
+      // CPU load
+      const cpuUsage = process.cpuUsage();
+      const cpuUser = Math.round(cpuUsage.user / 1000000);
+      const cpuSystem = Math.round(cpuUsage.system / 1000000);
+
+      logger.debug(
+        `Server stats: ${connectionCount} connections | Memory: ${heapUsed}/${heapTotal}MB (heap), ${rss}MB (total) | CPU: ${cpuUser}s user, ${cpuSystem}s system`
+      );
+    }, interval);
+  }
 
   /**
-   * Initializes and starts the server.
+   * Initializes and starts the server in single or cluster mode.
    * @param {boolean} silent - If true, suppress log output.
    * @returns {Promise<Server>} - The running server instance.
    */
-  private async runServer(silent: boolean) {
+  private async runServer(silent: boolean): Promise<Server> {
     const serverHost = config.app.host;
     const serverPort = config.app.port;
-    let serverConnections: any = [];
 
-    this.createServer();
-    this.listen(serverPort);
+    // Check if clustering is enabled and we're the master process
+    if (config.cluster && cluster.isPrimary) {
+      const numCPUs = os.cpus().length;
+      const workerCount = config.clusterWorkers || numCPUs;
+
+      logger.info(
+        colorTxt.cyan(
+          `Starting server in cluster mode with ${workerCount} workers`
+        )
+      );
+
+      // Fork workers
+      for (let i = 0; i < workerCount; i++) {
+        cluster.fork();
+      }
+
+      // Handle worker events
+      cluster.on('exit', (worker, code, signal) => {
+        logger.warn(
+          colorTxt.yellow(
+            `Worker ${worker.id} died with code ${code} and signal ${signal}`
+          )
+        );
+
+        // Replace the dead worker if not shutting down
+        if (!this.isShuttingDown) {
+          logger.info(colorTxt.white('Starting a new worker'));
+          cluster.fork();
+        }
+      });
+
+      return this;
+    }
+
+    // Worker process or non-clustered mode
+    const server = this.createServer();
+    server.listen(serverPort, serverHost);
 
     this.on('listening', () =>
       this.onListening(serverHost, serverPort, silent)
     );
+    this.on('error', (error) => this.onError(error, serverHost, serverPort));
 
-    this.on('error', (error) =>
-      this.onError(error, serverHost, serverPort, serverConnections)
-    );
+    // Efficient connection tracking with keep-alive timeout handling
+    this.on('connection', (connection) => {
+      this.serverConnections.add(connection);
 
-    this.on('connection', (connection: any) => {
-      serverConnections.push(connection);
+      // Auto-cleanup stale connections
+      connection.on('close', () => this.serverConnections.delete(connection));
 
-      // Remove closed connections from the list
-      connection.on('close', () => {
-        serverConnections = serverConnections.filter(
-          (curr: any) => curr !== connection
-        );
-      });
+      // Set keep-alive timeout to match server configuration
+      if (config.keepAliveTimeout) {
+        connection.setKeepAlive(true);
+        connection.setTimeout(config.keepAliveTimeout);
+      }
     });
 
+    // Monitor resources if enabled in config
     if (config.debug.http_connection) {
-      this.getServerConnections(); // Log connections if debug mode is enabled
+      this.monitorResources(config.debug.monitor_interval || 30000);
     }
 
     // Handle system signals for graceful shutdown
-    process.on('SIGTERM', () => this.shutDown(serverConnections));
-    process.on('SIGINT', () => this.shutDown(serverConnections));
+    const signals: NodeJS.Signals[] = ['SIGTERM', 'SIGINT', 'SIGHUP'];
+    signals.forEach((signal) => {
+      process.once(signal, () => {
+        logger.info(colorTxt.white(`Received ${signal} signal`));
+        this.shutDown();
+      });
+    });
 
     return this;
   }
@@ -217,21 +339,19 @@ class Server extends http.Server {
    * Checks the database connection and logs the result.
    * @param {boolean} silent - If true, suppress log output.
    */
-  public async checkDatabase(silent: boolean) {
+  public async checkDatabase(silent: boolean): Promise<void> {
     try {
       const res = await this.prismaService.checkConnection();
 
-      if (res.success) {
-        if (!silent) {
-          log(colorTxt.white(`-> Connected on database`));
-        }
+      if (res.success && !silent) {
+        logger.info(colorTxt.white('-> Connected to database successfully'));
+      } else if (!res.success) {
+        throw res.error || new Error('Unknown database connection error');
       }
     } catch (error) {
-      throw new Error(
-        colorTxt.red(
-          `-> Unable to connect to the database : ${(error as Error).message}'`
-        )
-      );
+      const errorMessage = `Unable to connect to the database: ${(error as Error).message}`;
+      logger.error(colorTxt.red(errorMessage));
+      throw new Error(colorTxt.red(errorMessage));
     }
   }
 
@@ -240,23 +360,25 @@ class Server extends http.Server {
    * @param {boolean} silent - If true, suppress log output.
    * @returns {Promise<Server>} - The running server instance.
    */
-  public async bootstrap(silent: boolean) {
+  public async bootstrap(silent: boolean): Promise<Server> {
     if (!silent) {
       const dateTime = format(new Date(), 'yyyy:MM:dd\tHH:mm:ss');
 
-      // Log startup information
-      log(
+      logger.info(
         colorTxt.bgBlackBright.yellow(
           `\n Starting ${pkg.name.toUpperCase()} `
         ) + colorTxt.bgGreen.white(` v${pkg.version} `)
       );
-      log(
-        colorTxt.bold.blue(`-> Running in ${process.env.NODE_ENV} environment`)
+      logger.info(
+        colorTxt.bold.blue(`-> Running in ${config.nodeEnv} environment`)
       );
-      log(colorTxt.blue(`-> Started at ${dateTime}`));
+      logger.info(colorTxt.blue(`-> Started at ${dateTime}`));
+
+      // Show Node.js version
+      logger.info(colorTxt.blue(`-> Node.js ${process.version}`));
     }
 
-    return this.runServer(silent); // Start the server
+    return this.runServer(silent);
   }
 }
 

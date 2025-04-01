@@ -60,7 +60,7 @@ class App {
    */
   private setupSecurity(): void {
     // Capture client information
-    this.express.use(clientInfoMiddleware);
+    // this.express.use(clientInfoMiddleware);
 
     // Security headers
     this.express.use(
@@ -77,7 +77,7 @@ class App {
     this.express.use(xssMiddleware());
 
     // Rate limiting to prevent abuse
-    this.express.use(rateLimiter);
+    // this.express.use(rateLimiter);
 
     // Request logging (only in non-testing environments)
     if (!config.isTest) {

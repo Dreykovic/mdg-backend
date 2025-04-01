@@ -21,6 +21,8 @@ const httpLogger = pinoHttp({
   // Personnaliser les données de requête à logger
   serializers: {
     req: (req) => {
+      // Important: Ne pas modifier l'objet req directement, juste créer un nouvel objet
+
       // Version minimale pour l'affichage console
       const minimalInfo = {
         method: req.method,
@@ -34,17 +36,18 @@ const httpLogger = pinoHttp({
         url: req.url,
         path: req.path,
         parameters: {
-          query: req.query,
-          params: req.params,
+          query: req.query ? { ...req.query } : {}, // Copie de req.query au lieu de modification directe
+          params: req.params ? { ...req.params } : {}, // Copie de req.params au lieu de modification directe
         },
         headers: {
           'user-agent': req.headers['user-agent'],
           'content-type': req.headers['content-type'],
           'x-forwarded-for':
-            req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+            req.headers['x-forwarded-for'] ||
+            (req.socket ? req.socket.remoteAddress : null),
         },
         // Ne pas logger les corps de requête en production pour des raisons de sécurité
-        ...(config.isDev && { body: req.body }),
+        ...(config.isDev && req.body ? { body: { ...req.body } } : {}),
       };
 
       // Retourner les informations appropriées selon le niveau de log

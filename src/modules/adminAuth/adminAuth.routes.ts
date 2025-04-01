@@ -4,6 +4,7 @@ import Container from 'typedi';
 import prefixRoutes from '@/core/middlewares/prefixRoutes.middleware';
 import verifyJWT from '@/core/middlewares/jwt.middleware';
 import { rbacMiddleware } from '@/core/middlewares/rbac.middleware';
+import { authRateLimiter } from '@/core/middlewares/rateLimiter.middleware';
 
 // Get the instance of AdminAuthController from the container
 const adminAuthController = Container.get(AdminAuthController);
@@ -15,7 +16,9 @@ const router = express.Router();
 prefixRoutes(router, '/admin-auth');
 
 // Route for admin sign-in (POST request)
-router.post('/sign-in', (req, res) => adminAuthController.signIn(req, res));
+router.post('/sign-in', authRateLimiter, (req, res) =>
+  adminAuthController.signIn(req, res)
+);
 
 // Route for refreshing the authentication token (POST request)
 router.post('/refresh', (req, res) => adminAuthController.refresh(req, res));

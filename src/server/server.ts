@@ -25,8 +25,9 @@ type ServerErrorCode = 'EACCES' | 'EADDRINUSE' | 'EADDRNOTAVAIL';
 type ErrorMessageMap = Record<ServerErrorCode, string>;
 
 @Service()
-class Server extends http.Server {
+class Server {
   private readonly app: expressInstance.Application;
+  private server: http.Server | https.Server;
   private serverConnections: ServerConnections = new Set();
   private isShuttingDown = false;
   private startTime: Date | null = null;
@@ -42,8 +43,8 @@ class Server extends http.Server {
     private readonly appInstance: App,
     public readonly prismaService: PrismaService
   ) {
-    super(appInstance.express);
     this.app = appInstance.express;
+    this.server = this.createServer();
 
     // Setup process uncaught exception handler
     process.on('uncaughtException', this.handleUncaughtException.bind(this));
@@ -119,10 +120,9 @@ class Server extends http.Server {
     const protocol = config.ssl.isHttps && config.isProd ? 'https' : 'http';
 
     // Log the actual port being used (may differ from config if port was busy)
+    const address = this.server.address();
     const actualPort =
-      this.address() && typeof this.address() === 'object'
-        ? (this.address() as { port: number }).port
-        : port;
+      typeof address === 'object' && address ? address.port : port;
 
     // In cluster mode as a worker, send port info to master instead of logging
     if (config.cluster && cluster.isWorker) {
@@ -225,7 +225,7 @@ class Server extends http.Server {
     });
 
     // Close the server to prevent new connections
-    this.close(() => {
+    this.server.close(() => {
       logger.info(colorTxt.white('Successfully closed all connections'));
 
       // Exit with success code after cleanup
@@ -345,17 +345,13 @@ class Server extends http.Server {
       return this;
     }
 
-    // Worker process or non-clustered mode
-    const server = this.createServer();
-    server.listen(serverPort, serverHost);
-
-    this.on('listening', () =>
-      this.onListening(serverHost, serverPort, silent)
+    // Set up event listeners before starting the server
+    this.server.on('error', (error) =>
+      this.onError(error, serverHost, serverPort)
     );
-    this.on('error', (error) => this.onError(error, serverHost, serverPort));
 
     // Efficient connection tracking with keep-alive timeout handling
-    this.on('connection', (connection) => {
+    this.server.on('connection', (connection) => {
       this.serverConnections.add(connection);
 
       // Auto-cleanup stale connections
@@ -368,8 +364,13 @@ class Server extends http.Server {
       }
     });
 
+    // Start the server
+    this.server.listen(serverPort, serverHost, () => {
+      this.onListening(serverHost, serverPort, silent);
+    });
+
     // Monitor resources if enabled in config
-    if (config.debug.http_connection) {
+    if (config.debug?.http_connection) {
       this.monitorResources(config.debug.monitor_interval || 30000);
     }
 
@@ -401,7 +402,7 @@ class Server extends http.Server {
     } catch (error) {
       const errorMessage = `Unable to connect to the database: ${(error as Error).message}`;
       logger.error(colorTxt.red(errorMessage));
-      throw new Error(colorTxt.red(errorMessage));
+      throw new Error(errorMessage);
     }
   }
 
@@ -428,6 +429,8 @@ class Server extends http.Server {
       logger.info(colorTxt.blue(`-> Node.js ${process.version}`));
     }
 
+    // Check database connection before starting server
+    await this.checkDatabase(silent);
     return this.runServer(silent);
   }
 }

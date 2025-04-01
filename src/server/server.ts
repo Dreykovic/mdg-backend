@@ -295,13 +295,13 @@ class Server {
         )
       );
 
-      if (protocol === 'http') {
-        logger.info(
-          colorTxt.green(
-            `-> Documentation available at http://${serverHost}:${serverPort}/api-docs`
-          )
-        );
-      }
+      // if (protocol === 'http') {
+      //   logger.info(
+      //     colorTxt.green(
+      //       `-> Documentation available at http://${serverHost}:${serverPort}/api-docs`
+      //     )
+      //   );
+      // }
 
       // Setup worker message handling to get port information
       cluster.on('message', (worker, message) => {

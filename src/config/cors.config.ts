@@ -12,27 +12,58 @@
  * These configurations ensure secure and controlled access to the application's resources
  * from external domains.
  */
-import cors from 'cors'; // Importing the 'cors' library for setting Cross-Origin Resource Sharing (CORS) options
-import config from '.'; // Importing the configuration file
+import cors from 'cors';
+import config from '.';
+import logger from '@/core/utils/logger.util';
 
-// Fetching the list of allowed origins from the configuration file
-const allowOrigins = config.cors.allowOrigins;
+// Fetching CORS settings from the main configuration
+const { allowOrigins, credentials, methods, maxAge } = config.cors;
 
-// Defining the CORS options object
 const corsOptions: cors.CorsOptions = {
-  // Function to handle the 'origin' check for incoming requests
   origin: (origin, callback) => {
-    // Allow requests if the origin is in the allowed list or if there is no origin (e.g., server-to-server calls)
-    if (allowOrigins.indexOf(origin as string) !== -1 || !origin) {
-      callback(null, true); // Allow the request
+    // If origin is undefined (like server-to-server requests) or in the allowed list
+    if (!origin || allowOrigins.includes(origin)) {
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by Cors'), false); // Reject the request with an error
+      // Log rejected origins in development mode
+      if (config.isDev) {
+        logger.warn(`CORS rejected origin: ${origin}`);
+      }
+      callback(new Error(`Origin ${origin} not allowed by CORS policy`), false);
     }
   },
-  credentials: true, // Allow credentials (e.g., cookies, authorization headers) to be included in requests
-  optionsSuccessStatus: 200, // Use HTTP status 200 for successful preflight requests instead of the default 204
-  allowedHeaders: ['Content-Type', 'Authorization'], // List of allowed headers in the requests
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // List of allowed HTTP methods
+  credentials,
+  methods,
+  maxAge,
+  optionsSuccessStatus: 200,
+  // Allow standard and custom headers
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'X-API-Key',
+    'X-Access-Token',
+  ],
+  // Expose these headers to the client
+  exposedHeaders: [
+    'Content-Length',
+    'X-Rate-Limit-Limit',
+    'X-Rate-Limit-Remaining',
+    'X-Rate-Limit-Reset',
+  ],
 };
 
-export default corsOptions; // Exporting the CORS options object for use in the application
+// Log CORS configuration in development mode
+if (config.isDev) {
+  logger.info('CORS configuration loaded:');
+  logger.info(
+    `- Allowed origins: ${allowOrigins.join(', ') || 'None specified'}`
+  );
+  logger.info(`- Credentials allowed: ${credentials}`);
+  logger.info(`- Methods allowed: ${methods?.join(', ')}`);
+  logger.info(`- Max age: ${maxAge} seconds`);
+}
+
+export default corsOptions;

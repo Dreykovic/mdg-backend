@@ -154,14 +154,6 @@ class Server {
         `-> Server running on ${cpuCount} CPU cores, using ${memoryUsageMB}MB memory`
       )
     );
-
-    if (protocol === 'http' && (!config.cluster || !cluster.isWorker)) {
-      logger.info(
-        colorTxt.green(
-          `-> Documentation available at http://${host}:${actualPort}/api-docs`
-        )
-      );
-    }
   }
 
   /**

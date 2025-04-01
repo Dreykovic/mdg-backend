@@ -33,8 +33,8 @@ const loggerOptions: pino.LoggerOptions = {
   timestamp: pino.stdTimeFunctions.isoTime,
   base: {
     // service: pkg.name || 'api-service',
-    env: config.nodeEnv || 'development',
-    pid: process.pid,
+    // env: config.nodeEnv || 'development',
+    // pid: process.pid,
   },
   redact: {
     paths: ['password', 'secret', 'authorization', '*.password', '*.secret'],

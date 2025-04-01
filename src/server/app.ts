@@ -7,7 +7,6 @@
 import expressInstance from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import swaggerUi from 'swagger-ui-express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { Service } from 'typedi';
@@ -15,10 +14,8 @@ import logger from '@/core/utils/logger.util';
 
 // Middlewares
 import errorHandler from '@/core/middlewares/error.middleware';
-// Remplacé Morgan par Pino HTTP
 import preventCrossSiteScripting from '@/core/middlewares/preventCrossScripting.middleware';
 import { rateLimiter } from '@/core/middlewares/rateLimiter.middleware';
-import xssMiddleware from '@/core/middlewares/xss.middleware';
 import { clientInfoMiddleware } from '@/core/middlewares/clientInfo.middleware';
 
 // Configurations
@@ -26,8 +23,8 @@ import corsOptions from '@/config/cors.config';
 import config from '@/config';
 
 // Routes and documentation
-import { generateSwaggerDocument } from './swaggerLoader';
 import apiRouter from './routes';
+
 import requestLogger from '@/core/middlewares/requestLogger.middleware';
 
 /**
@@ -37,104 +34,97 @@ import requestLogger from '@/core/middlewares/requestLogger.middleware';
 class App {
   public express: expressInstance.Application;
   private readonly baseApiUrl: string;
-  private swaggerInitialized = false;
+  private swaggerDocs = null;
 
   /**
    * Constructor to initialize the Express application and configure middlewares and routes.
    */
   constructor() {
-    this.baseApiUrl = '/' + config.api.prefix.replace(/^\/+/, '');
     this.express = expressInstance();
+    this.baseApiUrl = '/' + config.api.prefix.replace(/^\/+/, '');
 
     // Initialize the application in the proper order
-    this.setupSecurity();
-    this.setupParsers();
-    this.setupAPIRoutes();
+    this.configureMiddlewares();
+    this.configureRoutes();
 
     // Always add error handler last
     this.express.use(errorHandler);
   }
 
   /**
-   * Set up security-related middlewares
+   * Configure all middlewares in the proper order for optimal security and performance
    */
-  private setupSecurity(): void {
-    // Capture client information
-    // this.express.use(clientInfoMiddleware);
+  private configureMiddlewares(): void {
+    // 1. Client information capture (should be early to track request metadata)
+    this.express.use(clientInfoMiddleware);
 
-    // Security headers
+    // 2. Request logging (early to log requests as they come in)
+    if (!config.isTest) {
+      this.express.use(requestLogger);
+    }
+
+    // 3. Security headers (should be set before any content is processed)
     this.express.use(
       helmet({
         contentSecurityPolicy: config.isProd ? undefined : false,
       })
     );
 
-    // CORS configuration
+    // 4. Rate limiting (early to reject excessive requests before processing)
+    this.express.use(rateLimiter);
+
+    // 5. CORS configuration
     this.express.use(cors(corsOptions));
 
-    // XSS protection (combined middleware approach)
+    // 6. Body parsers (after security checks but before route handlers)
+    this.configureBodyParsers();
+
+    // 7. Cookie parsing
+    this.express.use(cookieParser());
+
+    // 8. XSS protection (after body parsing but before routes)
     this.express.use(preventCrossSiteScripting);
-    this.express.use(xssMiddleware());
-
-    // Rate limiting to prevent abuse
-    // this.express.use(rateLimiter);
-
-    // Request logging (only in non-testing environments)
-    if (!config.isTest) {
-      // Utiliser le middleware Pino HTTP au lieu de Morgan
-      this.express.use(...requestLogger());
-    }
   }
 
   /**
-   * Set up request parsers and body processing middlewares
+   * Configure body parsers with optimized settings
    */
-  private setupParsers(): void {
-    // Optimize JSON parsing with appropriate limits
+  private configureBodyParsers(): void {
+    // JSON parsing with appropriate limits and validations
     this.express.use(
       bodyParser.json({
         limit: config.api.jsonLimit,
         strict: true,
-        type: 'application/json', // Type de contenu spécifique accepté
+        type: 'application/json',
       })
     );
 
     // URL-encoded data parsing
-    this.express.use(
-      bodyParser.urlencoded({
-        extended: config.api.extUrlencoded,
-        limit: config.api.jsonLimit,
-      })
-    );
-
-    // Cookie parsing
-    this.express.use(cookieParser());
+    // this.express.use(
+    //   bodyParser.urlencoded({
+    //     extended: config.api.extUrlencoded,
+    //     limit: config.api.jsonLimit,
+    //   })
+    // );
   }
 
   /**
-   * Set up API routes and documentation
+   * Configure all application routes and API documentation
    */
-  private setupAPIRoutes(): void {
+  private configureRoutes(): void {
+    // Health check route
+    this.express.get('/health', (req, res) => {
+      res
+        .status(200)
+        .json({ status: 'OK', timestamp: new Date().toISOString() });
+    });
+
     // Test error route
     this.express.get('/error', () => {
       throw new Error('This is a test error!');
     });
 
-    // Initialize Swagger documentation lazily
-    this.express.use('/api-docs', (req, res, next) => {
-      if (!this.swaggerInitialized) {
-        const swaggerDocs = generateSwaggerDocument();
-        const swaggerSetup = swaggerUi.setup(swaggerDocs);
-
-        // Attach to express instance
-        this.express.use('/api-docs', swaggerUi.serve);
-        this.swaggerInitialized = true;
-
-        // Continue with the setup
-        return swaggerSetup(req, res, next);
-      }
-      next();
-    });
+    // API Documentation with optimized lazy-loading
 
     // Set up API routes
     logger.debug(`API base URL: ${this.baseApiUrl}`);

@@ -30,7 +30,6 @@ const logFormat = config.isDev ? 'dev' : 'combined';
 const httpLogger = morgan(logFormat, {
   stream: {
     write: (message: string) => {
-      logger.info(`[Morgan] ${message.trim()}`); // DEBUG
       try {
         logStream.write(message);
         logger.info(`[${workerId}] ${message.trim()}`);

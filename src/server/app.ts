@@ -15,7 +15,7 @@ import logger from '@/core/utils/logger.util';
 
 // Middlewares
 import errorHandler from '@/core/middlewares/error.middleware';
-import morganMiddleware from '@/core/middlewares/morgan.middleware';
+// Remplacé Morgan par Pino HTTP
 import preventCrossSiteScripting from '@/core/middlewares/preventCrossScripting.middleware';
 import { rateLimiter } from '@/core/middlewares/rateLimiter.middleware';
 import xssMiddleware from '@/core/middlewares/xss.middleware';
@@ -28,6 +28,7 @@ import config from '@/config';
 // Routes and documentation
 import { generateSwaggerDocument } from './swaggerLoader';
 import apiRouter from './routes';
+import requestLogger from '@/core/middlewares/requestLogger.middleware';
 
 /**
  * Main class that sets up and configures the Express application
@@ -80,7 +81,8 @@ class App {
 
     // Request logging (only in non-testing environments)
     if (!config.isTest) {
-      this.express.use(morganMiddleware);
+      // Utiliser le middleware Pino HTTP au lieu de Morgan
+      this.express.use(...requestLogger());
     }
   }
 

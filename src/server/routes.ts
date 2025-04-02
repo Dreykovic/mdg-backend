@@ -3,12 +3,12 @@
  * The router is responsible for delegating requests to their corresponding module controllers.
  */
 
-import adminAuthModule from '@/modules/apis/auth/adminAuth.module'; // Admin authentication module
-import conversionModule from '@/modules/apis/conversion/conversion.module';
-import filesModule from '@/modules/apis/files/files.module'; // File handling module
-import catalogModule from '@/modules/apis/catalog/catalog.module'; // Catalog management module
+import adminAuthModule from '@/apis/auth/adminAuth.module'; // Admin authentication module
+import conversionModule from '@/apis/admin/conversion/conversion.module';
+import filesModule from '@/apis/files/files.module'; // File handling module
+import catalogModule from '@/apis/admin/catalog/catalog.module'; // Catalog management module
 import express from 'express'; // Express router to define API routes
-import stockModule from '@/modules/apis/stock/stock.module';
+import stockModule from '@/apis/admin/stock/stock.module';
 
 // Initialize the API router
 const apiRouter = express.Router();

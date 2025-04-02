@@ -3,7 +3,7 @@
  * The router is responsible for delegating requests to their corresponding module controllers.
  */
 
-import adminAuthModule from '@/modules/apis/adminAuth/adminAuth.module'; // Admin authentication module
+import adminAuthModule from '@/modules/apis/auth/adminAuth.module'; // Admin authentication module
 import conversionModule from '@/modules/apis/conversion/conversion.module';
 import filesModule from '@/modules/apis/files/files.module'; // File handling module
 import catalogModule from '@/modules/apis/catalog/catalog.module'; // Catalog management module

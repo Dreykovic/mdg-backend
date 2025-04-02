@@ -19,7 +19,7 @@ const logFilePath = path.join(logDir, `${workerId}-access.log`);
 try {
   fs.appendFileSync(logFilePath, '[INIT] Logger démarré\n');
 } catch (err) {
-  console.error('Erreur d’écriture dans le fichier de log:', err);
+  logger.error('Erreur d’écriture dans le fichier de log:', err);
 }
 
 const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });

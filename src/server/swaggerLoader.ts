@@ -6,7 +6,7 @@
 import swaggerConfig from '@/config/swagger.config'; // Base Swagger configuration
 import authDocs, {
   authSchemas,
-} from '@/modules/api/adminAuth/adminAuth.swagger'; // Authentication module documentation
+} from '@/modules/apis/adminAuth/adminAuth.swagger'; // Authentication module documentation
 
 /**
  * Generates the complete Swagger documentation by merging the base config

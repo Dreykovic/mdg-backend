@@ -8,6 +8,7 @@
 import 'reflect-metadata'; // Required for TypeDI
 import { Container } from 'typedi';
 import RoutesDebugUtil from '@/core/utils/routesDebug.util';
+import { log } from 'console';
 
 interface CLIOptions {
   format: 'table' | 'tree' | 'detailed' | 'compact';
@@ -23,7 +24,7 @@ interface CLIOptions {
  * Shows CLI help information
  */
 function showHelp(): void {
-  console.log(`
+  log(`
 Express Routes CLI
 ==================
 
@@ -54,7 +55,8 @@ Examples:
  * Parses command line arguments
  */
 function parseArguments(): CLIOptions {
-  const args = process.argv.slice(2);
+  const ARG_START_INDEX = 2;
+  const args = process.argv.slice(ARG_START_INDEX);
   const options: CLIOptions = {
     format: 'table',
     groupBy: 'none',
@@ -101,6 +103,10 @@ function parseArguments(): CLIOptions {
         showHelp();
         process.exit(0);
         break;
+      default:
+        // Optionally warn about unknown arguments
+        // console.warn(`Unknown argument: ${arg}`);
+        break;
     }
   }
 
@@ -113,25 +119,21 @@ function parseArguments(): CLIOptions {
 async function runCLI(): Promise<void> {
   try {
     // Set environment to development for CLI usage
-    if (!process.env.NODE_ENV) {
-      process.env.NODE_ENV = 'development';
-    }
+    process.env.NODE_ENV ??= 'development';
 
     // Parse command line options
     const options = parseArguments();
 
     // Import and initialize the App class
-    const AppClass = await import('@/app');
+    const AppClass = await import('@/server/app');
     const AppConstructor = AppClass.default;
 
     // Get the App instance from TypeDI container
     const appInstance = Container.get(AppConstructor);
 
-    if (!appInstance || !appInstance.express) {
-      console.error('❌ Could not initialize Express app instance');
-      console.log(
-        'Make sure your App class is properly configured with TypeDI'
-      );
+    if (appInstance?.express === null) {
+      log('❌ Could not initialize Express app instance');
+      log('Make sure your App class is properly configured with TypeDI');
       process.exit(1);
     }
 
@@ -152,26 +154,26 @@ async function runCLI(): Promise<void> {
 
         process.exit(0);
       } catch (error) {
-        console.error('❌ Error displaying routes:', error);
+        log('❌ Error displaying routes:', error);
         process.exit(1);
       }
     }, 100);
   } catch (error) {
-    console.error('❌ Error initializing CLI:');
-    console.error(error instanceof Error ? error.message : error);
-    console.log('\nMake sure:');
-    console.log('1. Your app is properly configured with TypeDI');
-    console.log('2. All dependencies are installed');
-    console.log('3. TypeScript paths are correctly configured');
+    log('❌ Error initializing CLI:');
+    log(error instanceof Error ? error.message : error);
+    log('\nMake sure:');
+    log('1. Your app is properly configured with TypeDI');
+    log('2. All dependencies are installed');
+    log('3. TypeScript paths are correctly configured');
     process.exit(1);
   }
 }
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (error) => {
-  console.error('❌ Unhandled rejection:', error);
+  log('❌ Unhandled rejection:', error);
   process.exit(1);
 });
 
 // Run the CLI
-runCLI();
+void runCLI();

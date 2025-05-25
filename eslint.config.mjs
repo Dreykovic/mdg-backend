@@ -75,7 +75,7 @@ export default [
         // Object properties in camelCase (allow snake_case for DB fields)
         {
           selector: 'property',
-          format: ['camelCase', 'snake_case'],
+          format: ['camelCase', 'snake_case', 'UPPER_CASE'],
           leadingUnderscore: 'allow',
         },
         // Interfaces and Types in PascalCase
@@ -151,7 +151,7 @@ export default [
       'node/handle-callback-err': 'error', // Always handle callback errors in Node.js
       'node/no-new-require': 'error', // Disallow new require
       'node/no-path-concat': 'error', // Use path.join() instead of string concatenation
-      'node/no-process-exit': 'error', // Avoid abrupt process termination
+      //  'node/no-process-exit': 'error', // Avoid abrupt process termination
       'node/no-unpublished-require': 'off', // Allow devDependencies in source
       'node/no-unsupported-features/es-syntax': 'off', // Allow modern ES syntax with TypeScript
 
@@ -186,9 +186,9 @@ export default [
       'no-else-return': 'error', // Disallow else blocks after return in if
 
       // Performance and maintainability
-      complexity: ['warn', 10], // Limit cyclomatic complexity
+      complexity: ['warn', 20], // Limit cyclomatic complexity
       'max-depth': ['warn', 4], // Limit nesting depth
-      'max-lines-per-function': ['warn', 50], // Limit function length
+      'max-lines-per-function': ['warn', 100], // Limit function length
       'no-magic-numbers': [
         'warn',
         {

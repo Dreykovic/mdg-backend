@@ -11,7 +11,10 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { Service } from 'typedi';
 import logger from '@/core/utils/logger.util';
-import RoutesDebugUtil from '@/core/utils/routesDebug.util';
+import RoutesDebugUtil, {
+  RouteAnalysis,
+  RouteEndpoint,
+} from '@/core/utils/routesDebug.util';
 
 // Middlewares
 import errorHandler from '@/core/middlewares/error.middleware';
@@ -35,14 +38,13 @@ import requestLogger from '@/core/middlewares/requestLogger.middleware';
 class App {
   public express: expressInstance.Application;
   private readonly baseApiUrl: string;
-  private swaggerDocs = null;
 
   /**
    * Constructor to initialize the Express application and configure middlewares and routes.
    */
   constructor() {
     this.express = expressInstance();
-    this.baseApiUrl = '/' + config.api.prefix.replace(/^\/+/, '');
+    this.baseApiUrl = `/${config.api.prefix.replace(/^\/+/, '')}`;
 
     // Initialize the application in the proper order
     this.configureMiddlewares();
@@ -159,6 +161,9 @@ class App {
    * Log application routes to console for development debugging
    * Should be called after all routes are registered
    */
+  // eslint-disable-next-line no-magic-numbers
+  private static readonly ROUTE_LOG_TIMEOUT_MS = 100;
+
   public logRoutes(): void {
     try {
       if (!config.isProd && !config.isTest) {
@@ -170,7 +175,7 @@ class App {
             showMiddlewares: true,
             colorize: true,
           });
-        }, 100);
+        }, App.ROUTE_LOG_TIMEOUT_MS);
       }
     } catch (error) {
       logger.error('Error logging routes:', error);
@@ -181,7 +186,7 @@ class App {
    * Get route analysis for monitoring or administrative purposes
    * @returns Route analysis data including statistics and patterns
    */
-  public getRouteAnalysis() {
+  public getRouteAnalysis(): RouteAnalysis | null {
     try {
       return RoutesDebugUtil.getRouteAnalysis(this.express);
     } catch (error) {
@@ -194,7 +199,7 @@ class App {
    * Get all registered routes for programmatic access
    * @returns Array of route endpoints
    */
-  public getRoutes() {
+  public getRoutes(): RouteEndpoint[] {
     try {
       return RoutesDebugUtil.getRoutes(this.express);
     } catch (error) {

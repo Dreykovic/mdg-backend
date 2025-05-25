@@ -29,7 +29,7 @@ import config from '@/config';
 // Routes and documentation
 
 import requestLogger from '@/middlewares/requestLogger.middleware';
-import apiRouter from '@/api/routes';
+import appRoutes from '@/api/routes';
 
 /**
  * Main class that sets up and configures the Express application
@@ -37,14 +37,12 @@ import apiRouter from '@/api/routes';
 @Service()
 class App {
   public express: expressInstance.Application;
-  private readonly baseApiUrl: string;
 
   /**
    * Constructor to initialize the Express application and configure middlewares and routes.
    */
   constructor() {
     this.express = expressInstance();
-    this.baseApiUrl = `/${config.api.prefix.replace(/^\/+/, '')}`;
 
     // Initialize the application in the proper order
     this.configureMiddlewares();
@@ -131,8 +129,7 @@ class App {
     // API Documentation with optimized lazy-loading
 
     // Set up API routes
-    logger.debug(`API base URL: ${this.baseApiUrl}`);
-    this.express.use(this.baseApiUrl, apiRouter);
+    this.express.use(appRoutes);
   }
 
   /**

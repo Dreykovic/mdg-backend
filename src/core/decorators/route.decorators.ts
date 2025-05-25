@@ -22,9 +22,7 @@ export interface ControllerMetadata {
 // Décorateur Controller - maintenant avec prefix au lieu de basePath
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export function Controller(prefix: string, middlewares?: string[]) {
-  return function <T extends { new (...args: unknown[]): {} }>(
-    constructor: T
-  ): T {
+  return function <T extends { new (...args: any[]): {} }>(constructor: T): T {
     const metadata: ControllerMetadata = { prefix, middlewares };
     Reflect.defineMetadata(CONTROLLER_METADATA, metadata, constructor);
     return constructor;

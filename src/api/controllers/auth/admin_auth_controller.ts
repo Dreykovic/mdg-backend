@@ -4,9 +4,10 @@ import { Request, Response } from 'express';
 import { Service } from 'typedi';
 import { log } from 'console';
 import AdminAuthService from '@/services/auth/auth_service';
-
+import { Controller, Post } from '@/core/decorators/route.decorators';
 @Service()
-export default class AdminAuthController {
+@Controller('/admin-auth') // Niveau controller
+export class AdminAuthController {
   constructor(private readonly adminAuthService: AdminAuthService) {}
 
   /**
@@ -16,6 +17,7 @@ export default class AdminAuthController {
    * @param {Response} res - The HTTP response object.
    * @returns {Promise<void>} Resolves with a token payload if authentication is successful.
    */
+  @Post('/sign-in')
   async signIn(req: Request, res: Response): Promise<void> {
     try {
       log('Sign In Request Received');

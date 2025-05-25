@@ -1,13 +1,6 @@
 // app.ts
-import { RouteScanner } from './core/RouteScanner';
-import { AppConfig } from './types/route.types';
-
-// Import de tous vos controllers
-import { InventoryController } from './controllers/admin/InventoryController';
-import { AdminProductController } from './controllers/admin/ProductController';
-import { EcommerceProductController } from './controllers/ecommerce/ProductController';
-import { AuthController } from './controllers/ecommerce/AuthController';
-import { CartController } from './controllers/ecommerce/CartController';
+import { RouteScanner } from '@/core/routeScanner';
+import { AppConfig } from '@/core/types/route.types';
 
 const routeScanner = new RouteScanner();
 

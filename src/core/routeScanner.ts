@@ -183,7 +183,11 @@ export class RouteScanner {
     }
 
     // Handler de la méthode
-    const handler = async (req: any, res: any, next: any): Promise<void> => {
+    const handler = async (
+      req: import('express').Request,
+      res: import('express').Response,
+      next: import('express').NextFunction
+    ): Promise<void> => {
       try {
         await controller[route.methodName](req, res, next);
       } catch (error) {

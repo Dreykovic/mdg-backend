@@ -6,7 +6,7 @@ import { log } from 'console';
 import AdminAuthService from '@/services/auth/auth_service';
 import { Controller, Post } from '@/core/decorators/route.decorators';
 @Service()
-@Controller('/admin-auth') // Niveau controller
+@Controller('/admin') // Niveau controller
 export class AdminAuthController {
   constructor(private readonly adminAuthService: AdminAuthService) {}
 

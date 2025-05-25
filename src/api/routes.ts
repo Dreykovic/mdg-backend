@@ -16,11 +16,11 @@ const appConfig: AppConfig = {
   versions: [
     {
       version: 'v1', // Niveau 2: Version
-      middlewares: ['rateLimit:1000'],
+      // middlewares: ['rateLimit:1000'],
       modules: [
         {
           name: 'auth',
-          prefix: 'auth', // Niveau 3: Module
+          prefix: '/auth', // Niveau 3: Module
           controllers: [AdminAuthController],
         },
       ],

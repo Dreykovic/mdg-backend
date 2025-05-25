@@ -138,6 +138,7 @@ async function runCLI(): Promise<void> {
     }
 
     // Small delay to ensure all routes are registered
+    const ROUTE_REGISTRATION_DELAY_MS = 100;
     setTimeout(() => {
       try {
         RoutesDebugUtil.logRoutes(appInstance.express, {
@@ -157,7 +158,7 @@ async function runCLI(): Promise<void> {
         log('❌ Error displaying routes:', error);
         process.exit(1);
       }
-    }, 100);
+    }, ROUTE_REGISTRATION_DELAY_MS);
   } catch (error) {
     log('❌ Error initializing CLI:');
     log(error instanceof Error ? error.message : error);

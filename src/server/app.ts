@@ -11,6 +11,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { Service } from 'typedi';
 import logger from '@/core/utils/logger.util';
+import RoutesDebugUtil from '@/core/utils/routesDebug.util';
 
 // Middlewares
 import errorHandler from '@/core/middlewares/error.middleware';
@@ -46,6 +47,7 @@ class App {
     // Initialize the application in the proper order
     this.configureMiddlewares();
     this.configureRoutes();
+    this.configureDebugTools();
 
     // Always add error handler last
     this.express.use(errorHandler);
@@ -129,6 +131,76 @@ class App {
     // Set up API routes
     logger.debug(`API base URL: ${this.baseApiUrl}`);
     this.express.use(this.baseApiUrl, apiRouter);
+  }
+
+  /**
+   * Configure debug tools and development utilities
+   */
+  private configureDebugTools(): void {
+    try {
+      // Add routes debug endpoint in development
+      if (!config.isProd) {
+        RoutesDebugUtil.addDebugEndpoint(this.express, {
+          enableInProduction: false,
+          requireAuth: false,
+          logAccess: true,
+          customPath: '/debug/routes',
+        });
+      }
+
+      logger.debug('Debug tools configured successfully');
+    } catch (error) {
+      logger.error('Error configuring debug tools:', error);
+      // Don't throw here to prevent app startup failure
+    }
+  }
+
+  /**
+   * Log application routes to console for development debugging
+   * Should be called after all routes are registered
+   */
+  public logRoutes(): void {
+    try {
+      if (!config.isProd && !config.isTest) {
+        // Use a timeout to ensure all routes are registered
+        setTimeout(() => {
+          RoutesDebugUtil.logRoutes(this.express, {
+            format: 'tree',
+            showAnalysis: true,
+            showMiddlewares: true,
+            colorize: true,
+          });
+        }, 100);
+      }
+    } catch (error) {
+      logger.error('Error logging routes:', error);
+    }
+  }
+
+  /**
+   * Get route analysis for monitoring or administrative purposes
+   * @returns Route analysis data including statistics and patterns
+   */
+  public getRouteAnalysis() {
+    try {
+      return RoutesDebugUtil.getRouteAnalysis(this.express);
+    } catch (error) {
+      logger.error('Error getting route analysis:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get all registered routes for programmatic access
+   * @returns Array of route endpoints
+   */
+  public getRoutes() {
+    try {
+      return RoutesDebugUtil.getRoutes(this.express);
+    } catch (error) {
+      logger.error('Error getting routes:', error);
+      return [];
+    }
   }
 }
 

@@ -5,7 +5,7 @@ import { createRbacMiddleware } from '@/middlewares/rbac.middleware';
 import verifyJWT from '@/middlewares/jwt.middleware';
 
 export class MiddlewareRegistry {
-  private middlewares = new Map<string, any>();
+  private readonly middlewares = new Map<string, any>();
 
   constructor() {
     this.registerDefaults();
@@ -31,36 +31,36 @@ export class MiddlewareRegistry {
     this.middlewares.set(
       'validateOwnership',
       (req: any, res: any, next: any) => {
-        console.log('Validating ownership...');
+        log('Validating ownership...');
         next();
       }
     );
     this.middlewares.set(
       'validatePurchase',
       (req: any, res: any, next: any) => {
-        console.log('Validating purchase...');
+        log('Validating purchase...');
         next();
       }
     );
     this.middlewares.set(
       'validateCategory',
       (req: any, res: any, next: any) => {
-        console.log('Validating category...');
+        log('Validating category...');
         next();
       }
     );
     this.middlewares.set('sanitizeQuery', (req: any, res: any, next: any) => {
-      console.log('Sanitizing query...');
+      log('Sanitizing query...');
       next();
     });
     this.middlewares.set('confirmDeletion', (req: any, res: any, next: any) => {
-      console.log('Confirming deletion...');
+      log('Confirming deletion...');
       next();
     });
     this.middlewares.set(
       'validateBulkData',
       (req: any, res: any, next: any) => {
-        console.log('Validating bulk data...');
+        log('Validating bulk data...');
         next();
       }
     );

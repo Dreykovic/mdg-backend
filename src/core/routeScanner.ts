@@ -3,17 +3,22 @@ import { Router } from 'express';
 import Container from 'typedi';
 import {
   CONTROLLER_METADATA,
-  ROUTES_METADATA,
-  RouteMetadata,
   ControllerMetadata,
-} from '../decorators/route.decorators';
-import { MiddlewareRegistry } from './MiddlewareRegistry';
-import { ValidationRegistry } from './ValidationRegistry';
-import { AppConfig, VersionConfig, ModuleConfig } from '../types/route.types';
+  RouteMetadata,
+  ROUTES_METADATA,
+} from '@/core//decorators/route.decorators';
+
+import {
+  AppConfig,
+  ModuleConfig,
+  VersionConfig,
+} from '@/core/types/route.types';
+import { MiddlewareRegistry } from './middlewareRegistry';
+import { ValidationRegistry } from './validatorregistry';
 
 export class RouteScanner {
-  private middlewareRegistry = new MiddlewareRegistry();
-  private validationRegistry = new ValidationRegistry();
+  private readonly middlewareRegistry = new MiddlewareRegistry();
+  private readonly validationRegistry = new ValidationRegistry();
 
   // Méthode principale pour application complète
   public scanApp(config: AppConfig): Router {
@@ -23,7 +28,7 @@ export class RouteScanner {
     if (config.globalMiddlewares) {
       config.globalMiddlewares.forEach((middlewareName) => {
         const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware) {
+        if (middleware !== undefined && middleware !== null) {
           appRouter.use(middleware);
         }
       });
@@ -56,7 +61,7 @@ export class RouteScanner {
     if (version.middlewares) {
       version.middlewares.forEach((middlewareName) => {
         const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware) {
+        if (middleware !== undefined && middleware !== null) {
           router.use(middleware);
         }
       });
@@ -78,19 +83,19 @@ export class RouteScanner {
     if (module.middlewares) {
       module.middlewares.forEach((middlewareName) => {
         const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware) {
+        if (middleware !== undefined && middleware !== null) {
           router.use(middleware);
         }
       });
     }
 
     // Controllers du module
-    module.controllers.forEach((ControllerClass) => {
-      const controllerRouter = this.buildControllerRoutes(ControllerClass);
+    module.controllers.forEach((controllerClass) => {
+      const controllerRouter = this.buildControllerRoutes(controllerClass);
       if (controllerRouter) {
         const controllerMetadata: ControllerMetadata = Reflect.getMetadata(
           CONTROLLER_METADATA,
-          ControllerClass
+          controllerClass
         );
         router.use(controllerMetadata.prefix, controllerRouter);
       }
@@ -99,24 +104,35 @@ export class RouteScanner {
     return router;
   }
 
-  private buildControllerRoutes(ControllerClass: any): Router | null {
+  private buildControllerRoutes(
+    controllerClass: new (...args: any[]) => unknown
+  ): Router | null {
     const controllerMetadata: ControllerMetadata = Reflect.getMetadata(
       CONTROLLER_METADATA,
-      ControllerClass
+      controllerClass
     );
+    const metadata = Reflect.getMetadata(ROUTES_METADATA, controllerClass);
     const routesMetadata: RouteMetadata[] =
-      Reflect.getMetadata(ROUTES_METADATA, ControllerClass) || [];
+      metadata !== undefined ? metadata : [];
 
-    if (!controllerMetadata || routesMetadata.length === 0) {
+    if (
+      (controllerMetadata !== undefined && controllerMetadata !== null) ||
+      routesMetadata.length === 0
+    ) {
       return null;
     }
 
     const router = Router();
-    const controller = Container.get(ControllerClass);
+    const controller = Container.get(controllerClass);
 
     // Routes du controller (les middlewares du controller sont gérés au niveau route)
     routesMetadata.forEach((route) => {
-      this.addRoute(router, route, controller, controllerMetadata.middlewares);
+      this.addRoute(
+        router,
+        route,
+        controller,
+        (controllerMetadata as ControllerMetadata)?.middlewares
+      );
     });
 
     return router;
@@ -131,29 +147,43 @@ export class RouteScanner {
     const middlewares = [];
 
     // 1. Middlewares du controller (sauf si overrideMiddlewares = true)
-    if (!route.overrideMiddlewares && controllerMiddlewares) {
+    if (
+      (route.overrideMiddlewares === undefined ||
+        route.overrideMiddlewares === false) &&
+      controllerMiddlewares
+    ) {
       controllerMiddlewares.forEach((middlewareName) => {
         const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware) middlewares.push(middleware);
+        if (middleware !== undefined && middleware !== null) {
+          middlewares.push(middleware);
+        }
       });
     }
 
     // 2. Validation
-    if (route.validation) {
+    if (
+      route.validation !== undefined &&
+      route.validation !== null &&
+      route.validation !== ''
+    ) {
       const validator = this.validationRegistry.get(route.validation);
-      if (validator) middlewares.push(validator);
+      if (validator !== undefined && validator !== null) {
+        middlewares.push(validator);
+      }
     }
 
     // 3. Middlewares spécifiques à la route
     if (route.middlewares) {
       route.middlewares.forEach((middlewareName) => {
         const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware) middlewares.push(middleware);
+        if (middleware !== undefined && middleware !== null) {
+          middlewares.push(middleware);
+        }
       });
     }
 
     // Handler de la méthode
-    const handler = async (req: any, res: any, next: any) => {
+    const handler = async (req: any, res: any, next: any): Promise<void> => {
       try {
         await controller[route.methodName](req, res, next);
       } catch (error) {

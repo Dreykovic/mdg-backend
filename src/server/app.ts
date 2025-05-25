@@ -27,9 +27,9 @@ import corsOptions from '@/config/cors.config';
 import config from '@/config';
 
 // Routes and documentation
-import apiRouter from './routes';
 
 import requestLogger from '@/core/middlewares/requestLogger.middleware';
+import apiRouter from '@/api/routes';
 
 /**
  * Main class that sets up and configures the Express application

@@ -40,100 +40,100 @@ export class AdminAuthController {
     }
   }
 
-  /**
-   * Refreshes the admin authentication token.
-   *
-   * @param {Request} req - The HTTP request object containing the current token in the body.
-   * @param {Response} res - The HTTP response object.
-   * @returns {Promise<void>} Resolves with a new token payload if successful.
-   */
-  async refresh(req: Request, res: Response): Promise<void> {
-    try {
-      log('Refresh Token Request Received');
+  // /**
+  //  * Refreshes the admin authentication token.
+  //  *
+  //  * @param {Request} req - The HTTP request object containing the current token in the body.
+  //  * @param {Response} res - The HTTP response object.
+  //  * @returns {Promise<void>} Resolves with a new token payload if successful.
+  //  */
+  // async refresh(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     log('Refresh Token Request Received');
 
-      const data: { token: string } = req.body;
+  //     const data: { token: string } = req.body;
 
-      const payload = await this.adminAuthService.refreshToken(data.token);
+  //     const payload = await this.adminAuthService.refreshToken(data.token);
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      log(error);
-      const response = ApiResponse.http401({
-        message: (error as Error).message || 'Token refresh failed.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
-  }
+  //     const response = ApiResponse.http200(payload);
+  //     res.status(response.httpStatusCode).json(response.data);
+  //   } catch (error) {
+  //     log(error);
+  //     const response = ApiResponse.http401({
+  //       message: (error as Error).message || 'Token refresh failed.',
+  //     });
+  //     res.status(response.httpStatusCode).json(response.data);
+  //   }
+  // }
 
-  /**
-   * Logs the admin out by invalidating the provided token.
-   *
-   * @param {Request} req - The HTTP request object containing the token in the body.
-   * @param {Response} res - The HTTP response object.
-   * @returns {Promise<void>} Resolves when the token is successfully invalidated.
-   */
-  async logout(req: Request, res: Response): Promise<void> {
-    try {
-      log('Logout Request Received');
+  // /**
+  //  * Logs the admin out by invalidating the provided token.
+  //  *
+  //  * @param {Request} req - The HTTP request object containing the token in the body.
+  //  * @param {Response} res - The HTTP response object.
+  //  * @returns {Promise<void>} Resolves when the token is successfully invalidated.
+  //  */
+  // async logout(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     log('Logout Request Received');
 
-      const data: { token: string } = req.body;
+  //     const data: { token: string } = req.body;
 
-      const payload = await this.adminAuthService.logout(data.token);
+  //     const payload = await this.adminAuthService.logout(data.token);
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      log(error);
-      const response = ApiResponse.http401({
-        message: (error as Error).message || 'Logout failed.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
-  }
+  //     const response = ApiResponse.http200(payload);
+  //     res.status(response.httpStatusCode).json(response.data);
+  //   } catch (error) {
+  //     log(error);
+  //     const response = ApiResponse.http401({
+  //       message: (error as Error).message || 'Logout failed.',
+  //     });
+  //     res.status(response.httpStatusCode).json(response.data);
+  //   }
+  // }
 
-  /**
-   * Logs the admin out from all devices by invalidating all tokens for the user.
-   *
-   * @param {Request} req - The HTTP request object containing the user ID in the body.
-   * @param {Response} res - The HTTP response object.
-   * @returns {Promise<void>} Resolves when all tokens are successfully invalidated.
-   */
-  async logoutAll(req: Request, res: Response): Promise<void> {
-    try {
-      log('Logout All Request Received');
+  // /**
+  //  * Logs the admin out from all devices by invalidating all tokens for the user.
+  //  *
+  //  * @param {Request} req - The HTTP request object containing the user ID in the body.
+  //  * @param {Response} res - The HTTP response object.
+  //  * @returns {Promise<void>} Resolves when all tokens are successfully invalidated.
+  //  */
+  // async logoutAll(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     log('Logout All Request Received');
 
-      const data: { userId: string } = req.body;
+  //     const data: { userId: string } = req.body;
 
-      const payload = await this.adminAuthService.logoutAll(data.userId);
+  //     const payload = await this.adminAuthService.logoutAll(data.userId);
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      log(error);
-      const response = ApiResponse.http401({
-        message: (error as Error).message || 'Logout from all devices failed.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
-  }
+  //     const response = ApiResponse.http200(payload);
+  //     res.status(response.httpStatusCode).json(response.data);
+  //   } catch (error) {
+  //     log(error);
+  //     const response = ApiResponse.http401({
+  //       message: (error as Error).message || 'Logout from all devices failed.',
+  //     });
+  //     res.status(response.httpStatusCode).json(response.data);
+  //   }
+  // }
 
-  async getActiveSessions(req: Request, res: Response): Promise<void> {
-    try {
-      log('Gat All Active Sessions Request Received');
+  // async getActiveSessions(req: Request, res: Response): Promise<void> {
+  //   try {
+  //     log('Gat All Active Sessions Request Received');
 
-      const userId = (req as any).user.id;
+  //     const userId = (req as any).user.id;
 
-      const payload = await this.adminAuthService.getActiveSessions(userId);
+  //     const payload = await this.adminAuthService.getActiveSessions(userId);
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      log(error);
-      const response = ApiResponse.http401({
-        message: (error as Error).message || 'Get All active Sessions failed.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
-  }
+  //     const response = ApiResponse.http200(payload);
+  //     res.status(response.httpStatusCode).json(response.data);
+  //   } catch (error) {
+  //     log(error);
+  //     const response = ApiResponse.http401({
+  //       message: (error as Error).message || 'Get All active Sessions failed.',
+  //     });
+  //     res.status(response.httpStatusCode).json(response.data);
+  //   }
+  // }
 }

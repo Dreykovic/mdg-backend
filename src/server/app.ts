@@ -17,10 +17,10 @@ import RoutesDebugUtil, {
 } from '@/core/utils/routesDebug.util';
 
 // Middlewares
-import errorHandler from '@/core/middlewares/error.middleware';
-import preventCrossSiteScripting from '@/core/middlewares/preventCrossScripting.middleware';
-import { rateLimiter } from '@/core/middlewares/rateLimiter.middleware';
-import { clientInfoMiddleware } from '@/core/middlewares/clientInfo.middleware';
+import errorHandler from '@/middlewares/error.middleware';
+import preventCrossSiteScripting from '@/middlewares/preventCrossScripting.middleware';
+import { rateLimiter } from '@/middlewares/rateLimiter.middleware';
+import { clientInfoMiddleware } from '@/middlewares/clientInfo.middleware';
 
 // Configurations
 import corsOptions from '@/config/cors.config';
@@ -28,7 +28,7 @@ import config from '@/config';
 
 // Routes and documentation
 
-import requestLogger from '@/core/middlewares/requestLogger.middleware';
+import requestLogger from '@/middlewares/requestLogger.middleware';
 import apiRouter from '@/api/routes';
 
 /**

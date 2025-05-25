@@ -1,9 +1,9 @@
 import express from 'express';
 import Container from 'typedi';
-import prefixRoutes from '@/core/middlewares/prefixRoutes.middleware';
+import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 
-import { rbacMiddleware } from '@/core/middlewares/rbac.middleware';
-import verifyJWT from '@/core/middlewares/jwt.middleware';
+import { rbacMiddleware } from '@/middlewares/rbac.middleware';
+import verifyJWT from '@/middlewares/jwt.middleware';
 import { RecipeCategoryLinkController } from '@/api/controllers/admin/compositions/recipe_category_link_controller';
 
 const recipeCategoryLinkController = Container.get(

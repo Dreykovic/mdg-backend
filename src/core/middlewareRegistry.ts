@@ -1,7 +1,8 @@
 // core/MiddlewareRegistry.ts
 import rateLimit from 'express-rate-limit';
-import { verifyJWT } from '../middlewares/auth.middleware';
-import { createRbacMiddleware } from '../middlewares/rbac.middleware';
+import { log } from 'console';
+import { createRbacMiddleware } from '@/middlewares/rbac.middleware';
+import verifyJWT from '@/middlewares/jwt.middleware';
 
 export class MiddlewareRegistry {
   private middlewares = new Map<string, any>();
@@ -70,19 +71,21 @@ export class MiddlewareRegistry {
       const [type, param] = name.split(':');
 
       if (type === 'rbac') {
-        return createRbacMiddleware([param]);
+        if (typeof param === 'string') {
+          return createRbacMiddleware([param]);
+        }
       }
 
       if (type === 'rateLimit') {
         return rateLimit({
           windowMs: 15 * 60 * 1000,
-          max: parseInt(param),
+          max: parseInt(param ?? '100', 10),
           message: { error: 'Too many requests' },
         });
       }
 
       if (type === 'cache') {
-        return this.createCacheMiddleware(parseInt(param));
+        return this.createCacheMiddleware(parseInt(param ?? '300', 10));
       }
     }
 
@@ -90,9 +93,9 @@ export class MiddlewareRegistry {
   }
 
   private createCacheMiddleware(seconds: number) {
-    return (req: any, res: any, next: any) => {
+    return (req: any, res: any, next: any): void => {
       res.set('Cache-Control', `public, max-age=${seconds}`);
-      console.log(`Cache set for ${seconds} seconds`);
+      log(`Cache set for ${seconds} seconds`);
       next();
     };
   }

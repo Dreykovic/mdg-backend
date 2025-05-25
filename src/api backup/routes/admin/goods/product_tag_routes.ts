@@ -1,8 +1,8 @@
 import express from 'express';
 import Container from 'typedi';
-import prefixRoutes from '@/core/middlewares/prefixRoutes.middleware';
-import { rbacMiddleware } from '@/core/middlewares/rbac.middleware';
-import verifyJWT from '@/core/middlewares/jwt.middleware';
+import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
+import { rbacMiddleware } from '@/middlewares/rbac.middleware';
+import verifyJWT from '@/middlewares/jwt.middleware';
 import { ProductTagController } from '@/api/controllers/admin/goods/product_tag_controller';
 
 const productTagController = Container.get(ProductTagController);

@@ -1,9 +1,9 @@
 import express from 'express';
 import Container from 'typedi';
-import prefixRoutes from '@/core/middlewares/prefixRoutes.middleware';
+import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 
-import verifyJWT from '@/core/middlewares/jwt.middleware';
-import { rbacMiddleware } from '@/core/middlewares/rbac.middleware';
+import verifyJWT from '@/middlewares/jwt.middleware';
+import { rbacMiddleware } from '@/middlewares/rbac.middleware';
 import { MarginController } from '@/api/controllers/admin/goods/margin_level_controller';
 
 const marginController = Container.get(MarginController);

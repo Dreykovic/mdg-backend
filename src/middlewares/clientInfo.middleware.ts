@@ -9,8 +9,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import DeviceDetector from 'node-device-detector';
-import logger from '../utils/logger.util';
-import { ClientInfo } from '../types';
+import logger from '../core/utils/logger.util';
+import { ClientInfo } from '../core/types';
 
 export const clientInfoMiddleware = (
   req: Request,

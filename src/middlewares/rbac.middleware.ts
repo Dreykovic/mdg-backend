@@ -31,7 +31,7 @@ import ApiResponse from '@/core/utils/apiResponse.util';
  * @param {string[]} allowedRoles - List of roles authorized to access the resource.
  * @returns Middleware function to enforce role-based access control.
  */
-export const rbacMiddleware = (allowedRoles: string[]) => {
+export const createRbacMiddleware = (allowedRoles: string[]) => {
   return (
     req: Request,
     res: Response,

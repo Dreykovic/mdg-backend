@@ -1,9 +1,9 @@
 import express from 'express';
 import Container from 'typedi';
-import prefixRoutes from '@/core/middlewares/prefixRoutes.middleware';
-import verifyJWT from '@/core/middlewares/jwt.middleware';
-import { rbacMiddleware } from '@/core/middlewares/rbac.middleware';
-import { authRateLimiter } from '@/core/middlewares/rateLimiter.middleware';
+import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
+import verifyJWT from '@/middlewares/jwt.middleware';
+import { rbacMiddleware } from '@/middlewares/rbac.middleware';
+import { authRateLimiter } from '@/middlewares/rateLimiter.middleware';
 import AdminAuthController from '@/api/controllers/auth/admin_auth_controller';
 
 // Get the instance of AdminAuthController from the container

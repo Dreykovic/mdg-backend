@@ -5,46 +5,15 @@ import { AdminAuthController } from './controllers/auth/admin_auth_controller';
 import config from '@/config';
 // Vérifier les métadonnées du controller
 import 'reflect-metadata';
-import {
-  CONTROLLER_METADATA,
-  ROUTES_METADATA,
-} from '@/core/decorators/route.decorators';
-import { log } from 'console';
-import { TestController } from './controllers/test_controller';
 
-log('🚀 === DÉBUT CONFIGURATION ROUTES ===');
+import { TestController } from './controllers/test_controller';
+import logger from '@/core/utils/logger.util';
+
+logger.debug('🚀 === DÉBUT CONFIGURATION ROUTES ===');
 
 const routeScanner = new RouteScanner();
 const baseApiUrl = `/${config.api.prefix.replace(/^\/+/, '')}`;
-log(`🔧 API base URL: ${baseApiUrl}`);
-
-// Vérifier que le controller est bien importé
-log('🎮 AdminAuthController:', AdminAuthController);
-log('🎮 AdminAuthController.name:', AdminAuthController.name);
-
-const controllerMetadata = Reflect.getMetadata(
-  CONTROLLER_METADATA,
-  AdminAuthController
-);
-const routesMetadata = Reflect.getMetadata(
-  ROUTES_METADATA,
-  AdminAuthController
-);
-
-log('🔍 Controller metadata:', controllerMetadata);
-log('🔍 Routes metadata:', routesMetadata);
-log(
-  '🔍 Nombre de routes:',
-  Array.isArray(routesMetadata) ? routesMetadata.length : 0
-);
-
-if (routesMetadata !== undefined && routesMetadata !== null) {
-  routesMetadata.forEach((route: any, index: number) => {
-    log(
-      `  Route ${index + 1}: ${route.method.toUpperCase()} ${route.path} -> ${route.methodName}`
-    );
-  });
-}
+logger.debug(`🔧 API base URL: ${baseApiUrl}`);
 
 // Configuration complète avec 4 niveaux de préfixage
 const appConfig: AppConfig = {
@@ -71,13 +40,11 @@ const appConfig: AppConfig = {
   ],
 };
 
-log('⚙️ Configuration finale:', JSON.stringify(appConfig, null, 2));
-
 // Construction des routes avec 4 niveaux de préfixage
-log('🏗️ Construction des routes...');
+logger.debug('🏗️ Construction des routes...');
 const appRoutes = routeScanner.scanApp(appConfig);
 
-log('✅ Routes construites avec succès');
-log('✅ === FIN CONFIGURATION ROUTES ===');
+logger.debug('✅ Routes construites avec succès');
+logger.debug('✅ === FIN CONFIGURATION ROUTES ===');
 
 export default appRoutes;

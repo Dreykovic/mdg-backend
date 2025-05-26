@@ -15,7 +15,8 @@ import {
 } from '@/core/types/route.types';
 import { MiddlewareRegistry } from './middlewareRegistry';
 import { ValidationRegistry } from './validatorregistry';
-import { log } from 'console';
+
+import logger from './utils/logger.util';
 
 interface RouteInfo {
   method: string;
@@ -42,7 +43,7 @@ export class RouteScanner {
   private routingSummary: VersionInfo[] = [];
 
   public scanApp(config: AppConfig): Router {
-    log("🚀 Début du scan de l'application");
+    logger.debug("🚀 Début du scan de l'application");
     this.routingSummary = [];
 
     const appRouter = Router();
@@ -75,7 +76,7 @@ export class RouteScanner {
     });
 
     if (appliedCount > 0) {
-      log(`📋 ${appliedCount} middleware(s) global(aux) appliqué(s)`);
+      logger.debug(`📋 ${appliedCount} middleware(s) global(aux) appliqué(s)`);
     }
   }
 
@@ -243,7 +244,7 @@ export class RouteScanner {
 
       return router;
     } catch (error) {
-      log(`❌ Erreur controller ${controllerClass.name}:`, error);
+      logger.debug(`❌ Erreur controller ${controllerClass.name}:`, error);
       return null;
     }
   }
@@ -327,26 +328,26 @@ export class RouteScanner {
   }
 
   private displayRoutingSummary(globalPrefix: string): void {
-    const SEPARATOR_LENGTH = 80;
+    const SEPARATOR_LENGTH = 50;
 
-    log(`\n${'='.repeat(SEPARATOR_LENGTH)}`);
-    log('🗺️  RÉSUMÉ DES ROUTES PAR MODULE');
-    log(`${'='.repeat(SEPARATOR_LENGTH)}\n`);
+    logger.debug(`${'='.repeat(SEPARATOR_LENGTH)}`);
+    logger.debug('🗺️  RÉSUMÉ DES ROUTES PAR MODULE');
+    logger.debug(`${'='.repeat(SEPARATOR_LENGTH)}`);
 
     let totalRoutes = 0;
 
     this.routingSummary.forEach((versionInfo) => {
-      log(`\n📦 VERSION: ${versionInfo.version}`);
-      log('-'.repeat(50));
+      logger.debug(`📦 VERSION: ${versionInfo.version}`);
+      logger.debug('-'.repeat(50));
 
       versionInfo.modules.forEach((moduleInfo) => {
         if (moduleInfo.routes.length === 0) {
           return;
         }
 
-        log(`\n🏗️  MODULE: ${moduleInfo.name.toUpperCase()}`);
-        log(`   Préfixe: ${moduleInfo.prefix}`);
-        log(`   Routes (${moduleInfo.routes.length}):`);
+        logger.debug(`🏗️  MODULE: ${moduleInfo.name.toUpperCase()}`);
+        logger.debug(`   Préfixe: ${moduleInfo.prefix}`);
+        logger.debug(`   Routes (${moduleInfo.routes.length}):`);
 
         moduleInfo.routes
           .sort((a, b) => {
@@ -362,16 +363,18 @@ export class RouteScanner {
           .forEach((route) => {
             const methodPadded = route.method.padEnd(6);
             const fullPath = globalPrefix + route.fullPath;
-            log(`     ${methodPadded} ${fullPath}`);
-            log(`            └─ ${route.controller}.${route.handler}()`);
+            logger.debug(`     ${methodPadded} ${fullPath}`);
+            logger.debug(
+              `            └─ ${route.controller}.${route.handler}()`
+            );
           });
 
         totalRoutes += moduleInfo.routes.length;
       });
     });
 
-    log(`\n${'='.repeat(SEPARATOR_LENGTH)}`);
-    log(`✅ TOTAL: ${totalRoutes} route(s) enregistrée(s)`);
-    log(`${'='.repeat(SEPARATOR_LENGTH)}\n`);
+    logger.debug(`${'='.repeat(SEPARATOR_LENGTH)}`);
+    logger.debug(`✅ TOTAL: ${totalRoutes} route(s) enregistrée(s)`);
+    logger.debug(`${'='.repeat(SEPARATOR_LENGTH)}`);
   }
 }

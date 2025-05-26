@@ -39,7 +39,7 @@ export const createRbacMiddleware = (allowedRoles: string[]) => {
   ): Promise<void> | void => {
     try {
       // Check if the user is authenticated and has roles defined
-      if (!(req as any).user) {
+      if ((req as any).user === undefined || (req as any).user === null) {
         const response = ApiResponse.http403({
           message: "You don't have the right permission",
         });

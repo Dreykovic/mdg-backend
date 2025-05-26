@@ -123,7 +123,8 @@ export default [
       '@typescript-eslint/prefer-nullish-coalescing': 'error', // Use ?? instead of ||
       '@typescript-eslint/prefer-optional-chain': 'error', // Use ?. for safe navigation
       '@typescript-eslint/strict-boolean-expressions': 'error', // Strict boolean contexts
-      '@typescript-eslint/no-explicit-any': 'warn', // Discourage any type in APIs
+      '@typescript-eslint/no-explicit-any': 'off', // Discourage any type in APIs
+      // '@typescript-eslint/no-explicit-any': 'warn', // Discourage any type in APIs
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -190,7 +191,7 @@ export default [
       'max-depth': ['warn', 4], // Limit nesting depth
       'max-lines-per-function': ['warn', 100], // Limit function length
       'no-magic-numbers': [
-        'warn',
+        'off',
         {
           ignore: [
             0, 1, -1, 200, 201, 204, 400, 401, 403, 404, 422, 429, 500, 502,

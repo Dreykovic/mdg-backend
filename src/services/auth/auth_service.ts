@@ -39,7 +39,13 @@ export default class AdminAuthService extends ServiceDefinition {
    * @param clientInfo - Client metadata (IP address, user agent, etc.).
    * @returns An object containing access and refresh tokens along with user data.
    */
-  async signIn(data: UserLogin, clientInfo: ClientInfo) {
+  async signIn(
+    data: UserLogin,
+    clientInfo: ClientInfo
+  ): Promise<{
+    tokens: { accessToken: string; refreshToken: string };
+    userData: any;
+  }> {
     try {
       const cleanData = data;
 
@@ -47,10 +53,6 @@ export default class AdminAuthService extends ServiceDefinition {
       const user = await this.db.user.findFirstOrThrow({
         where: { username: cleanData.username },
       });
-
-      if (!user) {
-        throw new Error('Username or password incorrect');
-      }
 
       // Validate the user's password
       if (user.password && cleanData.password) {

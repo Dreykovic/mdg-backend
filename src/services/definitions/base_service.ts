@@ -9,7 +9,7 @@ export default class ServiceDefinition {
   }
 
   // Error handler for Prisma errors
-  protected handleError(error: any) {
+  protected handleError(error: any): any {
     return this.prismaService.handleError(error);
   }
 }

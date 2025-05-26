@@ -54,7 +54,7 @@ export class PrismaService {
   constructor() {
     // Set worker ID for logging
     this.workerId = cluster.isWorker
-      ? cluster.worker?.id || 'unknown'
+      ? (cluster.worker?.id ?? 'unknown')
       : 'primary';
 
     // Initialize with extended client
@@ -166,7 +166,7 @@ export class PrismaService {
         );
 
         await new Promise((resolve) => setTimeout(resolve, delay));
-        return this.connectWithRetry(retryCount + 1);
+        await this.connectWithRetry(retryCount + 1);
       }
 
       const errorMessage =

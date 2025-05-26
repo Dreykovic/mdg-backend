@@ -78,13 +78,6 @@ log('🏗️ Construction des routes...');
 const appRoutes = routeScanner.scanApp(appConfig);
 
 log('✅ Routes construites avec succès');
-log('🎯 URLs attendues:');
-log(`   POST ${baseApiUrl}/v1/auth/admin/sign-in`);
-log(`   POST ${baseApiUrl}/v1/auth/admin/refresh`);
-log(`   POST ${baseApiUrl}/v1/auth/admin/logout`);
-log(`   POST ${baseApiUrl}/v1/auth/admin/logout-all`);
-log(`   GET ${baseApiUrl}/v1/auth/admin/active-sessions`);
-
 log('✅ === FIN CONFIGURATION ROUTES ===');
 
 export default appRoutes;

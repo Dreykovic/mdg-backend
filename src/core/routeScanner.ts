@@ -17,135 +17,151 @@ import { MiddlewareRegistry } from './middlewareRegistry';
 import { ValidationRegistry } from './validatorregistry';
 import { log } from 'console';
 
+interface RouteInfo {
+  method: string;
+  path: string;
+  fullPath: string;
+  controller: string;
+  handler: string;
+}
+
+interface ModuleInfo {
+  name: string;
+  prefix: string;
+  routes: RouteInfo[];
+}
+
+interface VersionInfo {
+  version: string;
+  modules: ModuleInfo[];
+}
+
 export class RouteScanner {
   private readonly middlewareRegistry = new MiddlewareRegistry();
   private readonly validationRegistry = new ValidationRegistry();
+  private routingSummary: VersionInfo[] = [];
 
-  // Méthode principale pour application complète
   public scanApp(config: AppConfig): Router {
-    log('🚀 === DÉBUT SCAN APPLICATION ===');
-    log('Config:', JSON.stringify(config, null, 2));
+    log("🚀 Début du scan de l'application");
+    this.routingSummary = [];
 
     const appRouter = Router();
 
-    // Middlewares globaux de l'application
-    if (config.globalMiddlewares) {
-      log('📋 Application des middlewares globaux:', config.globalMiddlewares);
-      config.globalMiddlewares.forEach((middlewareName) => {
-        const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware !== undefined && middleware !== null) {
-          appRouter.use(middleware);
-          log(`✅ Middleware global appliqué: ${middlewareName}`);
-        } else {
-          log(`❌ Middleware global non trouvé: ${middlewareName}`);
-        }
-      });
-    }
+    // Middlewares globaux
+    this.applyGlobalMiddlewares(appRouter, config.globalMiddlewares);
 
-    // Construire les versions
-    log('🔄 Construction des versions...');
+    // Construction des versions
     const versionsRouter = this.scanVersions(config.versions);
-
-    // Appliquer le préfixe global
-    log(`🎯 Application du préfixe global: ${config.globalPrefix}`);
     appRouter.use(config.globalPrefix, versionsRouter);
 
-    log('✅ === FIN SCAN APPLICATION ===');
-
-    // Debug: Afficher les routes enregistrées
-    // this.debugRoutes(appRouter);
+    // Affichage du résumé final
+    this.displayRoutingSummary(config.globalPrefix);
 
     return appRouter;
   }
 
-  private scanVersions(versions: VersionConfig[]): Router {
-    log('📦 === SCAN VERSIONS ===');
-    log('Nombre de versions:', versions.length);
+  private applyGlobalMiddlewares(router: Router, middlewares?: string[]): void {
+    if (middlewares?.length === null || middlewares?.length === undefined) {
+      return;
+    }
 
-    const router = Router();
-
-    versions.forEach((version, index) => {
-      log(
-        `🔧 Construction version ${index + 1}/${versions.length}: ${version.version}`
-      );
-      const versionRouter = this.buildVersionRoutes(version);
-      const versionPath = `/${version.version}`;
-      router.use(versionPath, versionRouter);
-      log(`✅ Version ${version.version} montée sur: ${versionPath}`);
+    let appliedCount = 0;
+    middlewares.forEach((middlewareName) => {
+      const middleware = this.middlewareRegistry.get(middlewareName);
+      if (middleware !== undefined && middleware !== null) {
+        router.use(middleware);
+        appliedCount++;
+      }
     });
 
-    log('✅ === FIN SCAN VERSIONS ===');
+    if (appliedCount > 0) {
+      log(`📋 ${appliedCount} middleware(s) global(aux) appliqué(s)`);
+    }
+  }
+
+  private scanVersions(versions: VersionConfig[]): Router {
+    const router = Router();
+
+    versions.forEach((version) => {
+      const versionInfo: VersionInfo = {
+        version: version.version,
+        modules: [],
+      };
+
+      const versionRouter = this.buildVersionRoutes(version, versionInfo);
+      router.use(`/${version.version}`, versionRouter);
+
+      this.routingSummary.push(versionInfo);
+    });
+
     return router;
   }
 
-  private buildVersionRoutes(version: VersionConfig): Router {
-    log(`🏗️  === BUILD VERSION ${version.version} ===`);
+  private buildVersionRoutes(
+    version: VersionConfig,
+    versionInfo: VersionInfo
+  ): Router {
     const router = Router();
 
     // Middlewares de version
-    if (version.middlewares) {
-      log('📋 Middlewares de version:', version.middlewares);
-      version.middlewares.forEach((middlewareName) => {
-        const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware !== undefined && middleware !== null) {
-          router.use(middleware);
-          log(`✅ Middleware version appliqué: ${middlewareName}`);
-        } else {
-          log(`❌ Middleware version non trouvé: ${middlewareName}`);
-        }
-      });
-    }
+    this.applyVersionMiddlewares(router, version.middlewares);
 
-    log(`📂 Modules dans ${version.version}:`, version.modules.length);
+    // Modules
+    version.modules.forEach((module) => {
+      const moduleInfo: ModuleInfo = {
+        name: module.name,
+        prefix: module.prefix.startsWith('/')
+          ? module.prefix
+          : `/${module.prefix}`,
+        routes: [],
+      };
 
-    // Modules de la version
-    version.modules.forEach((module, index) => {
-      log(
-        `🔧 Construction module ${index + 1}/${version.modules.length}: ${module.name}`
+      const moduleRouter = this.buildModuleRoutes(
+        module,
+        moduleInfo,
+        version.version
       );
-      const moduleRouter = this.buildModuleRoutes(module);
-      const modulePath = module.prefix.startsWith('/')
-        ? module.prefix
-        : `/${module.prefix}`;
-      router.use(modulePath, moduleRouter);
-      log(`✅ Module ${module.name} monté sur: ${modulePath}`);
+      router.use(moduleInfo.prefix, moduleRouter);
+
+      versionInfo.modules.push(moduleInfo);
     });
 
-    log(`✅ === FIN BUILD VERSION ${version.version} ===`);
     return router;
   }
 
-  private buildModuleRoutes(module: ModuleConfig): Router {
-    log(`🏗️  === BUILD MODULE ${module.name} ===`);
+  private applyVersionMiddlewares(
+    router: Router,
+    middlewares?: string[]
+  ): void {
+    if (middlewares?.length === null || middlewares?.length === undefined) {
+      return;
+    }
+    middlewares.forEach((middlewareName) => {
+      const middleware = this.middlewareRegistry.get(middlewareName);
+
+      if (middleware !== undefined || middleware !== null) {
+        router.use(middleware);
+      }
+    });
+  }
+
+  private buildModuleRoutes(
+    module: ModuleConfig,
+    moduleInfo: ModuleInfo,
+    version: string
+  ): Router {
     const router = Router();
 
     // Middlewares de module
-    if (module.middlewares) {
-      log('📋 Middlewares de module:', module.middlewares);
-      module.middlewares.forEach((middlewareName) => {
-        const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware !== undefined && middleware !== null) {
-          router.use(middleware);
-          log(`✅ Middleware module appliqué: ${middlewareName}`);
-        } else {
-          log(`❌ Middleware module non trouvé: ${middlewareName}`);
-        }
-      });
-    }
+    this.applyModuleMiddlewares(router, module.middlewares);
 
-    log(`🎮 Controllers dans ${module.name}:`, module.controllers.length);
-    log(
-      'Controllers:',
-      module.controllers.map((c) => c.name)
-    );
-
-    // Controllers du module
-    module.controllers.forEach((controllerClass, index) => {
-      log(
-        `🔧 Construction controller ${index + 1}/${module.controllers.length}: ${controllerClass.name}`
+    // Controllers
+    module.controllers.forEach((controllerClass) => {
+      const controllerRouter = this.buildControllerRoutes(
+        controllerClass,
+        moduleInfo,
+        version
       );
-
-      const controllerRouter = this.buildControllerRoutes(controllerClass);
 
       if (controllerRouter) {
         const controllerMetadata: ControllerMetadata = Reflect.getMetadata(
@@ -153,52 +169,45 @@ export class RouteScanner {
           controllerClass
         );
 
-        if (controllerMetadata !== undefined && controllerMetadata !== null) {
-          const controllerPath = controllerMetadata.prefix;
-          router.use(controllerPath, controllerRouter);
-          log(
-            `✅ Controller ${controllerClass.name} monté sur: ${controllerPath}`
-          );
-        } else {
-          log(`❌ Pas de metadata de controller pour: ${controllerClass.name}`);
+        if (controllerMetadata !== null && controllerMetadata !== undefined) {
+          router.use(controllerMetadata.prefix, controllerRouter);
         }
-      } else {
-        log(`❌ Aucune route construite pour: ${controllerClass.name}`);
       }
     });
 
-    log(`✅ === FIN BUILD MODULE ${module.name} ===`);
     return router;
   }
 
-  private buildControllerRoutes(
-    controllerClass: new (...args: any[]) => unknown
-  ): Router | null {
-    log(`🏗️  === BUILD CONTROLLER ${controllerClass.name} ===`);
+  private applyModuleMiddlewares(router: Router, middlewares?: string[]): void {
+    if (middlewares?.length === null || middlewares?.length === undefined) {
+      return;
+    }
+    middlewares.forEach((middlewareName) => {
+      const middleware = this.middlewareRegistry.get(middlewareName);
+      if (middleware !== undefined && middleware !== null) {
+        router.use(middleware);
+      }
+    });
+  }
 
-    // Vérifier les métadonnées
+  private buildControllerRoutes(
+    controllerClass: new (...args: any[]) => unknown,
+    moduleInfo: ModuleInfo,
+    version: string
+  ): Router | null {
     const controllerMetadata: ControllerMetadata = Reflect.getMetadata(
       CONTROLLER_METADATA,
       controllerClass
     );
 
-    log('Controller metadata:', controllerMetadata);
-
-    const metadata = Reflect.getMetadata(ROUTES_METADATA, controllerClass);
     const routesMetadata: RouteMetadata[] =
-      metadata !== undefined ? metadata : [];
+      Reflect.getMetadata(ROUTES_METADATA, controllerClass) ?? [];
 
-    log('Routes metadata:', routesMetadata);
-    log('Nombre de routes trouvées:', routesMetadata.length);
-
-    if (controllerMetadata === undefined || controllerMetadata === null) {
-      log(`❌ Pas de metadata @Controller pour: ${controllerClass.name}`);
-      return null;
-    }
-
-    if (routesMetadata.length === 0) {
-      log(`❌ Aucune route trouvée pour: ${controllerClass.name}`);
-      log('Vérifiez que les méthodes ont des décorateurs @Get, @Post, etc.');
+    if (
+      controllerMetadata === null ||
+      controllerMetadata === undefined ||
+      routesMetadata.length === 0
+    ) {
       return null;
     }
 
@@ -206,16 +215,8 @@ export class RouteScanner {
 
     try {
       const controller = Container.get(controllerClass);
-      log(`✅ Instance du controller créée: ${controllerClass.name}`);
 
-      // Routes du controller
-      routesMetadata.forEach((route, index) => {
-        log(`🛣️  Ajout route ${index + 1}/${routesMetadata.length}:`);
-        log(`   Méthode: ${route.method.toUpperCase()}`);
-        log(`   Chemin: ${route.path}`);
-        log(`   Handler: ${route.methodName}`);
-        log(`   Middlewares: ${route.middlewares ?? 'aucun'}`);
-
+      routesMetadata.forEach((route) => {
         this.addRoute(
           router,
           route,
@@ -223,15 +224,41 @@ export class RouteScanner {
           controllerMetadata?.middlewares
         );
 
-        log(`✅ Route ajoutée: ${route.method.toUpperCase()} ${route.path}`);
+        // Enregistrer les informations de route pour le résumé
+        const fullPath = this.buildFullPath(
+          version,
+          moduleInfo.prefix,
+          controllerMetadata.prefix,
+          route.path
+        );
+
+        moduleInfo.routes.push({
+          method: route.method.toUpperCase(),
+          path: route.path,
+          fullPath,
+          controller: controllerClass.name,
+          handler: route.methodName,
+        });
       });
+
+      return router;
     } catch (error) {
-      log(`❌ Erreur lors de la création de l'instance du controller:`, error);
+      log(`❌ Erreur controller ${controllerClass.name}:`, error);
       return null;
     }
+  }
 
-    log(`✅ === FIN BUILD CONTROLLER ${controllerClass.name} ===`);
-    return router;
+  private buildFullPath(
+    version: string,
+    modulePrefix: string,
+    controllerPrefix: string,
+    routePath: string
+  ): string {
+    const parts = ['', version, modulePrefix, controllerPrefix, routePath]
+      .filter((part) => part !== null && part !== undefined && part !== '/')
+      .map((part) => part.replace(/^\/+|\/+$/g, ''));
+
+    return `/${parts.join('/')}`;
   }
 
   private addRoute(
@@ -240,67 +267,50 @@ export class RouteScanner {
     controller: any,
     controllerMiddlewares?: string[]
   ): void {
-    log(`🔧 === AJOUT ROUTE ${route.method.toUpperCase()} ${route.path} ===`);
-
     const middlewares = [];
 
-    // 1. Middlewares du controller (sauf si overrideMiddlewares = true)
+    // Middlewares du controller
     if (
-      (route.overrideMiddlewares === undefined ||
-        route.overrideMiddlewares === false) &&
+      (route.overrideMiddlewares === false ||
+        route.overrideMiddlewares === undefined ||
+        route.overrideMiddlewares === null) &&
       controllerMiddlewares
     ) {
-      log('📋 Middlewares du controller:', controllerMiddlewares);
       controllerMiddlewares.forEach((middlewareName) => {
         const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware !== undefined && middleware !== null) {
+        if (middleware !== null && middleware !== undefined) {
           middlewares.push(middleware);
-          log(`✅ Middleware controller ajouté: ${middlewareName}`);
-        } else {
-          log(`❌ Middleware controller non trouvé: ${middlewareName}`);
         }
       });
     }
 
-    // 2. Validation
+    // Validation
     if (
-      route.validation !== undefined &&
-      route.validation !== null &&
-      route.validation !== ''
+      typeof route.validation === 'string' &&
+      route.validation.trim() !== ''
     ) {
-      log('🔍 Validation:', route.validation);
       const validator = this.validationRegistry.get(route.validation);
-      if (validator !== undefined && validator !== null) {
+      if (validator !== null && validator !== undefined) {
         middlewares.push(validator);
-        log(`✅ Validator ajouté: ${route.validation}`);
-      } else {
-        log(`❌ Validator non trouvé: ${route.validation}`);
       }
     }
 
-    // 3. Middlewares spécifiques à la route
+    // Middlewares de la route
     if (route.middlewares) {
-      log('📋 Middlewares de la route:', route.middlewares);
       route.middlewares.forEach((middlewareName) => {
         const middleware = this.middlewareRegistry.get(middlewareName);
-        if (middleware !== undefined && middleware !== null) {
+        if (middleware !== null && middleware !== undefined) {
           middlewares.push(middleware);
-          log(`✅ Middleware route ajouté: ${middlewareName}`);
-        } else {
-          log(`❌ Middleware route non trouvé: ${middlewareName}`);
         }
       });
     }
 
-    // Vérifier que la méthode existe sur le controller
+    // Vérification de l||a méthode
     if (typeof controller[route.methodName] !== 'function') {
-      log(`❌ Méthode ${route.methodName} non trouvée sur le controller`);
       return;
     }
 
-    log(`✅ Méthode ${route.methodName} trouvée sur le controller`);
-
-    // Handler de la méthode
+    // Handler
     const handler = async (
       req: import('express').Request,
       res: import('express').Response,
@@ -313,42 +323,55 @@ export class RouteScanner {
       }
     };
 
-    log(`🎯 Enregistrement: ${route.method.toUpperCase()} ${route.path}`);
-    log(`📦 Nombre de middlewares: ${middlewares.length}`);
-
     router[route.method](route.path, ...middlewares, handler);
-
-    log(`✅ === ROUTE AJOUTÉE ===`);
   }
 
-  // Méthode de debug pour afficher les routes
-  // private debugRoutes(router: any): void {
-  //   log('\n🔍 === DEBUG ROUTES FINALES ===');
-  //   this.printRoutes(router, '');
-  //   log('✅ === FIN DEBUG ROUTES ===\n');
-  // }
+  private displayRoutingSummary(globalPrefix: string): void {
+    const SEPARATOR_LENGTH = 80;
 
-  // private printRoutes(router: any, basePath: string): void {
-  //   if (Array.isArray(router.stack)) {
-  //     router.stack.forEach((layer: any) => {
-  //       if (typeof layer.route !== 'undefined') {
-  //         // Route finale
-  //         const methods = Object.keys(layer.route.methods)
-  //           .join(', ')
-  //           .toUpperCase();
-  //         log(`📍 ${methods} ${basePath}${layer.route.path}`);
-  //       } else if (layer.name === 'router') {
-  //         // Sous-router
-  //         const path = layer.regexp.source
-  //           .replace('\\', '')
-  //           .replace('(?:', '')
-  //           .replace(')?', '')
-  //           .replace('$', '')
-  //           .replace('^', '');
-  //         log(`📁 Sous-router: ${basePath}${path}`);
-  //         this.printRoutes(layer.handle, `${basePath}${path}`);
-  //       }
-  //     });
-  //   }
-  // }
+    log(`\n${'='.repeat(SEPARATOR_LENGTH)}`);
+    log('🗺️  RÉSUMÉ DES ROUTES PAR MODULE');
+    log(`${'='.repeat(SEPARATOR_LENGTH)}\n`);
+
+    let totalRoutes = 0;
+
+    this.routingSummary.forEach((versionInfo) => {
+      log(`\n📦 VERSION: ${versionInfo.version}`);
+      log('-'.repeat(50));
+
+      versionInfo.modules.forEach((moduleInfo) => {
+        if (moduleInfo.routes.length === 0) {
+          return;
+        }
+
+        log(`\n🏗️  MODULE: ${moduleInfo.name.toUpperCase()}`);
+        log(`   Préfixe: ${moduleInfo.prefix}`);
+        log(`   Routes (${moduleInfo.routes.length}):`);
+
+        moduleInfo.routes
+          .sort((a, b) => {
+            // Tri par méthode puis par path
+            if (a.method !== b.method) {
+              const methodOrder = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+              return (
+                methodOrder.indexOf(a.method) - methodOrder.indexOf(b.method)
+              );
+            }
+            return a.path.localeCompare(b.path);
+          })
+          .forEach((route) => {
+            const methodPadded = route.method.padEnd(6);
+            const fullPath = globalPrefix + route.fullPath;
+            log(`     ${methodPadded} ${fullPath}`);
+            log(`            └─ ${route.controller}.${route.handler}()`);
+          });
+
+        totalRoutes += moduleInfo.routes.length;
+      });
+    });
+
+    log(`\n${'='.repeat(SEPARATOR_LENGTH)}`);
+    log(`✅ TOTAL: ${totalRoutes} route(s) enregistrée(s)`);
+    log(`${'='.repeat(SEPARATOR_LENGTH)}\n`);
+  }
 }

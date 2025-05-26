@@ -19,12 +19,11 @@ export function parseAllowedOrigins(originsString: string): string[] {
     const array = JSON.parse(originsString);
 
     // Validate that the parsed value is an array
-    if (Array.isArray(array)) {
-      return array;
-    } else {
+    if (!Array.isArray(array)) {
       // Throw an error if the parsed value is not an array
       throw new Error('The JSON string does not represent a valid array.');
     }
+    return array;
   } catch (error) {
     // Log an error message if parsing fails
     logger.error(

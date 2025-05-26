@@ -8,19 +8,21 @@ import cluster from 'cluster';
 const logDir = path.resolve('logs');
 
 // Assure-toi que le dossier logs existe
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
-}
+void (async (): Promise<void> => {
+  try {
+    await fs.promises.mkdir(logDir, { recursive: true });
+  } catch (err) {
+    logger.error('Erreur lors de la création du dossier de logs:', err);
+  }
+})();
 
 const workerId = cluster.isPrimary ? 'master' : `worker-${process.pid}`;
 const logFilePath = path.join(logDir, `${workerId}-access.log`);
 
 // Test d'écriture dans le fichier
-try {
-  fs.appendFileSync(logFilePath, '[INIT] Logger démarré\n');
-} catch (err) {
-  console.error('Erreur d’écriture dans le fichier de log:', err);
-}
+fs.promises.appendFile(logFilePath, '[INIT] Logger démarré\n').catch((err) => {
+  logger.error('Erreur d’écriture dans le fichier de log:', err);
+});
 
 const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
 

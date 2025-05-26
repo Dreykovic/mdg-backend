@@ -81,6 +81,7 @@ export class AdminAuthController {
    * @returns {Promise<void>} Resolves when the token is successfully invalidated.
    */
   @Delete('/sign-out')
+  @UseMiddlewares('auth', 'rbac:ADMIN')
   async logout(req: Request, res: Response): Promise<void> {
     try {
       log('Logout Request Received');
@@ -107,7 +108,8 @@ export class AdminAuthController {
    * @param {Response} res - The HTTP response object.
    * @returns {Promise<void>} Resolves when all tokens are successfully invalidated.
    */
-  @Delete('close-all-sessions')
+  @Delete('/close-all-sessions')
+  @UseMiddlewares('auth', 'rbac:ADMIN')
   async logoutAll(req: Request, res: Response): Promise<void> {
     try {
       log('Logout All Request Received');

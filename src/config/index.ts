@@ -10,12 +10,15 @@
  */
 
 import { env, nodeEnv } from './env.config';
-import { parseAllowedOrigins } from '@/core/utils/cors.util';
 import { EnvConfig } from './types';
 import { ProfileName } from '@prisma/client';
 import os from 'os';
 import { log } from 'console';
-import { parseBooleanEnv, parseNumericEnv } from '@/core/utils/env.util';
+import {
+  parseAllowedOrigins,
+  parseBooleanEnv,
+  parseNumericEnv,
+} from '@/core/utils/config.util';
 
 // Configuration object with strongly typed properties
 const config: EnvConfig = {

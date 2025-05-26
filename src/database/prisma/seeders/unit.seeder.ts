@@ -7,7 +7,9 @@ import { Prisma, PrismaClient, UOMType } from '@prisma/client'; // Prisma types 
  * This function seeds the database with default units of measurement.
  * It ensures that certain units (e.g., Gram and Tablespoon) exist in the database.
  */
-export async function seedDefaultUnits(prismaService: PrismaClient) {
+export async function seedDefaultUnits(
+  prismaService: PrismaClient
+): Promise<void> {
   // Default units of measure with properties like name, factor, and type
   const defaultUnits: Prisma.UnitOfMeasureCreateInput[] = [
     {
@@ -28,14 +30,16 @@ export async function seedDefaultUnits(prismaService: PrismaClient) {
     },
   ];
 
-  // Loop through each default unit and upsert it into the database
-  defaultUnits.forEach(async (defaultUnit) => {
-    await prismaService.unitOfMeasure.upsert({
-      where: {
-        name: defaultUnit.name, // Check for existing unit by name
-      },
-      update: {}, // If the unit exists, no update is performed
-      create: defaultUnit, // Create the unit if it doesn't exist
-    });
-  });
+  // Upsert all default units in parallel to avoid awaiting inside a loop
+  await Promise.all(
+    defaultUnits.map((defaultUnit) =>
+      prismaService.unitOfMeasure.upsert({
+        where: {
+          name: defaultUnit.name, // Check for existing unit by name
+        },
+        update: {}, // If the unit exists, no update is performed
+        create: defaultUnit, // Create the unit if it doesn't exist
+      })
+    )
+  );
 }

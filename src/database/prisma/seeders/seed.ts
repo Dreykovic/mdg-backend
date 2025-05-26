@@ -13,7 +13,7 @@ import { seedDefaultWareHouse } from './warehouse.seeder';
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function main(): Promise<void> {
   if (config.isDev || config.isTest) {
     await seedDefaultUnits(prisma);
     await createOrFindDefaultUser(prisma);
@@ -28,8 +28,8 @@ main()
 
     process.exit(1);
   })
-  .finally(async () => {
+  .finally(() => {
     log(colorTxt.green(`✔ Database seed successfully `));
 
-    await prisma.$disconnect();
+    void prisma.$disconnect();
   });

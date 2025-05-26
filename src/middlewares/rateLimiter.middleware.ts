@@ -49,7 +49,7 @@ export const rateLimiter = rateLimit({
   handler: (req: Request, res: Response, next: NextFunction, options) => {
     // Log the rate limit violation with detailed information
     logger.error(
-      `Rate limit exceeded: IP=${req.ip} | Method=${req.method} | URL=${req.url} | Origin=${req.headers.origin || 'unknown'}`,
+      `Rate limit exceeded: IP=${req.ip} | Method=${req.method} | URL=${req.url} | Origin=${req.headers.origin ?? 'unknown'}`,
       'rate-limiter.log'
     );
 

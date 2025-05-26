@@ -482,9 +482,6 @@ class Server {
           `🔍 Routes debug endpoint: http://localhost:${config.app.port}/debug/routes`
         );
       }
-
-      // Log routes to console in development
-      this.appInstance.logRoutes();
     }
 
     // Check database connection before starting server

@@ -1,5 +1,5 @@
 // app.ts
-import { RouteScanner } from '@/core/routeScanner';
+import { RouteScanner } from '@/core/scanner/route.scanner';
 import { AppConfig } from '@/core/types/route.types';
 import { AdminAuthController } from './controllers/auth/admin_auth_controller';
 import config from '@/config';

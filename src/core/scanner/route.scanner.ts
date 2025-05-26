@@ -13,10 +13,10 @@ import {
   ModuleConfig,
   VersionConfig,
 } from '@/core/types/route.types';
-import { MiddlewareRegistry } from './middlewareRegistry';
-import { ValidationRegistry } from './validatorregistry';
+import { MiddlewareRegistry } from '../registry/middleware.registry';
+import { ValidationRegistry } from '../registry/validator.registry';
 
-import logger from './utils/logger.util';
+import logger from '../utils/logger.util';
 
 interface RouteInfo {
   method: string;

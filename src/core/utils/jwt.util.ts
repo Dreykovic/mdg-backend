@@ -16,9 +16,9 @@
  */
 import jwt, {
   JwtPayload,
-  VerifyOptions,
-  SignOptions,
   Secret,
+  SignOptions,
+  VerifyOptions,
 } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 

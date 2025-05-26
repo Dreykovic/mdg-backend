@@ -22,7 +22,7 @@ const errorHandler = (
   res: Response,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
-) => {
+): void => {
   // Log the error details for debugging, including the stack trace and request info
   logger.error(`Error occurred: ${err.message}`, {
     stack: err.stack,

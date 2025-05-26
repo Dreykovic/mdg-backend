@@ -22,7 +22,11 @@ const { allowOrigins, credentials, methods, maxAge } = config.cors;
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     // If origin is undefined (like server-to-server requests) or in the allowed list
-    if (!origin || allowOrigins.includes(origin)) {
+    if (
+      origin === null ||
+      origin === '' ||
+      (typeof origin === 'string' && allowOrigins.includes(origin))
+    ) {
       callback(null, true);
     } else {
       // Log rejected origins in development mode

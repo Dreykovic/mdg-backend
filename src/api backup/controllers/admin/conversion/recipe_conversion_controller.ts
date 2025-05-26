@@ -12,7 +12,7 @@ export class RecipeConversionController {
 
   async getRecipe(req: Request, res: Response): Promise<void> {
     try {
-      const url = req.body.url;
+      const { url } = req.body;
 
       log(`Get Recipe From Site ${url} Request Received`);
 

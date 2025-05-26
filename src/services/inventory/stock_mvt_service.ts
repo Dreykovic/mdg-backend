@@ -1,4 +1,4 @@
-import { StockMovement, Inventory, MovementReason } from '@prisma/client';
+import { Inventory, MovementReason, StockMovement } from '@prisma/client';
 import { Service } from 'typedi';
 import logger from '@/core/utils/logger.util';
 
@@ -105,7 +105,7 @@ export default class StockMvtService extends StockService {
         throw new Error('Movement already completed');
       }
 
-      const inventory = movement.inventory;
+      const { inventory } = movement;
       let updatedQuantity = inventory.quantity;
       let updatedAvailableQuantity = inventory.availableQuantity;
 
@@ -355,7 +355,7 @@ export default class StockMvtService extends StockService {
    * @param limit Number of movements to return
    * @returns Recent stock movements
    */
-  async getRecentMovements(limit: number = 10): Promise<any> {
+  async getRecentMovements(limit = 10): Promise<any> {
     try {
       return this.db.stockMovement.findMany({
         take: limit,

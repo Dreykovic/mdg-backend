@@ -22,8 +22,8 @@ export default class RecipeCategoryLinkService extends ServiceDefinition {
   }
 
   async recipeCategoryLinks(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.RecipeCategoryLinkWhereInput = {}
   ) {
     try {

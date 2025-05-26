@@ -47,8 +47,8 @@ export default class UOMService extends ServiceDefinition {
    * @throws Will throw an error if the query fails.
    */
   async unitsOfMeasure(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.UnitOfMeasureWhereInput = {}
   ) {
     try {

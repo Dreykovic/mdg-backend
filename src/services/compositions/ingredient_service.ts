@@ -20,8 +20,8 @@ export default class IngredientService extends ServiceDefinition {
   }
 
   async ingredients(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.IngredientWhereInput = {}
   ) {
     try {

@@ -1,7 +1,7 @@
 import ServiceDefinition from '@/services/definitions/base_service';
 import logger from '@/core/utils/logger.util';
 
-import { MovementType, MovementReason } from '@prisma/client';
+import { MovementReason, MovementType } from '@prisma/client';
 
 import { Service } from 'typedi';
 

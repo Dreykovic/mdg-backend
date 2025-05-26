@@ -21,8 +21,8 @@ export default class RecipeService extends ServiceDefinition {
   }
 
   async recipes(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.RecipeWhereInput = {}
   ) {
     try {

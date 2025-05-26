@@ -22,8 +22,8 @@ export default class SupplierService extends ServiceDefinition {
   }
 
   async suppliers(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.SupplierWhereInput = {}
   ) {
     try {

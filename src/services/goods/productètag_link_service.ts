@@ -20,8 +20,8 @@ export default class ProductTagLinkService extends ServiceDefinition {
   }
 
   async productTagLinks(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.ProductTagLinkWhereInput = {}
   ) {
     try {

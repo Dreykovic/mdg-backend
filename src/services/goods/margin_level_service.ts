@@ -20,8 +20,8 @@ export default class MarginService extends ServiceDefinition {
   }
 
   async margins(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.MarginLevelWhereInput = {}
   ) {
     try {

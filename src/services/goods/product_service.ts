@@ -46,8 +46,8 @@ export default class ProductService extends ServiceDefinition {
   }
 
   async products(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.ProductWhereInput = {}
   ) {
     try {
@@ -193,8 +193,8 @@ export default class ProductService extends ServiceDefinition {
     categoryId: number,
     originId: number,
     supplierId: number,
-    isGlutenFree: boolean = false,
-    isGMOFree: boolean = false
+    isGlutenFree = false,
+    isGMOFree = false
   ): Promise<string> {
     try {
       // Initialize with fallback values in case of failure
@@ -282,7 +282,7 @@ export default class ProductService extends ServiceDefinition {
 
           // Extract the numeric portion
           const numericMatch = lastPart.match(/\d+/);
-          if (numericMatch && numericMatch[0]) {
+          if (numericMatch?.[0]) {
             sequenceNumber = parseInt(numericMatch[0], 10) + 1;
           }
         }

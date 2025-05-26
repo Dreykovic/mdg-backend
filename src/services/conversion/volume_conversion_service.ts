@@ -47,8 +47,8 @@ export default class VolumeConversionService extends ServiceDefinition {
    * @throws Will throw an error if the query fails.
    */
   async volumeConversions(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.VolumeConversionWhereInput = {}
   ) {
     try {

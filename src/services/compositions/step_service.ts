@@ -19,11 +19,7 @@ export default class StepService extends ServiceDefinition {
     }
   }
 
-  async steps(
-    page: number = 1,
-    pageSize: number = 10,
-    filters: Prisma.StepWhereInput = {}
-  ) {
+  async steps(page = 1, pageSize = 10, filters: Prisma.StepWhereInput = {}) {
     try {
       const skip = (page - 1) * pageSize;
 

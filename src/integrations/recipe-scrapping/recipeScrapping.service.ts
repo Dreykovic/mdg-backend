@@ -12,7 +12,7 @@ import {
 @Service()
 export default class RecipeScrappingService {
   // Store allowed sites in a Set for faster lookup
-  private allowedSites = new Set<AllowedSitesType>([
+  private readonly allowedSites = new Set<AllowedSitesType>([
     'allrecipes.com',
     'cooking.nytimes.com',
     'simplyrecipes.com',

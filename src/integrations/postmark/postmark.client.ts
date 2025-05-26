@@ -2,7 +2,7 @@ import nodemailer, { Transporter } from 'nodemailer';
 import { MailConfig } from './postmark.types';
 
 export class MailClient {
-  private transporter: Transporter;
+  private readonly transporter: Transporter;
 
   constructor(config: MailConfig) {
     this.transporter = this.createTransporter(config);
@@ -30,9 +30,8 @@ export class MailClient {
           refreshToken: config.refreshToken,
         },
       });
-    } else {
-      throw new Error('Service de mail inconnu.');
     }
+    throw new Error('Service de mail inconnu.');
   }
 
   public getTransporter(): Transporter {

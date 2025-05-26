@@ -20,8 +20,8 @@ export default class CategoryService extends ServiceDefinition {
   }
 
   async categories(
-    page: number = 1,
-    pageSize: number = 10,
+    page = 1,
+    pageSize = 10,
     filters: Prisma.ProductCategoryWhereInput = {}
   ) {
     try {

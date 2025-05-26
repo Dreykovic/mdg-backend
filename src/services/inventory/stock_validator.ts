@@ -1,9 +1,9 @@
 import {
-  MovementType,
+  Inventory,
   MovementReason,
   MovementStatus,
+  MovementType,
   ValuationMethod,
-  Inventory,
 } from '@prisma/client';
 
 /**

@@ -16,7 +16,7 @@
  *
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
 /**
  * Middleware to add the `X-XSS-Protection` header to HTTP responses.

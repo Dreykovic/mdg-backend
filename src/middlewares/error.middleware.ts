@@ -4,7 +4,7 @@
  * based on the error type.
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import logger from '@/core/utils/logger.util';
 import ApiResponse from '@/core/utils/apiResponse.util';
 

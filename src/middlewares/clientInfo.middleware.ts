@@ -7,7 +7,7 @@
  * and detect the device type, operating system, and client details.
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import DeviceDetector from 'node-device-detector';
 import logger from '../core/utils/logger.util';
 import { ClientInfo } from '../core/types';
@@ -16,7 +16,7 @@ export const clientInfoMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   try {
     // 1️⃣ Extract client information from request headers
     const ipAddress =
@@ -55,25 +55,32 @@ export const clientInfoMiddleware = (
     // 4️⃣ Proceed to the next middleware
     next();
   } catch (error) {
-    // Log an error if detection fails and set the client info to 'unknown' values
-    logger.error('Error while detecting client information:', error);
-    const data: ClientInfo = {
-      ipAddress: 'unknown',
-      userAgent: 'unknown',
-      acceptLang: 'unknown',
-
-      deviceType: 'unknown',
-      deviceBrand: 'unknown',
-      deviceModel: 'unknown',
-      osName: 'unknown',
-      osVersion: 'unknown',
-      clientName: 'unknown',
-      clientType: 'unknown',
-      clientVersion: 'unknown',
-    };
-    (req as any).clientInfo = data;
-
-    // Continue with the request even if there is an error
-    next();
+    handleClientInfoError(req, next, error);
   }
 };
+
+function handleClientInfoError(
+  req: Request,
+  next: NextFunction,
+  error: unknown
+): void {
+  logger.error('Error while detecting client information:', error);
+  const data: ClientInfo = {
+    ipAddress: 'unknown',
+    userAgent: 'unknown',
+    acceptLang: 'unknown',
+
+    deviceType: 'unknown',
+    deviceBrand: 'unknown',
+    deviceModel: 'unknown',
+    osName: 'unknown',
+    osVersion: 'unknown',
+    clientName: 'unknown',
+    clientType: 'unknown',
+    clientVersion: 'unknown',
+  };
+  (req as any).clientInfo = data;
+
+  // Continue with the request even if there is an error
+  next();
+}

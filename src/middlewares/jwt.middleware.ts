@@ -15,7 +15,7 @@
  */
 
 import config from '@/config';
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import ApiResponse from '../core/utils/apiResponse.util';
 import { log } from 'console';

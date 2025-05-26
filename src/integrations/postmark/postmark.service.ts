@@ -1,11 +1,11 @@
 import { Transporter } from 'nodemailer';
 import ejs from 'ejs';
 import path from 'path';
-import { MailServiceInterface, MailOptions } from './postmark.types';
+import { MailOptions, MailServiceInterface } from './postmark.types';
 import { log } from 'console';
 
 export class MailService implements MailServiceInterface {
-  private transporter: Transporter;
+  private readonly transporter: Transporter;
 
   constructor(transporter: Transporter) {
     this.transporter = transporter;

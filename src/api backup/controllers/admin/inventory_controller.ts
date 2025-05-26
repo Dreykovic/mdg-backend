@@ -20,8 +20,8 @@ export class InventoryController {
    */
   async createInventory(req: Request, res: Response): Promise<void> {
     try {
-      const sku: string = req.body.sku;
-      const wareHouseId: string = req.body.wareHouseId;
+      const { sku } = req.body;
+      const { wareHouseId } = req.body;
       const userId = (req as any).user.id;
 
       // Parse and prepare inventory metadata
@@ -172,7 +172,7 @@ export class InventoryController {
    */
   async updateInventoryQuantity(req: Request, res: Response): Promise<void> {
     try {
-      const inventoryId = req.params.inventoryId;
+      const { inventoryId } = req.params;
       const { quantity } = req.body;
       const userId = (req as any).user.id;
 
@@ -244,7 +244,7 @@ export class InventoryController {
    */
   async getStockMovement(req: Request, res: Response): Promise<void> {
     try {
-      const movementId = req.params.movementId;
+      const { movementId } = req.params;
 
       if (!movementId) {
         throw new Error('Movement ID is required.');
@@ -300,7 +300,7 @@ export class InventoryController {
    */
   async processStockMovement(req: Request, res: Response): Promise<void> {
     try {
-      const movementId = req.params.movementId;
+      const { movementId } = req.params;
       const { action } = req.body;
       const userId = (req as any).user.id;
 

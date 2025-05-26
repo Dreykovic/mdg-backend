@@ -40,9 +40,8 @@ export default class StringUtil {
       return value; // If already a boolean, return as is.
     } else if (typeof value === 'string') {
       return value.toLowerCase() === 'true' || value === '1'; // Strings 'true' or '1' will return true.
-    } else {
-      return false; // Default to false if not a boolean or recognized string.
     }
+    return false; // Default to false if not a boolean or recognized string.
   }
 
   /**
@@ -66,8 +65,8 @@ export default class StringUtil {
    * @returns The converted number if valid, otherwise `null`.
    */
   static parseAndValidateNumber(param: string | undefined): number | null {
-    if (!param) {
-      return null; // Return null if the parameter is undefined
+    if (param === undefined || param === null || param.trim() === '') {
+      return null; // Return null if the parameter is undefined, null, or an empty string
     }
     const num = Number(param);
     return isNaN(num) ? null : num; // Return null if the parameter is not a valid number

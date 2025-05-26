@@ -90,6 +90,9 @@ export default class AdminAuthService extends ServiceDefinition {
     // Generate tokens
     const userData = _.omit(user, ['password', 'profile']);
     const accessToken = JwtUtil.generateToken(accessTokenPayload);
+    if (typeof tokenFamily.id !== 'number') {
+      throw new Error('Token family ID is undefined');
+    }
     const refreshToken = await this.generateRefreshToken(
       null,
       tokenFamily.id,
@@ -100,7 +103,9 @@ export default class AdminAuthService extends ServiceDefinition {
   }
 
   @AuthServiceErrorHandler('Token refresh failed')
-  async refreshToken(refreshToken: string) {
+  async refreshToken(
+    refreshToken: string
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     log('Refresh Token received:', refreshToken);
 
     const result = await this.validateRefreshToken(refreshToken);
@@ -134,7 +139,7 @@ export default class AdminAuthService extends ServiceDefinition {
   }
 
   @ServiceErrorHandler('Failed to retrieve active sessions')
-  async getActiveSessions(userId: string) {
+  async getActiveSessions(userId: string): Promise<{ activeSessions: any[] }> {
     const activeSessions = await this.db.tokenFamily.findMany({
       where: { userId, status: 'ACTIVE' },
     });
@@ -142,7 +147,7 @@ export default class AdminAuthService extends ServiceDefinition {
   }
 
   @AuthServiceErrorHandler('Logout operation failed')
-  async logout(refreshToken: string) {
+  async logout(refreshToken: string): Promise<void> {
     const adminToken = await this.db.refreshToken.findUnique({
       where: { token: refreshToken },
     });
@@ -163,15 +168,17 @@ export default class AdminAuthService extends ServiceDefinition {
   }
 
   @AuthServiceErrorHandler('Failed to logout from all sessions')
-  async logoutAll(userId: string) {
+  async logoutAll(userId: string): Promise<boolean> {
     const activeFamilies = await this.db.tokenFamily.findMany({
       where: { userId, status: 'ACTIVE' },
       orderBy: { createdAt: 'asc' },
     });
 
-    for (const activeFamily of activeFamilies) {
-      await this.revokeTokenFamily(activeFamily.id);
-    }
+    await Promise.all(
+      activeFamilies.map((activeFamily) =>
+        this.revokeTokenFamily(activeFamily.id)
+      )
+    );
 
     return true;
   }
@@ -179,25 +186,26 @@ export default class AdminAuthService extends ServiceDefinition {
   @CriticalServiceErrorHandler('Failed to create token family')
   private async createTokenFamily(
     data: Prisma.TokenFamilyUncheckedCreateInput
-  ) {
+  ): Promise<Prisma.TokenFamilyUncheckedCreateInput> {
     const activeFamilies = await this.db.tokenFamily.findMany({
       where: { userId: data.userId, status: 'ACTIVE' },
       orderBy: { createdAt: 'asc' },
     });
 
-    // Check if there are active families and if their count exceeds the max allowed
-    if (activeFamilies && activeFamilies.length >= config.jwt.maxConnexions) {
+    // Check if the count of active families exceeds the max allowed
+    if (activeFamilies.length >= config.jwt.maxConnexions) {
       // Revoke the oldest family if necessary
       if (activeFamilies[0]) {
         await this.revokeTokenFamily(activeFamilies[0].id);
       }
     }
 
-    return await this.db.tokenFamily.create({ data });
+    const createdTokenFamoly = await this.db.tokenFamily.create({ data });
+    return createdTokenFamoly;
   }
 
   @CriticalServiceErrorHandler('Failed to revoke token family')
-  private async revokeTokenFamily(familyId: number) {
+  private async revokeTokenFamily(familyId: number): Promise<void> {
     log('Revoke token family');
 
     await this.db.tokenFamily.update({
@@ -213,7 +221,9 @@ export default class AdminAuthService extends ServiceDefinition {
   }
 
   @CriticalServiceErrorHandler('Token validation failed')
-  private async validateRefreshToken(refreshToken: string) {
+  private async validateRefreshToken(
+    refreshToken: string
+  ): Promise<{ refreshTokenContent: RefreshTokenPayload; adminToken: any }> {
     const adminToken = await this.db.refreshToken.findUnique({
       where: { token: refreshToken },
     });
@@ -243,7 +253,11 @@ export default class AdminAuthService extends ServiceDefinition {
     familyId: number,
     payload: RefreshTokenPayload
   ): Promise<string> {
-    if (parentTokenId) {
+    if (
+      parentTokenId !== null &&
+      parentTokenId !== undefined &&
+      !isNaN(parentTokenId)
+    ) {
       await this.db.refreshToken.update({
         where: { id: parentTokenId },
         data: { status: 'REVOKED' },

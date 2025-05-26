@@ -11,6 +11,7 @@ import {
   Post,
   UseMiddlewares,
 } from '@/core/decorators/route.decorators';
+import { ControllerErrorHandler } from '@/core/decorators/errorHandler.decorators';
 @Service()
 @Controller('/admin') // Niveau controller
 export class AdminAuthController {
@@ -24,26 +25,19 @@ export class AdminAuthController {
    * @returns {Promise<void>} Resolves with a token payload if authentication is successful.
    */
   @Post('/sign-in')
+  @ControllerErrorHandler('Sign In failed.')
   async signIn(req: Request, res: Response): Promise<void> {
-    try {
-      log('Sign In Request Received');
+    log('Sign In Request Received');
 
-      const data: UserLogin = req.body;
+    const data: UserLogin = req.body;
 
-      const payload = await this.adminAuthService.signIn(
-        data,
-        (req as any).clientInfo
-      );
+    const payload = await this.adminAuthService.signIn(
+      data,
+      (req as any).clientInfo
+    );
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      log(error);
-      const response = ApiResponse.http401({
-        message: (error as Error).message || 'Invalid credentials provided.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
   }
 
   /**

@@ -31,14 +31,16 @@ import DateUtil from '@/core/utils/date.util';
 import { log } from 'console';
 import { Prisma } from '@prisma/client';
 
+// Utilisation dans votre service AdminAuthService
+import {
+  AuthServiceErrorHandler,
+  CriticalServiceErrorHandler,
+  ServiceErrorHandler,
+} from '@/core/decorators/errorHandler.decorators';
+
 @Service()
 export default class AdminAuthService extends ServiceDefinition {
-  /**
-   * Handles user login by verifying credentials, generating tokens, and returning session data.
-   * @param data - The user login credentials (username and password).
-   * @param clientInfo - Client metadata (IP address, user agent, etc.).
-   * @returns An object containing access and refresh tokens along with user data.
-   */
+  @AuthServiceErrorHandler('Invalid credentials provided')
   async signIn(
     data: UserLogin,
     clientInfo: ClientInfo
@@ -46,305 +48,227 @@ export default class AdminAuthService extends ServiceDefinition {
     tokens: { accessToken: string; refreshToken: string };
     userData: any;
   }> {
-    try {
-      const cleanData = data;
+    const cleanData = data;
 
-      // Find the user by username
-      const user = await this.db.user.findFirstOrThrow({
-        where: { username: cleanData.username },
-      });
+    // Find the user by username
+    const user = await this.db.user.findFirstOrThrow({
+      where: { username: cleanData.username },
+    });
 
-      // Validate the user's password
-      if (user.password && cleanData.password) {
-        const isPwdCorrect = await BcryptUtil.comparePassword(
-          cleanData.password,
-          user.password
-        );
-        if (!isPwdCorrect) {
-          throw new Error('Username or password incorrect');
-        }
-      }
-
-      // Prepare token payloads
-      const accessTokenPayload: AccessTokenPayload = {
-        userId: user.id,
-        username: user.username,
-        email: user.email,
-        profiles: user.profiles.join(),
-      };
-
-      const tokenFamilyCreateData: Prisma.TokenFamilyUncheckedCreateInput = {
-        family: uuidv4(),
-        ...clientInfo,
-        userId: user.id,
-      };
-
-      const tokenFamily = await this.createTokenFamily(tokenFamilyCreateData);
-
-      const refreshTokenPayload: RefreshTokenPayload = {
-        userId: user.id,
-        profiles: user.profiles.join(),
-      };
-
-      // Generate tokens
-      const userData = _.omit(user, ['password', 'profile']);
-      const accessToken = JwtUtil.generateToken(accessTokenPayload);
-      const refreshToken = await this.generateRefreshToken(
-        null,
-        tokenFamily.id,
-        refreshTokenPayload
+    // Validate the user's password
+    if (user.password && cleanData.password) {
+      const isPwdCorrect = await BcryptUtil.comparePassword(
+        cleanData.password,
+        user.password
       );
-
-      return { tokens: { accessToken, refreshToken }, userData };
-    } catch (error) {
-      throw this.handleError(error);
+      if (!isPwdCorrect) {
+        throw new Error('Username or password incorrect');
+      }
     }
+
+    // Prepare token payloads
+    const accessTokenPayload: AccessTokenPayload = {
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      profiles: user.profiles.join(),
+    };
+
+    const tokenFamilyCreateData: Prisma.TokenFamilyUncheckedCreateInput = {
+      family: uuidv4(),
+      ...clientInfo,
+      userId: user.id,
+    };
+
+    const tokenFamily = await this.createTokenFamily(tokenFamilyCreateData);
+
+    const refreshTokenPayload: RefreshTokenPayload = {
+      userId: user.id,
+      profiles: user.profiles.join(),
+    };
+
+    // Generate tokens
+    const userData = _.omit(user, ['password', 'profile']);
+    const accessToken = JwtUtil.generateToken(accessTokenPayload);
+    const refreshToken = await this.generateRefreshToken(
+      null,
+      tokenFamily.id,
+      refreshTokenPayload
+    );
+
+    return { tokens: { accessToken, refreshToken }, userData };
   }
 
-  /**
-   * Handles refreshing tokens by validating the refresh token and generating new ones.
-   * @param refreshToken - The refresh token to validate and replace.
-   * @returns An object containing a new access token and refresh token.
-   */
+  @AuthServiceErrorHandler('Token refresh failed')
   async refreshToken(refreshToken: string) {
-    try {
-      log('Refresh Token received:', refreshToken);
+    log('Refresh Token received:', refreshToken);
 
-      const result = await this.validateRefreshToken(refreshToken);
-      const decoded = result.refreshTokenContent;
-      const tokenRecord = result.adminToken;
+    const result = await this.validateRefreshToken(refreshToken);
+    const decoded = result.refreshTokenContent;
+    const tokenRecord = result.adminToken;
 
-      // Find the associated user
-      const foundAdminUser = await this.db.user.findUnique({
-        where: { id: decoded.userId },
-      });
+    // Find the associated user
+    const foundAdminUser = await this.db.user.findUnique({
+      where: { id: decoded.userId },
+    });
 
-      if (!foundAdminUser) {
-        throw new Error('Unauthorized');
-      }
-
-      // Generate new tokens
-      const newRefreshToken = await this.generateRefreshToken(
-        tokenRecord.id,
-        tokenRecord.familyId,
-        decoded
-      );
-
-      const accessToken = JwtUtil.generateToken({
-        userId: foundAdminUser.id,
-        username: foundAdminUser.username,
-        email: foundAdminUser.email,
-        profiles: foundAdminUser.profiles.join(),
-      });
-
-      return { accessToken, refreshToken: newRefreshToken };
-    } catch (error) {
-      throw new Error('Error ' + (error as Error).message);
+    if (!foundAdminUser) {
+      throw new Error('Unauthorized');
     }
+
+    // Generate new tokens
+    const newRefreshToken = await this.generateRefreshToken(
+      tokenRecord.id,
+      tokenRecord.familyId,
+      decoded
+    );
+
+    const accessToken = JwtUtil.generateToken({
+      userId: foundAdminUser.id,
+      username: foundAdminUser.username,
+      email: foundAdminUser.email,
+      profiles: foundAdminUser.profiles.join(),
+    });
+
+    return { accessToken, refreshToken: newRefreshToken };
   }
 
-  /**
-   * Retrieves all active sessions for a given user.
-   * @param userId - The ID of the user.
-   * @returns A list of active sessions.
-   */
+  @ServiceErrorHandler('Failed to retrieve active sessions')
   async getActiveSessions(userId: string) {
-    try {
-      const activeSessions = await this.db.tokenFamily.findMany({
-        where: { userId, status: 'ACTIVE' },
-      });
-      return { activeSessions };
-    } catch (error) {
-      throw new Error(
-        'Error retrieving active sessions: ' + (error as Error).message
-      );
-    }
+    const activeSessions = await this.db.tokenFamily.findMany({
+      where: { userId, status: 'ACTIVE' },
+    });
+    return { activeSessions };
   }
 
-  /**
-   * Logs out a single session by revoking the specified refresh token.
-   * @param refreshToken - The refresh token to revoke.
-   */
+  @AuthServiceErrorHandler('Logout operation failed')
   async logout(refreshToken: string) {
-    try {
-      const adminToken = await this.db.refreshToken.findUnique({
-        where: { token: refreshToken },
-      });
+    const adminToken = await this.db.refreshToken.findUnique({
+      where: { token: refreshToken },
+    });
 
-      if (!adminToken) {
-        throw new Error('Token not found');
-      }
-
-      // Revoke tokens and associated family
-      await this.db.refreshToken.updateMany({
-        where: {
-          OR: [{ id: adminToken.id }, { parentTokenId: adminToken.id }],
-        },
-        data: { status: 'REVOKED' },
-      });
-
-      await this.revokeTokenFamily(adminToken.familyId);
-    } catch (error) {
-      throw new Error('Error logging out: ' + (error as Error).message);
+    if (!adminToken) {
+      throw new Error('Token not found');
     }
+
+    // Revoke tokens and associated family
+    await this.db.refreshToken.updateMany({
+      where: {
+        OR: [{ id: adminToken.id }, { parentTokenId: adminToken.id }],
+      },
+      data: { status: 'REVOKED' },
+    });
+
+    await this.revokeTokenFamily(adminToken.familyId);
   }
 
-  /**
-   * Logs out all sessions for a user by revoking all active token families.
-   * @param userId - The ID of the user.
-   * @returns A boolean indicating success.
-   */
+  @AuthServiceErrorHandler('Failed to logout from all sessions')
   async logoutAll(userId: string) {
-    try {
-      const activeFamilies = await this.db.tokenFamily.findMany({
-        where: { userId, status: 'ACTIVE' },
-        orderBy: { createdAt: 'asc' },
-      });
+    const activeFamilies = await this.db.tokenFamily.findMany({
+      where: { userId, status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+    });
 
-      for (const activeFamily of activeFamilies) {
-        await this.revokeTokenFamily(activeFamily.id);
-      }
-
-      return true;
-    } catch (error) {
-      throw new Error(
-        'Error logging out all sessions: ' + (error as Error).message
-      );
+    for (const activeFamily of activeFamilies) {
+      await this.revokeTokenFamily(activeFamily.id);
     }
+
+    return true;
   }
 
-  /**
-   * Creates a new token family and revokes old ones if the maximum number of connections is exceeded.
-   * @param data - The data to create a token family.
-   * @returns The newly created token family.
-   */
+  @CriticalServiceErrorHandler('Failed to create token family')
   private async createTokenFamily(
     data: Prisma.TokenFamilyUncheckedCreateInput
   ) {
-    try {
-      const activeFamilies = await this.db.tokenFamily.findMany({
-        where: { userId: data.userId, status: 'ACTIVE' },
-        orderBy: { createdAt: 'asc' },
-      });
+    const activeFamilies = await this.db.tokenFamily.findMany({
+      where: { userId: data.userId, status: 'ACTIVE' },
+      orderBy: { createdAt: 'asc' },
+    });
 
-      // Check if there are active families and if their count exceeds the max allowed
-      if (activeFamilies && activeFamilies.length >= config.jwt.maxConnexions) {
-        // Revoke the oldest family if necessary
-        if (activeFamilies[0]) {
-          await this.revokeTokenFamily(activeFamilies[0].id);
-        }
+    // Check if there are active families and if their count exceeds the max allowed
+    if (activeFamilies && activeFamilies.length >= config.jwt.maxConnexions) {
+      // Revoke the oldest family if necessary
+      if (activeFamilies[0]) {
+        await this.revokeTokenFamily(activeFamilies[0].id);
       }
-
-      return await this.db.tokenFamily.create({ data });
-    } catch (error) {
-      throw new Error(
-        'Error creating token family: ' + (error as Error).message
-      );
     }
+
+    return await this.db.tokenFamily.create({ data });
   }
 
-  /**
-   * Revokes a token family and all associated tokens.
-   * @param familyId - The ID of the token family to revoke.
-   */
+  @CriticalServiceErrorHandler('Failed to revoke token family')
   private async revokeTokenFamily(familyId: number) {
-    try {
-      log('Revoke token family');
+    log('Revoke token family');
 
-      await this.db.tokenFamily.update({
-        where: { id: familyId },
-        data: { status: 'REVOKED' },
-      });
+    await this.db.tokenFamily.update({
+      where: { id: familyId },
+      data: { status: 'REVOKED' },
+    });
 
-      // Revoke all associated refresh tokens
-      await this.db.refreshToken.updateMany({
-        where: { familyId },
-        data: { status: 'REVOKED' },
-      });
-    } catch (error) {
-      throw new Error(
-        'Error revoking token family: ' + (error as Error).message
-      );
-    }
+    // Revoke all associated refresh tokens
+    await this.db.refreshToken.updateMany({
+      where: { familyId },
+      data: { status: 'REVOKED' },
+    });
   }
 
-  /**
-   * Validates a refresh token and checks its status and expiration.
-   * @param refreshToken - The refresh token to validate.
-   * @returns The decoded token payload and associated database record.
-   */
+  @CriticalServiceErrorHandler('Token validation failed')
   private async validateRefreshToken(refreshToken: string) {
-    try {
-      const adminToken = await this.db.refreshToken.findUnique({
-        where: { token: refreshToken },
-      });
+    const adminToken = await this.db.refreshToken.findUnique({
+      where: { token: refreshToken },
+    });
 
-      if (!adminToken) {
-        throw new Error('Token not found');
-      }
-
-      if (adminToken.status !== 'ACTIVE') {
-        await this.revokeTokenFamily(adminToken.familyId);
-        throw new Error('Token is revoked or expired');
-      }
-
-      if (new Date(adminToken.expiresAt) < new Date()) {
-        await this.revokeTokenFamily(adminToken.familyId);
-        throw new Error('Token expired');
-      }
-
-      const refreshTokenContent: RefreshTokenPayload =
-        JwtUtil.verifyRefreshToken(refreshToken);
-      return { refreshTokenContent, adminToken };
-    } catch (error) {
-      throw new Error('Error validating token: ' + (error as Error).message);
+    if (!adminToken) {
+      throw new Error('Token not found');
     }
+
+    if (adminToken.status !== 'ACTIVE') {
+      await this.revokeTokenFamily(adminToken.familyId);
+      throw new Error('Token is revoked or expired');
+    }
+
+    if (new Date(adminToken.expiresAt) < new Date()) {
+      await this.revokeTokenFamily(adminToken.familyId);
+      throw new Error('Token expired');
+    }
+
+    const refreshTokenContent: RefreshTokenPayload =
+      JwtUtil.verifyRefreshToken(refreshToken);
+    return { refreshTokenContent, adminToken };
   }
 
-  /**
-   * Generates a new refresh token and revokes the parent token if specified.
-   * @param parentTokenId - The ID of the parent token to revoke.
-   * @param familyId - The ID of the token family.
-   * @param payload - The refresh token payload.
-   * @returns A new refresh token.
-   */
+  @ServiceErrorHandler('Failed to generate refresh token')
   private async generateRefreshToken(
     parentTokenId: number | null,
     familyId: number,
     payload: RefreshTokenPayload
   ): Promise<string> {
-    try {
-      if (parentTokenId) {
-        await this.db.refreshToken.update({
-          where: { id: parentTokenId },
-          data: { status: 'REVOKED' },
-        });
-      }
-
-      const newPayload: RefreshTokenPayload = {
-        userId: payload.userId,
-        profiles: payload.profiles,
-      };
-
-      const newRefreshToken = JwtUtil.generateRefreshToken(newPayload);
-      const expiresAt = DateUtil.getDateToInterval(
-        DateUtil.parseDurationToMilliseconds(config.jwt.refreshExpiresIn)
-      );
-
-      await this.db.refreshToken.create({
-        data: {
-          token: newRefreshToken,
-          parentTokenId,
-          familyId,
-          expiresAt,
-        },
+    if (parentTokenId) {
+      await this.db.refreshToken.update({
+        where: { id: parentTokenId },
+        data: { status: 'REVOKED' },
       });
-
-      return newRefreshToken;
-    } catch (error) {
-      throw new Error(
-        'Error generating refresh token: ' + (error as Error).message
-      );
     }
+
+    const newPayload: RefreshTokenPayload = {
+      userId: payload.userId,
+      profiles: payload.profiles,
+    };
+
+    const newRefreshToken = JwtUtil.generateRefreshToken(newPayload);
+    const expiresAt = DateUtil.getDateToInterval(
+      DateUtil.parseDurationToMilliseconds(config.jwt.refreshExpiresIn)
+    );
+
+    await this.db.refreshToken.create({
+      data: {
+        token: newRefreshToken,
+        parentTokenId,
+        familyId,
+        expiresAt,
+      },
+    });
+
+    return newRefreshToken;
   }
 }

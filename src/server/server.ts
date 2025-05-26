@@ -151,7 +151,6 @@ class Server {
     // Log CPU and memory info
     const cpuCount = os.cpus().length;
     const memoryUsage = process.memoryUsage();
-    // eslint-disable-next-line no-magic-numbers
     const memoryUsageMB = Math.round(memoryUsage.rss / 1024 / 1024);
 
     logger.info(
@@ -267,7 +266,6 @@ class Server {
 
       // Memory usage
       const memoryUsage = process.memoryUsage();
-      // eslint-disable-next-line no-magic-numbers
       const BYTES_PER_MB = 1024 * 1024;
       const heapUsed = Math.round(memoryUsage.heapUsed / BYTES_PER_MB);
       const heapTotal = Math.round(memoryUsage.heapTotal / BYTES_PER_MB);
@@ -288,7 +286,6 @@ class Server {
   /**
    * Default monitor interval in milliseconds.
    */
-  // eslint-disable-next-line no-magic-numbers
   private static readonly DEFAULT_MONITOR_INTERVAL_MS = 30000;
 
   /**

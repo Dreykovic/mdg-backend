@@ -14,7 +14,7 @@
  */
 import cors from 'cors';
 import config from '.';
-import logger from '@/core/utils/logger.util';
+import { log } from 'console';
 
 // Fetching CORS settings from the main configuration
 const { allowOrigins, credentials, methods, maxAge } = config.cors;
@@ -31,7 +31,7 @@ const corsOptions: cors.CorsOptions = {
     } else {
       // Log rejected origins in development mode
       if (config.isDev) {
-        logger.warn(`CORS rejected origin: ${origin}`);
+        log(`CORS rejected origin: ${origin}`);
       }
       callback(new Error(`Origin ${origin} not allowed by CORS policy`), false);
     }
@@ -61,13 +61,11 @@ const corsOptions: cors.CorsOptions = {
 
 // Log CORS configuration in development mode
 if (config.isDev) {
-  logger.info('CORS configuration loaded:');
-  logger.info(
-    `- Allowed origins: ${allowOrigins.join(', ') || 'None specified'}`
-  );
-  logger.info(`- Credentials allowed: ${credentials}`);
-  logger.info(`- Methods allowed: ${methods?.join(', ')}`);
-  logger.info(`- Max age: ${maxAge} seconds`);
+  log('CORS configuration loaded:');
+  log(`- Allowed origins: ${allowOrigins.join(', ') || 'None specified'}`);
+  log(`- Credentials allowed: ${credentials}`);
+  log(`- Methods allowed: ${methods?.join(', ')}`);
+  log(`- Max age: ${maxAge} seconds`);
 }
 
 export default corsOptions;

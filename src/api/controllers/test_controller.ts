@@ -4,7 +4,7 @@ import { Controller, Get, Post } from '@/core/decorators/route.decorators';
 import { log } from 'console';
 
 @Service()
-@Controller('/test')
+@Controller('')
 export class TestController {
   @Get('/hello')
   async hello(req: Request, res: Response): Promise<void> {

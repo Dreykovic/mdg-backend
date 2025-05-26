@@ -54,7 +54,6 @@ export class RouteScanner {
     // Construction des versions
     const versionsRouter = this.scanVersions(config.versions);
     appRouter.use(config.globalPrefix, versionsRouter);
-
     // Affichage du résumé final
     this.displayRoutingSummary(config.globalPrefix);
 
@@ -116,7 +115,6 @@ export class RouteScanner {
           : `/${module.prefix}`,
         routes: [],
       };
-
       const moduleRouter = this.buildModuleRoutes(
         module,
         moduleInfo,
@@ -256,7 +254,10 @@ export class RouteScanner {
     routePath: string
   ): string {
     const parts = ['', version, modulePrefix, controllerPrefix, routePath]
-      .filter((part) => part !== null && part !== undefined && part !== '/')
+      .filter(
+        (part) =>
+          part !== null && part !== undefined && part !== '/' && part !== ''
+      )
       .map((part) => part.replace(/^\/+|\/+$/g, ''));
 
     return `/${parts.join('/')}`;

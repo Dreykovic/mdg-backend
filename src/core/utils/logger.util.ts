@@ -8,11 +8,15 @@ import config from '@/config';
 // Type for environment
 type Environment = 'development' | 'test' | 'production';
 
-// Create logs directory if it doesn't exist
+// Create logs directory if it doesn't exist (async version)
 const logsDir = resolve(appRoot.path, 'logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
+void (async (): Promise<void> => {
+  try {
+    await fs.promises.access(logsDir, fs.constants.F_OK);
+  } catch {
+    await fs.promises.mkdir(logsDir, { recursive: true });
+  }
+})();
 
 // Determine log level based on environment
 const logLevel = config.isProd ? 'info' : 'debug';
@@ -37,7 +41,7 @@ const loggerOptions: pino.LoggerOptions = {
 // Function to create logger instance
 const createLogger = (): pino.Logger => {
   if (cluster.isWorker) {
-    const workerId = cluster.worker?.id || 'unknown';
+    const workerId = cluster.worker?.id ?? 'unknown';
     return pino(
       {
         ...loggerOptions,
@@ -104,7 +108,7 @@ const logger = createLogger();
 // Handle uncaught exceptions and unhandled rejections
 process.on('uncaughtException', (err) => {
   logger.fatal({ err }, 'Uncaught exception');
-  fs.appendFileSync(
+  void fs.promises.appendFile(
     resolve(logsDir, 'exceptions.log'),
     `${new Date().toISOString()} FATAL: Uncaught exception: ${err.message}\n${err.stack}\n`
   );

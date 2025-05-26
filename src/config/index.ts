@@ -175,7 +175,11 @@ if (config.isDev) {
   log(
     `Clustering enabled: ${config.cluster} (${config.clusterWorkers} workers)`
   );
-  log('Allowed Origins:', config.cors.allowOrigins);
 }
+log('Config loaded:', typeof config !== 'undefined' && config !== null);
+log(
+  'Config keys:',
+  config !== undefined && config !== null ? Object.keys(config) : 'undefined'
+);
 
 export default config;

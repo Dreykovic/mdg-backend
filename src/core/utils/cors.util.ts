@@ -6,7 +6,7 @@
  * Logs errors if parsing fails and provides a default fallback.
  */
 
-import logger from './logger.util';
+import { log } from 'console';
 
 /**
  * Parses a JSON string to extract an array of allowed origins for CORS.
@@ -26,10 +26,7 @@ export function parseAllowedOrigins(originsString: string): string[] {
     return array;
   } catch (error) {
     // Log an error message if parsing fails
-    logger.error(
-      'Error while parsing CORS_ALLOW_ORIGINS:',
-      (error as Error).message
-    );
+    log('Error while parsing CORS_ALLOW_ORIGINS:', (error as Error).message);
 
     // Return a default value to allow all origins
     return ['*'];

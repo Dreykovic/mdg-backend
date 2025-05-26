@@ -6,10 +6,10 @@ import config from '@/config';
 import { PrismaClient } from '@prisma/client';
 import colorTxt from 'ansi-colors';
 
-import { log } from 'console';
 import { seedDefaultUnits } from './unit.seeder';
 import { createOrFindDefaultUser } from './user.seeder';
 import { seedDefaultWareHouse } from './warehouse.seeder';
+import logger from '@/core/utils/logger.util';
 
 const prisma = new PrismaClient();
 
@@ -19,17 +19,16 @@ async function main(): Promise<void> {
     await createOrFindDefaultUser(prisma);
     await seedDefaultWareHouse(prisma);
   } else if (config.isStage) {
-    log('Good update');
+    logger.info('Good update');
   }
 }
 main()
   .catch((e) => {
-    log(colorTxt.red(`x Database seed error ${e}`));
-
+    logger.error(colorTxt.red(`✗ Database seed error: ${e.message}`));
+    logger.error(e.stack); // Pour le debug
     process.exit(1);
   })
   .finally(() => {
-    log(colorTxt.green(`✔ Database seed successfully `));
-
+    logger.info(colorTxt.green(`✔ Database seed completed`));
     void prisma.$disconnect();
   });

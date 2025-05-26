@@ -4,7 +4,11 @@ import appRoot from 'app-root-path';
 import fs from 'fs';
 import cluster from 'cluster';
 import config from '@/config';
-
+console.log('Config loaded:', typeof config !== 'undefined' && config !== null);
+console.log(
+  'Config keys:',
+  config !== undefined && config !== null ? Object.keys(config) : 'undefined'
+);
 // Type for environment
 type Environment = 'development' | 'test' | 'production';
 

@@ -1,8 +1,8 @@
 // decorators/errorHandler.decorator.ts
 import { Request, Response } from 'express';
-import { log } from 'console';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import { PrismaService } from '@/database/prisma/prisma.service';
+import logger from '../utils/logger.util';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export function ControllerErrorHandler(defaultMessage = 'An error occurred') {
@@ -21,7 +21,7 @@ export function ControllerErrorHandler(defaultMessage = 'An error occurred') {
       try {
         await originalMethod.apply(this, [req, res, ...args]);
       } catch (error) {
-        log(error);
+        logger.debug(error);
         const response = ApiResponse.http401({
           message: (error as Error).message || defaultMessage,
         });
@@ -55,13 +55,13 @@ export function ServiceErrorHandler(
     descriptor.value = async function (...args: any[]): Promise<any> {
       try {
         if (logOperation) {
-          log(
+          logger.debug(
             `Service operation: ${target.constructor.name}.${String(propertyKey)}`
           );
         }
         return await originalMethod.apply(this, args);
       } catch (error) {
-        log(
+        logger.debug(
           `Error in ${target.constructor.name}.${String(propertyKey)}:`,
           error
         );

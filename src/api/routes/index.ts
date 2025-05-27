@@ -7,6 +7,7 @@ import config from '@/config';
 import { TestController } from '../controllers/test_controller';
 import logger from '@/core/utils/logger.util';
 import authModule from './auth_module';
+import adminModule from './admin_module';
 
 logger.debug('🚀 === DÉBUT CONFIGURATION ROUTES ===');
 
@@ -24,7 +25,7 @@ const appConfig: AppConfig = {
       // middlewares: ['rateLimit:1000'],
       modules: [
         authModule,
-
+        adminModule,
         {
           name: 'test', // Ajout temporaire
           prefix: '/test',

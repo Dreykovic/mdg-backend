@@ -1,6 +1,4 @@
 // decorators/route.decorators.ts
-import 'reflect-metadata';
-
 export const CONTROLLER_METADATA = Symbol('controller');
 export const ROUTES_METADATA = Symbol('routes');
 export const MIDDLEWARES_METADATA = Symbol('middlewares');

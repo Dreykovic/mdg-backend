@@ -1,12 +1,11 @@
 // app.ts
 import { RouteScanner } from '@/core/scanner/route.scanner';
 import { AppConfig } from '@/core/types/route.types';
-import { AdminAuthController } from './controllers/auth/admin_auth_controller';
+import { AdminAuthController } from '../controllers/auth/admin_auth_controller';
 import config from '@/config';
 // Vérifier les métadonnées du controller
-import 'reflect-metadata';
 
-import { TestController } from './controllers/test_controller';
+import { TestController } from '../controllers/test_controller';
 import logger from '@/core/utils/logger.util';
 
 logger.debug('🚀 === DÉBUT CONFIGURATION ROUTES ===');

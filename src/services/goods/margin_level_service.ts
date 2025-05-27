@@ -1,89 +1,88 @@
 import ServiceDefinition from '@/services/definitions/base_service';
-import { Prisma } from '@prisma/client';
-import { log } from 'console';
 import { Service } from 'typedi';
+import { MarginLevel, Prisma } from '@prisma/client';
+import { ServiceErrorHandler } from '@/core/decorators/errorHandler.decorators';
+import logger from '@/core/utils/logger.util';
 
 @Service()
 export default class MarginService extends ServiceDefinition {
-  async createMargin(data: Prisma.MarginLevelUncheckedCreateInput) {
-    try {
-      const cleanData = data;
+  @ServiceErrorHandler()
+  async createMargin(
+    data: Prisma.MarginLevelUncheckedCreateInput
+  ): Promise<{ margin: MarginLevel }> {
+    const cleanData = data;
 
-      const margin = await this.db.marginLevel.create({
-        data: cleanData,
-      });
-      log('Created Margin : ', margin);
-      return { margin };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    const margin = await this.db.marginLevel.create({
+      data: cleanData,
+    });
+    logger.debug('Created Margin : ', margin);
+    return { margin };
   }
 
+  @ServiceErrorHandler()
   async margins(
     page = 1,
     pageSize = 10,
     filters: Prisma.MarginLevelWhereInput = {}
-  ) {
-    try {
-      const skip = (page - 1) * pageSize;
+  ): Promise<{
+    data: MarginLevel[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }> {
+    const skip = (page - 1) * pageSize;
 
-      const [total, data] = await this.db.$transaction([
-        this.db.marginLevel.count({
-          where: filters,
-        }),
+    const [total, data] = await this.db.$transaction([
+      this.db.marginLevel.count({
+        where: filters,
+      }),
 
-        this.db.marginLevel.findMany({
-          where: filters,
-          skip,
-          take: pageSize,
-          orderBy: { createdAt: 'desc' },
-        }),
-      ]);
-      log('Filtered Margins fetched successfully');
-      return {
-        data,
-        total,
-        page,
-        pageSize,
-      };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+      this.db.marginLevel.findMany({
+        where: filters,
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+    logger.debug('Filtered Margins fetched successfully');
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+    };
   }
 
-  async marginsList() {
-    try {
-      const margins = await this.db.marginLevel.findMany();
+  @ServiceErrorHandler()
+  async marginsList(): Promise<{ margins: MarginLevel[] }> {
+    const margins = await this.db.marginLevel.findMany();
 
-      return { margins };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    return { margins };
   }
 
-  async deleteMargin(filter: Prisma.MarginLevelWhereUniqueInput) {
-    try {
-      await this.db.marginLevel.delete({
-        where: filter,
-      });
+  @ServiceErrorHandler()
+  async deleteMargin(
+    filter: Prisma.MarginLevelWhereUniqueInput
+  ): Promise<boolean> {
+    await this.db.marginLevel.delete({
+      where: filter,
+    });
 
-      log('Margin deleted successfully');
-      return true;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    logger.debug('Margin deleted successfully');
+    return true;
   }
 
+  @ServiceErrorHandler()
   async updateMargin(
     data: Prisma.MarginLevelUncheckedUpdateInput,
     filter: Prisma.MarginLevelWhereUniqueInput
-  ) {
+  ): Promise<{ margin: MarginLevel }> {
     try {
       const margin = await this.db.marginLevel.update({
         where: filter,
         data,
       });
-      log('Updated Margin : ', margin);
+      logger.debug('Updated Margin : ', margin);
       return { margin };
     } catch (error) {
       throw this.handleError(error);

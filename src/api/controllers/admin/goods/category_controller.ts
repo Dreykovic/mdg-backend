@@ -6,20 +6,25 @@ import { Service } from 'typedi';
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '../../../../core/utils/string.util';
 import CategoryService from '@/services/goods/category_service';
+import { Controller, Get } from '@/core/decorators/route.decorators';
+import { ControllerErrorHandler } from '@/core/decorators/errorHandler.decorators';
 
 @Service()
+@Controller('/goods/categories', ['auth', 'rbac:ADMIN'])
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
+  @Get('/')
+  @ControllerErrorHandler('Failed to fetch categories.')
   async categories(req: Request, res: Response): Promise<void> {
-    try {
       log('Filtered List Categories Request Received');
 
       const page = parseInt(req.query.page as string) || 1;
       const pageSize = parseInt(req.query.pageSize as string) || 10;
-      const filters = req.query.filters
-        ? JSON.parse(req.query.filters as string)
-        : {};
+      const filters =
+        req.query.filters !== undefined && req.query.filters !== null
+          ? JSON.parse(req.query.filters as string)
+          : {};
 
       const allowedFields = ['name'];
 

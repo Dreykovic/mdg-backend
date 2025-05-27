@@ -1,12 +1,12 @@
 // app.ts
 import { RouteScanner } from '@/core/scanner/route.scanner';
 import { AppConfig } from '@/core/types/route.types';
-import { AdminAuthController } from '../controllers/auth/admin_auth_controller';
 import config from '@/config';
 // Vérifier les métadonnées du controller
 
 import { TestController } from '../controllers/test_controller';
 import logger from '@/core/utils/logger.util';
+import authModule from './auth_module';
 
 logger.debug('🚀 === DÉBUT CONFIGURATION ROUTES ===');
 
@@ -23,11 +23,7 @@ const appConfig: AppConfig = {
       version: 'v1', // Niveau 2: Version
       // middlewares: ['rateLimit:1000'],
       modules: [
-        {
-          name: 'auth',
-          prefix: '/auth', // Niveau 3: Module
-          controllers: [AdminAuthController],
-        },
+        authModule,
 
         {
           name: 'test', // Ajout temporaire

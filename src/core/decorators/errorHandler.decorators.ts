@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 // decorators/errorHandler.decorator.ts
 import { Request, Response } from 'express';
 import ApiResponse from '@/core/utils/apiResponse.util';
@@ -5,7 +6,10 @@ import { PrismaService } from '@/database/prisma/prisma.service';
 import logger from '../utils/logger.util';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export function ControllerErrorHandler(defaultMessage = 'An error occurred') {
+export function ControllerErrorHandler(
+  defaultMessage = 'An error occurred',
+  code = 400
+) {
   return function (
     target: any,
     propertyKey: string | symbol,
@@ -21,11 +25,33 @@ export function ControllerErrorHandler(defaultMessage = 'An error occurred') {
       try {
         await originalMethod.apply(this, [req, res, ...args]);
       } catch (error) {
-        logger.debug(error);
-        const response = ApiResponse.http401({
-          message: (error as Error).message || defaultMessage,
+        const errorMessage = (error as Error)?.message || defaultMessage;
+
+        logger.error(`Controller error in ${propertyKey.toString()}:`, {
+          error: errorMessage,
+          method: req.method,
+          url: req.url,
+          statusCode: code,
         });
-        res.status(response.httpStatusCode).json(response.data);
+
+        // Map direct des codes vers les méthodes ApiResponse
+        const responseMap: Record<number, () => any> = {
+          400: () => ApiResponse.http400({ message: errorMessage }),
+          401: () => ApiResponse.http401({ message: errorMessage }),
+          403: () => ApiResponse.http403({ message: errorMessage }),
+          404: () => ApiResponse.http404({ message: errorMessage }),
+          422: () => ApiResponse.http422({ message: errorMessage }),
+          500: () => ApiResponse.http500(errorMessage, error),
+        };
+
+        const response = responseMap[code] ?? responseMap[400];
+        if (typeof response === 'function') {
+          const result = response();
+          res.status(result.httpStatusCode).json(result.data);
+        } else {
+          // Fallback in case no valid response function is found
+          res.status(500).json({ message: defaultMessage });
+        }
       }
     };
 

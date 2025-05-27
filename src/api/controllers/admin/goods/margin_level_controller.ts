@@ -82,7 +82,7 @@ export class MarginController {
     res.status(response.httpStatusCode).json(response.data);
   }
 
-  @Put('/:modelId')
+  @Put('/update/:modelId')
   @ControllerErrorHandler('Failed to update margin.')
   async updateMargin(req: Request, res: Response): Promise<void> {
     logger.debug('Update Margin Request Received');

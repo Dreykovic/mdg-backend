@@ -2,7 +2,6 @@ import { UserLogin } from '@/core/types';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import { Request, Response } from 'express';
 import { Service } from 'typedi';
-import { log } from 'console';
 import AdminAuthService from '@/services/auth/auth_service';
 import {
   Controller,
@@ -12,6 +11,7 @@ import {
   UseMiddlewares,
 } from '@/core/decorators/route.decorators';
 import { ControllerErrorHandler } from '@/core/decorators/errorHandler.decorators';
+import logger from '@/core/utils/logger.util';
 @Service()
 @Controller('/admin') // Niveau controller
 export class AdminAuthController {
@@ -27,7 +27,7 @@ export class AdminAuthController {
   @Post('/sign-in')
   @ControllerErrorHandler('Sign In failed.')
   async signIn(req: Request, res: Response): Promise<void> {
-    log('Sign In Request Received');
+    logger.debug('Sign In Request Received');
 
     const data: UserLogin = req.body;
 
@@ -50,7 +50,7 @@ export class AdminAuthController {
   @Post('/refresh')
   async refresh(req: Request, res: Response): Promise<void> {
     try {
-      log('Refresh Token Request Received');
+      logger.debug('Refresh Token Request Received');
 
       const data: { token: string } = req.body;
 
@@ -59,7 +59,7 @@ export class AdminAuthController {
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
     } catch (error) {
-      log(error);
+      logger.debug(error);
       const response = ApiResponse.http401({
         message: (error as Error).message || 'Token refresh failed.',
       });
@@ -78,7 +78,7 @@ export class AdminAuthController {
   @UseMiddlewares('auth', 'rbac:ADMIN')
   async logout(req: Request, res: Response): Promise<void> {
     try {
-      log('Logout Request Received');
+      logger.debug('Logout Request Received');
 
       const data: { token: string } = req.body;
 
@@ -87,7 +87,7 @@ export class AdminAuthController {
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
     } catch (error) {
-      log(error);
+      logger.debug(error);
       const response = ApiResponse.http401({
         message: (error as Error).message || 'Logout failed.',
       });
@@ -106,7 +106,7 @@ export class AdminAuthController {
   @UseMiddlewares('auth', 'rbac:ADMIN')
   async logoutAll(req: Request, res: Response): Promise<void> {
     try {
-      log('Logout All Request Received');
+      logger.debug('Logout All Request Received');
 
       const data: { userId: string } = req.body;
 
@@ -115,7 +115,7 @@ export class AdminAuthController {
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
     } catch (error) {
-      log(error);
+      logger.debug(error);
       const response = ApiResponse.http401({
         message: (error as Error).message || 'Logout from all devices failed.',
       });
@@ -126,7 +126,7 @@ export class AdminAuthController {
   @UseMiddlewares('auth', 'rbac:ADMIN')
   async getActiveSessions(req: Request, res: Response): Promise<void> {
     try {
-      log('Gat All Active Sessions Request Received');
+      logger.debug('Gat All Active Sessions Request Received');
 
       const userId = (req as any).user.id;
 
@@ -135,7 +135,7 @@ export class AdminAuthController {
       const response = ApiResponse.http200(payload);
       res.status(response.httpStatusCode).json(response.data);
     } catch (error) {
-      log(error);
+      logger.debug(error);
       const response = ApiResponse.http401({
         message: (error as Error).message || 'Get All active Sessions failed.',
       });

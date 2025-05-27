@@ -28,7 +28,6 @@ import _ from 'lodash';
 import config from '@/config';
 import JwtUtil from '@/core/utils/jwt.util';
 import DateUtil from '@/core/utils/date.util';
-import { log } from 'console';
 import { Prisma } from '@prisma/client';
 
 // Utilisation dans votre service AdminAuthService
@@ -37,6 +36,7 @@ import {
   CriticalServiceErrorHandler,
   ServiceErrorHandler,
 } from '@/core/decorators/errorHandler.decorators';
+import logger from '@/core/utils/logger.util';
 
 @Service()
 export default class AdminAuthService extends ServiceDefinition {
@@ -106,7 +106,7 @@ export default class AdminAuthService extends ServiceDefinition {
   async refreshToken(
     refreshToken: string
   ): Promise<{ accessToken: string; refreshToken: string }> {
-    log('Refresh Token received:', refreshToken);
+    logger.debug('Refresh Token received:', refreshToken);
 
     const result = await this.validateRefreshToken(refreshToken);
     const decoded = result.refreshTokenContent;
@@ -206,7 +206,7 @@ export default class AdminAuthService extends ServiceDefinition {
 
   @CriticalServiceErrorHandler('Failed to revoke token family')
   private async revokeTokenFamily(familyId: number): Promise<void> {
-    log('Revoke token family');
+    logger.debug('Revoke token family');
 
     await this.db.tokenFamily.update({
       where: { id: familyId },

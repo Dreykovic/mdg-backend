@@ -4,10 +4,10 @@ import { AppConfig } from '@/core/types/route.types';
 import config from '@/config';
 // Vérifier les métadonnées du controller
 
-import { TestController } from '../controllers/test_controller';
+import { TestController } from '../controllers/test.controller';
 import logger from '@/core/utils/logger.util';
-import authModule from './auth_module';
-import adminModule from './admin_module';
+import authModule from './auth.module';
+import adminModule from './admin.module';
 
 logger.debug('🚀 === DÉBUT CONFIGURATION ROUTES ===');
 

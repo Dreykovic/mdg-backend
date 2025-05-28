@@ -13,7 +13,7 @@ import {
 import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
 import logger from '@/core/utils/logger.util';
 import { ValidateRequest } from '@/core/decorators/validation.dacorator';
-import { AuthSchemas } from '@/api/validators/auth.validator';
+import { AdminAuthSchemas } from '@/api/validators/admin/auth.validator';
 @Service()
 @Controller('/admin') // Niveau controller
 export class AdminAuthController {
@@ -28,7 +28,7 @@ export class AdminAuthController {
    */
   @Post('/sign-in')
   @ValidateRequest({
-    body: AuthSchemas.signIn,
+    body: AdminAuthSchemas.signIn,
   })
   @ControllerErrorHandler('Sign In failed.')
   async signIn(req: Request, res: Response): Promise<void> {
@@ -54,7 +54,7 @@ export class AdminAuthController {
    */
   @Post('/refresh')
   @ValidateRequest({
-    body: AuthSchemas.refreshToken,
+    body: AdminAuthSchemas.refreshToken,
   })
   @ControllerErrorHandler('Token refresh failed.')
   async refresh(req: Request, res: Response): Promise<void> {
@@ -79,7 +79,7 @@ export class AdminAuthController {
   @UseMiddlewares('auth', 'rbac:ADMIN')
   @ControllerErrorHandler('Logout failed.')
   @ValidateRequest({
-    body: AuthSchemas.logout,
+    body: AdminAuthSchemas.logout,
   })
   async logout(req: Request, res: Response): Promise<void> {
     logger.debug('Logout Request Received');
@@ -103,7 +103,7 @@ export class AdminAuthController {
   @UseMiddlewares('auth', 'rbac:ADMIN')
   @ControllerErrorHandler('Logout from all devices failed.')
   @ValidateRequest({
-    body: AuthSchemas.logoutAll,
+    body: AdminAuthSchemas.logoutAll,
   })
   async logoutAll(req: Request, res: Response): Promise<void> {
     logger.debug('Logout All Request Received');

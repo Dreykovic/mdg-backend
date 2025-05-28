@@ -1,7 +1,7 @@
 // validators/auth.validators.ts
 import { z } from 'zod';
 
-export const AuthSchemas = {
+export const AdminAuthSchemas = {
   signIn: z.object({
     username: z.string().min(1, 'Username is required'),
     password: z.string().min(1, 'Password is required'),
@@ -34,9 +34,11 @@ export const AuthSchemas = {
     }),
 };
 // Inférence des types TypeScript automatique
-export type SignInRequest = z.infer<typeof AuthSchemas.signIn>;
-export type RefreshTokenRequest = z.infer<typeof AuthSchemas.refreshToken>;
-export type LogoutRequest = z.infer<typeof AuthSchemas.logout>;
-export type LogoutAllRequest = z.infer<typeof AuthSchemas.logoutAll>;
-export type ChangePasswordRequest = z.infer<typeof AuthSchemas.changePassword>;
-export type AuthSchemasType = typeof AuthSchemas;
+export type SignInRequest = z.infer<typeof AdminAuthSchemas.signIn>;
+export type RefreshTokenRequest = z.infer<typeof AdminAuthSchemas.refreshToken>;
+export type LogoutRequest = z.infer<typeof AdminAuthSchemas.logout>;
+export type LogoutAllRequest = z.infer<typeof AdminAuthSchemas.logoutAll>;
+export type ChangePasswordRequest = z.infer<
+  typeof AdminAuthSchemas.changePassword
+>;
+export type AdminAuthSchemasType = typeof AdminAuthSchemas;

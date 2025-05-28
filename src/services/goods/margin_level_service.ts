@@ -1,7 +1,7 @@
 import ServiceDefinition from '@/services/definitions/base_service';
 import { Service } from 'typedi';
 import { MarginLevel, Prisma } from '@prisma/client';
-import { ServiceErrorHandler } from '@/core/decorators/errorHandler.decorators';
+import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
 import logger from '@/core/utils/logger.util';
 
 @Service()

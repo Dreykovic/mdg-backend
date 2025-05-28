@@ -6,7 +6,7 @@ import {
   ControllerMetadata,
   RouteMetadata,
   ROUTES_METADATA,
-} from '@/core//decorators/route.decorators';
+} from '@/core/decorators/route.decorator';
 
 import {
   AppConfig,

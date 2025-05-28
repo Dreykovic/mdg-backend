@@ -9,8 +9,8 @@ import {
   Get,
   Post,
   UseMiddlewares,
-} from '@/core/decorators/route.decorators';
-import { ControllerErrorHandler } from '@/core/decorators/errorHandler.decorators';
+} from '@/core/decorators/route.decorator';
+import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
 import logger from '@/core/utils/logger.util';
 @Service()
 @Controller('/admin') // Niveau controller

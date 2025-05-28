@@ -1,0 +1,412 @@
+// validators/auth.validators.ts
+import { z } from 'zod';
+
+export const AuthSchemas = {
+  signIn: z.object({
+    email: z.string().email('Email format is invalid'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    rememberMe: z.boolean().optional().default(false),
+  }),
+
+  refreshToken: z.object({
+    token: z.string().min(1, 'Refresh token is required'),
+  }),
+
+  logout: z.object({
+    token: z.string().min(1, 'Token is required'),
+  }),
+
+  logoutAll: z.object({
+    userId: z.string().uuid('User ID must be a valid UUID'),
+  }),
+
+  changePassword: z
+    .object({
+      currentPassword: z.string().min(1, 'Current password is required'),
+      newPassword: z
+        .string()
+        .min(8, 'New password must be at least 8 characters'),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ['confirmPassword'],
+    }),
+};
+
+// Inférence des types TypeScript automatique
+export type SignInRequest = z.infer<typeof AuthSchemas.signIn>;
+export type RefreshTokenRequest = z.infer<typeof AuthSchemas.refreshToken>;
+
+// validators/product.validators.ts
+export const ProductSchemas = {
+  // Schémas de base réutilisables
+  baseProduct: z.object({
+    name: z.string().min(2).max(100),
+    description: z.string().max(1000).optional(),
+    price: z.number().positive().multipleOf(0.01),
+  }),
+
+  create: z.object({
+    name: z.string().min(2, 'Name must be at least 2 characters').max(100),
+    description: z.string().max(1000).optional(),
+    price: z.number().positive('Price must be positive').multipleOf(0.01),
+    categoryId: z.string().uuid('Invalid category ID'),
+    sku: z.string().min(1, 'SKU is required').max(20),
+    stockQuantity: z.number().int().min(0, 'Stock cannot be negative'),
+    images: z
+      .array(
+        z.object({
+          url: z.string().url(),
+          altText: z.string().max(200).optional(),
+          isPrimary: z.boolean().default(false),
+        })
+      )
+      .max(10, 'Maximum 10 images allowed')
+      .optional(),
+    tags: z.array(z.string().max(30)).max(20).optional(),
+    isActive: z.boolean().default(true),
+  }),
+
+  update: z
+    .object({
+      name: z.string().min(2).max(100).optional(),
+      description: z.string().max(1000).optional(),
+      price: z.number().positive().multipleOf(0.01).optional(),
+      stockQuantity: z.number().int().min(0).optional(),
+      isActive: z.boolean().optional(),
+    })
+    .refine((data) => Object.keys(data).length > 0, {
+      message: 'At least one field must be provided',
+    }),
+
+  search: z
+    .object({
+      q: z.string().max(100).optional(),
+      categoryId: z.string().uuid().optional(),
+      minPrice: z.number().min(0).optional(),
+      maxPrice: z.number().min(0).optional(),
+      page: z.number().int().min(1).default(1),
+      limit: z.number().int().min(1).max(100).default(20),
+      sortBy: z.enum(['name', 'price', 'createdAt']).default('createdAt'),
+      sortOrder: z.enum(['asc', 'desc']).default('desc'),
+    })
+    .refine(
+      (data) =>
+        !data.minPrice || !data.maxPrice || data.minPrice <= data.maxPrice,
+      {
+        message: 'minPrice must be less than or equal to maxPrice',
+      }
+    ),
+
+  // Paramètres communs
+  idParam: z.object({
+    id: z.string().uuid('Invalid product ID'),
+  }),
+
+  bulkIds: z.object({
+    ids: z.array(z.string().uuid()).min(1, 'At least one ID required').max(100),
+  }),
+};
+
+export type CreateProductRequest = z.infer<typeof ProductSchemas.create>;
+export type UpdateProductRequest = z.infer<typeof ProductSchemas.update>;
+
+// core/decorators/validation.decorators.ts
+import { Request, Response, NextFunction } from 'express';
+import { z, ZodError } from 'zod';
+import ApiResponse from '@/core/utils/apiResponse.util';
+import logger from '@/core/utils/logger.util';
+
+type ValidationSource = 'body' | 'query' | 'params';
+
+export function ValidateBody<T extends z.ZodType>(schema: T) {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = async function (
+      req: Request,
+      res: Response,
+      next?: NextFunction
+    ) {
+      try {
+        const result = schema.safeParse(req.body);
+
+        if (!result.success) {
+          logger.debug('Body Validation Error:', result.error.errors);
+          const response = ApiResponse.http400({
+            message: 'Validation failed',
+            details: result.error.errors.map((err) => ({
+              field: err.path.join('.'),
+              message: err.message,
+              code: err.code,
+            })),
+          });
+          return res.status(response.httpStatusCode).json(response.data);
+        }
+
+        // Remplacer par les données validées et transformées
+        req.body = result.data;
+        return await originalMethod.call(this, req, res, next);
+      } catch (err) {
+        logger.error('Validation decorator error:', err);
+        const response = ApiResponse.http500({
+          message: 'Internal validation error',
+        });
+        return res.status(response.httpStatusCode).json(response.data);
+      }
+    };
+
+    return descriptor;
+  };
+}
+
+export function ValidateQuery<T extends z.ZodType>(schema: T) {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = async function (
+      req: Request,
+      res: Response,
+      next?: NextFunction
+    ) {
+      try {
+        const result = schema.safeParse(req.query);
+
+        if (!result.success) {
+          logger.debug('Query Validation Error:', result.error.errors);
+          const response = ApiResponse.http400({
+            message: 'Query validation failed',
+            details: result.error.errors.map((err) => ({
+              field: err.path.join('.'),
+              message: err.message,
+              code: err.code,
+            })),
+          });
+          return res.status(response.httpStatusCode).json(response.data);
+        }
+
+        req.query = result.data as any;
+        return await originalMethod.call(this, req, res, next);
+      } catch (err) {
+        logger.error('Query validation decorator error:', err);
+        const response = ApiResponse.http500({
+          message: 'Internal validation error',
+        });
+        return res.status(response.httpStatusCode).json(response.data);
+      }
+    };
+
+    return descriptor;
+  };
+}
+
+export function ValidateParams<T extends z.ZodType>(schema: T) {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = async function (
+      req: Request,
+      res: Response,
+      next?: NextFunction
+    ) {
+      try {
+        const result = schema.safeParse(req.params);
+
+        if (!result.success) {
+          logger.debug('Params Validation Error:', result.error.errors);
+          const response = ApiResponse.http400({
+            message: 'Parameters validation failed',
+            details: result.error.errors.map((err) => ({
+              field: err.path.join('.'),
+              message: err.message,
+              code: err.code,
+            })),
+          });
+          return res.status(response.httpStatusCode).json(response.data);
+        }
+
+        req.params = result.data as any;
+        return await originalMethod.call(this, req, res, next);
+      } catch (err) {
+        logger.error('Params validation decorator error:', err);
+        const response = ApiResponse.http500({
+          message: 'Internal validation error',
+        });
+        return res.status(response.httpStatusCode).json(response.data);
+      }
+    };
+
+    return descriptor;
+  };
+}
+
+// Décorateur composé pour validation complète
+export function ValidateRequest<
+  B extends z.ZodType,
+  Q extends z.ZodType,
+  P extends z.ZodType,
+>(options: { body?: B; query?: Q; params?: P }) {
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ) {
+    // Appliquer les validateurs dans l'ordre inverse (params -> query -> body)
+    if (options.params) {
+      ValidateParams(options.params)(target, propertyKey, descriptor);
+    }
+    if (options.query) {
+      ValidateQuery(options.query)(target, propertyKey, descriptor);
+    }
+    if (options.body) {
+      ValidateBody(options.body)(target, propertyKey, descriptor);
+    }
+
+    return descriptor;
+  };
+}
+
+// controllers/admin/auth.controller.ts - Version avec Zod
+import { Request, Response } from 'express';
+import { Service } from 'typedi';
+import AdminAuthService from '@/services/auth/auth_service';
+import {
+  Controller,
+  Delete,
+  Get,
+  Post,
+  UseMiddlewares,
+} from '@/core/decorators/route.decorators';
+import { ControllerErrorHandler } from '@/core/decorators/errorHandler.decorators';
+import {
+  ValidateBody,
+  ValidateRequest,
+} from '@/core/decorators/validation.decorators';
+import { AuthSchemas, SignInRequest } from '@/validators/auth.validators';
+import ApiResponse from '@/core/utils/apiResponse.util';
+import logger from '@/core/utils/logger.util';
+
+@Service()
+@Controller('/admin')
+export class AdminAuthController {
+  constructor(private readonly adminAuthService: AdminAuthService) {}
+
+  @Post('/sign-in')
+  @ValidateBody(AuthSchemas.signIn)
+  @ControllerErrorHandler('Sign In failed.')
+  async signIn(req: Request, res: Response): Promise<void> {
+    logger.debug('Sign In Request Received');
+
+    // req.body est maintenant typé automatiquement et validé
+    const data: SignInRequest = req.body;
+
+    const payload = await this.adminAuthService.signIn(
+      data,
+      (req as any).clientInfo
+    );
+
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+
+  @Post('/refresh')
+  @ValidateBody(AuthSchemas.refreshToken)
+  @ControllerErrorHandler('Token refresh failed.')
+  async refresh(req: Request, res: Response): Promise<void> {
+    logger.debug('Refresh Token Request Received');
+
+    const { token } = req.body; // Typé automatiquement
+
+    const payload = await this.adminAuthService.refreshToken(token);
+
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+
+  @Delete('/sign-out')
+  @ValidateBody(AuthSchemas.logout)
+  @UseMiddlewares('auth', 'rbac:ADMIN')
+  @ControllerErrorHandler('Logout failed.')
+  async logout(req: Request, res: Response): Promise<void> {
+    logger.debug('Logout Request Received');
+
+    const { token } = req.body;
+
+    const payload = await this.adminAuthService.logout(token);
+
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+
+  @Delete('/close-all-sessions')
+  @ValidateBody(AuthSchemas.logoutAll)
+  @UseMiddlewares('auth', 'rbac:ADMIN')
+  @ControllerErrorHandler('Logout from all devices failed.')
+  async logoutAll(req: Request, res: Response): Promise<void> {
+    logger.debug('Logout All Request Received');
+
+    const { userId } = req.body;
+
+    const payload = await this.adminAuthService.logoutAll(userId);
+
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+}
+
+// Exemple avec validation composée
+// controllers/product.controller.ts
+@Service()
+@Controller('/products')
+export class ProductController {
+  constructor(private readonly productService: ProductService) {}
+
+  @Post('/')
+  @ValidateBody(ProductSchemas.create)
+  @UseMiddlewares('auth', 'rbac:ADMIN')
+  @ControllerErrorHandler('Product creation failed.')
+  async create(req: Request, res: Response): Promise<void> {
+    const data: CreateProductRequest = req.body; // Typé automatiquement
+    const payload = await this.productService.create(data);
+    const response = ApiResponse.http201(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+
+  @Get('/search')
+  @ValidateQuery(ProductSchemas.search)
+  @ControllerErrorHandler('Product search failed.')
+  async search(req: Request, res: Response): Promise<void> {
+    const filters = req.query; // Typé et avec valeurs par défaut
+    const payload = await this.productService.search(filters);
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+
+  @Put('/:id')
+  @ValidateRequest({
+    params: ProductSchemas.idParam,
+    body: ProductSchemas.update,
+  })
+  @UseMiddlewares('auth', 'rbac:ADMIN')
+  @ControllerErrorHandler('Product update failed.')
+  async update(req: Request, res: Response): Promise<void> {
+    const { id } = req.params; // Typé et validé
+    const data = req.body; // Typé et validé
+    const payload = await this.productService.update(id, data);
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+}

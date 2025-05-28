@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Service } from 'typedi';
-import { Controller, Get, Post } from '@/core/decorators/route.decorators';
+import { Controller, Get, Post } from '@/core/decorators/route.decorator';
 import { log } from 'console';
 
 @Service()

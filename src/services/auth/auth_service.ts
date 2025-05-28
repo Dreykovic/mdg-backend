@@ -35,7 +35,7 @@ import {
   AuthServiceErrorHandler,
   CriticalServiceErrorHandler,
   ServiceErrorHandler,
-} from '@/core/decorators/errorHandler.decorators';
+} from '@/core/decorators/error-handler.decorator';
 import logger from '@/core/utils/logger.util';
 
 @Service()

@@ -5,6 +5,7 @@
  * - TypeScript strict rules for API development
  * - Node.js/Express best practices and security
  * - Naming conventions enforcement
+ * - File naming conventions with exceptions for specific folders
  * - Performance and code quality rules
  * - Prettier integration for consistent formatting
  *
@@ -16,6 +17,8 @@ import typescriptEslintPlugin from '@typescript-eslint/eslint-plugin';
 import typescriptParser from '@typescript-eslint/parser';
 import prettierPlugin from 'eslint-plugin-prettier';
 import nodePlugin from 'eslint-plugin-n';
+import unicornPlugin from 'eslint-plugin-unicorn';
+import { Linter } from 'eslint';
 
 export default [
   {
@@ -23,7 +26,17 @@ export default [
     files: ['src/**/*.{ts,js}'],
 
     // Files and directories to ignore during linting
-    ignores: ['dist/**', 'node_modules/**', 'logs/**', 'coverage/**', '*.js'],
+    ignores: [
+      'dist/**', 
+      'node_modules/**', 
+      'logs/**', 
+      'coverage/**', 
+      '*.js',
+      // Additional exceptions for file naming
+      'database/**',
+      'server/**', 
+      'public/**'
+    ],
 
     // Language parsing options
     languageOptions: {
@@ -50,12 +63,33 @@ export default [
       '@typescript-eslint': typescriptEslintPlugin, // TypeScript-specific rules
       prettier: prettierPlugin, // Prettier formatting integration
       node: nodePlugin, // Node.js specific rules (using eslint-plugin-n)
+      unicorn: unicornPlugin, // Additional code quality rules including filename-case
     },
 
     // Complete linting rules configuration
     rules: {
       // Prettier integration - treats formatting violations as ESLint errors
       'prettier/prettier': ['error'],
+
+      // File naming convention enforcement
+      'unicorn/filename-case': [
+        'error',
+        {
+          cases: {
+            kebabCase: true, // Enforce kebab-case for file names
+          },
+          ignore: [
+            // Exceptions for specific patterns
+            /^[a-zA-Z-]+\.(controller|service|validator|decorator|middleware|util|type|schema)\.ts$/, // Allow domain.type.ts pattern
+            /^index\.(ts|js)$/, // Allow index files
+            /^.*\.d\.ts$/, // Allow TypeScript declaration files
+            /^.*\.config\.(ts|js)$/, // Allow config files
+            /^.*\.test\.(ts|js)$/, // Allow test files
+            /^.*\.spec\.(ts|js)$/, // Allow spec files
+            /^[A-Z][A-Z_]*\.(ts|js)$/, // Allow CONSTANT files (README.md style)
+          ],
+        },
+      ],
 
       // TypeScript naming conventions
       '@typescript-eslint/naming-convention': [
@@ -227,11 +261,28 @@ export default [
     },
   },
 
+  // Exceptions for database, server, and public folders
+  {
+    files: [
+      'database/**/*.{ts,js}',
+      'server/**/*.{ts,js}',
+      'public/**/*.{ts,js}',
+    ],
+    rules: {
+      // Disable file naming convention for these specific folders
+      'unicorn/filename-case': 'off',
+      // You can add other relaxed rules for these folders if needed
+      'no-console': 'off', // Allow console in server files
+      '@typescript-eslint/explicit-function-return-type': 'off', // Relaxed for server configs
+    },
+  },
+
   // Specific configuration for test files
   {
     files: ['**/*.test.{ts,js}', '**/*.spec.{ts,js}', '**/tests/**/*.{ts,js}'],
     rules: {
       // Relaxed rules for test files
+      'unicorn/filename-case': 'off', // Allow any case in test files
       'no-console': 'off', // Allow console.log in tests for debugging
       '@typescript-eslint/explicit-function-return-type': 'off', // Relaxed return types in tests
       'no-magic-numbers': 'off', // Allow test data numbers
@@ -246,10 +297,26 @@ export default [
   {
     files: ['*.config.{js,ts}', '**/*.config.{js,ts}'],
     rules: {
+      'unicorn/filename-case': 'off', // Allow any case in config files
       'no-console': 'off', // Allow console in config files
       '@typescript-eslint/explicit-function-return-type': 'off', // Relaxed for config
       'no-magic-numbers': 'off', // Allow configuration numbers
       'node/no-process-exit': 'off', // Allow process.exit in config
     },
   },
-];
+
+  // Configuration for migration files and seeds (often have specific naming)
+  {
+    files: [
+      '**/migrations/**/*.{ts,js}',
+      '**/seeds/**/*.{ts,js}',
+      '**/seeders/**/*.{ts,js}',
+    ],
+    rules: {
+      'unicorn/filename-case': 'off', // Migration files often have timestamps
+      'no-console': 'off', // Allow console in migration files
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      'no-magic-numbers': 'off', // Allow magic numbers in migrations
+    },
+  },
+] 

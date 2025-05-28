@@ -1,4 +1,4 @@
-import { ServiceErrorHandler } from '@/core/decorators/errorHandler.decorators';
+import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
 import ServiceDefinition from '@/services/definitions/base_service';
 import { Prisma } from '@prisma/client';
 import { log } from 'console';

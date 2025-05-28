@@ -4,7 +4,7 @@ import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 import verifyJWT from '@/middlewares/jwt.middleware';
 import { rbacMiddleware } from '@/middlewares/rbac.middleware';
 import { authRateLimiter } from '@/middlewares/rateLimiter.middleware';
-import AdminAuthController from '@/api/controllers/auth/admin_auth_controller';
+import AdminAuthController from '@/api/controllers/auth/admin-auth.controller';
 
 // Get the instance of AdminAuthController from the container
 const adminAuthController = Container.get(AdminAuthController);

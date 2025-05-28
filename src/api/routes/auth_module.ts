@@ -1,6 +1,6 @@
 // app.ts
 import { ModuleConfig } from '@/core/types/route.types';
-import { AdminAuthController } from '../controllers/auth/admin_auth_controller';
+import { AdminAuthController } from '../controllers/auth/admin-auth.controller';
 
 // Configuration complète avec 4 niveaux de préfixage
 const authModule: ModuleConfig = {

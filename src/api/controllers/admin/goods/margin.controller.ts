@@ -37,7 +37,12 @@ export class MarginController {
   async margins(req: Request, res: Response): Promise<void> {
     logger.debug('Filtered List Margins Request Received');
 
-    const { page, pageSize, filters } = req.query as any;
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 10;
+    const filters =
+      req.query.filters !== undefined && req.query.filters !== null
+        ? JSON.parse(req.query.filters as string)
+        : {};
     const allowedFields = ['name', 'margin'];
 
     const whereConditions = WhereConditionBuilder.generateWhereConditions(
@@ -126,10 +131,10 @@ export class MarginController {
    */
   @Put('/update/:modelId')
   @ControllerErrorHandler('Failed to update margin.')
-  // @ValidateRequest({
-  //   params: CommonSchemas.entityNumberParam,
-  //   body: MarginSchemas.updateMargin,
-  // })
+  @ValidateRequest({
+    params: CommonSchemas.entityNumberParam,
+    body: MarginSchemas.updateMargin,
+  })
   async updateMargin(req: Request, res: Response): Promise<void> {
     logger.debug('Update Margin Request Received');
 

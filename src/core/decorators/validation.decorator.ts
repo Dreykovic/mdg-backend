@@ -51,7 +51,8 @@ export function ValidateRequest<
               'params'
             );
           }
-          req.params = paramsResult.data as any;
+          // Utiliser Object.assign au lieu d'assignation directe
+          Object.assign(req.params, paramsResult.data);
         }
 
         // Valider query
@@ -68,7 +69,8 @@ export function ValidateRequest<
               'query'
             );
           }
-          req.query = queryResult.data as any;
+          // Utiliser Object.assign au lieu d'assignation directe
+          Object.assign(req.query, queryResult.data);
         }
 
         // Valider body
@@ -100,7 +102,7 @@ export function ValidateRequest<
 }
 
 // Décorateurs individuels (si vous préférez parfois séparer)
-// export function ValidateBody<T extends z.ZodType>(schema: T): PropertyDescriptor {
+// export function ValidateBody<T extends z.ZodType>(schema: T) {
 //   return ValidateRequest({ body: schema });
 // }
 

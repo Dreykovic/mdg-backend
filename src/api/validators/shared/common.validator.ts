@@ -31,7 +31,7 @@ export const CommonSchemas = {
     id: z.number().int().positive('ID must be a positive integer'),
   }),
   deleteEntityWithStringId: z.object({
-    id: z.string().min(1, 'ID is reauired'),
+    id: z.string().uuid('Product ID must be a valid UUID'),
   }),
 
   // Schema pour les paramètres d'URL
@@ -40,7 +40,7 @@ export const CommonSchemas = {
   }),
 
   entityStringParam: z.object({
-    modelId: z.string().min(1, 'ID is reauired'),
+    id: z.string().uuid('Product ID must be a valid UUID'),
   }),
 };
 

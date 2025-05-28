@@ -4,7 +4,7 @@ import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 import StringUtil from '@/core/utils/string.util';
 import WhereConditionBuilder from '@/core/utils/filter.utils';
-import ProductService from '@/services/goods/product_service';
+import ProductService from '@/services/goods/product.service';
 
 @Service()
 export class ProductController {

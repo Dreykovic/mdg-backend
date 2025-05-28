@@ -3,7 +3,7 @@ import Container from 'typedi';
 import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 import { rbacMiddleware } from '@/middlewares/rbac.middleware';
 import verifyJWT from '@/middlewares/jwt.middleware';
-import { CategoryController } from '@/api/controllers/admin/goods/category_controller';
+import { CategoryController } from '@/api/controllers/admin/goods/category.controller';
 
 const categoryController = Container.get(CategoryController);
 const categoriesRouter = express.Router();

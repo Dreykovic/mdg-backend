@@ -12,6 +12,8 @@ import {
 } from '@/core/decorators/route.decorator';
 import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
 import logger from '@/core/utils/logger.util';
+import { ValidateRequest } from '@/core/decorators/validation.dacorator';
+import { AuthSchemas } from '@/api/validators/auth.validator';
 @Service()
 @Controller('/admin') // Niveau controller
 export class AdminAuthController {
@@ -25,6 +27,9 @@ export class AdminAuthController {
    * @returns {Promise<void>} Resolves with a token payload if authentication is successful.
    */
   @Post('/sign-in')
+  @ValidateRequest({
+    body: AuthSchemas.signIn,
+  })
   @ControllerErrorHandler('Sign In failed.')
   async signIn(req: Request, res: Response): Promise<void> {
     logger.debug('Sign In Request Received');
@@ -48,23 +53,19 @@ export class AdminAuthController {
    * @returns {Promise<void>} Resolves with a new token payload if successful.
    */
   @Post('/refresh')
+  @ValidateRequest({
+    body: AuthSchemas.refreshToken,
+  })
+  @ControllerErrorHandler('Token refresh failed.')
   async refresh(req: Request, res: Response): Promise<void> {
-    try {
-      logger.debug('Refresh Token Request Received');
+    logger.debug('Refresh Token Request Received');
 
-      const data: { token: string } = req.body;
+    const data: { token: string } = req.body;
 
-      const payload = await this.adminAuthService.refreshToken(data.token);
+    const payload = await this.adminAuthService.refreshToken(data.token);
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      logger.debug(error);
-      const response = ApiResponse.http401({
-        message: (error as Error).message || 'Token refresh failed.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
   }
 
   /**
@@ -76,23 +77,19 @@ export class AdminAuthController {
    */
   @Delete('/sign-out')
   @UseMiddlewares('auth', 'rbac:ADMIN')
+  @ControllerErrorHandler('Logout failed.')
+  @ValidateRequest({
+    body: AuthSchemas.logout,
+  })
   async logout(req: Request, res: Response): Promise<void> {
-    try {
-      logger.debug('Logout Request Received');
+    logger.debug('Logout Request Received');
 
-      const data: { token: string } = req.body;
+    const data: { token: string } = req.body;
 
-      const payload = await this.adminAuthService.logout(data.token);
+    const payload = await this.adminAuthService.logout(data.token);
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      logger.debug(error);
-      const response = ApiResponse.http401({
-        message: (error as Error).message || 'Logout failed.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
   }
 
   /**
@@ -104,42 +101,31 @@ export class AdminAuthController {
    */
   @Delete('/close-all-sessions')
   @UseMiddlewares('auth', 'rbac:ADMIN')
+  @ControllerErrorHandler('Logout from all devices failed.')
+  @ValidateRequest({
+    body: AuthSchemas.logoutAll,
+  })
   async logoutAll(req: Request, res: Response): Promise<void> {
-    try {
-      logger.debug('Logout All Request Received');
+    logger.debug('Logout All Request Received');
 
-      const data: { userId: string } = req.body;
+    const data: { userId: string } = req.body;
 
-      const payload = await this.adminAuthService.logoutAll(data.userId);
+    const payload = await this.adminAuthService.logoutAll(data.userId);
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      logger.debug(error);
-      const response = ApiResponse.http401({
-        message: (error as Error).message || 'Logout from all devices failed.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
   }
   @Get('/all-active-sessions')
   @UseMiddlewares('auth', 'rbac:ADMIN')
+  @ControllerErrorHandler('Get All active Sessions failed.')
   async getActiveSessions(req: Request, res: Response): Promise<void> {
-    try {
-      logger.debug('Gat All Active Sessions Request Received');
+    logger.debug('Gat All Active Sessions Request Received');
 
-      const userId = (req as any).user.id;
+    const userId = (req as any).user.id;
 
-      const payload = await this.adminAuthService.getActiveSessions(userId);
+    const payload = await this.adminAuthService.getActiveSessions(userId);
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      logger.debug(error);
-      const response = ApiResponse.http401({
-        message: (error as Error).message || 'Get All active Sessions failed.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
   }
 }

@@ -1,6 +1,6 @@
 // app.ts
 import { ModuleConfig } from '@/core/types/route.types';
-import { CategoryController } from '../controllers/admin/goods/category_controller';
+import { CategoryController } from '../controllers/admin/goods/category.controller';
 import { MarginController } from '../controllers/admin/goods/margin_level_controller';
 
 // Configuration complète avec 4 niveaux de préfixage

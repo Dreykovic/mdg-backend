@@ -4,8 +4,12 @@ import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import logger from '@/core/utils/logger.util';
-
-export function ValidateBody<T extends z.ZodType>(schema: T) {
+// Dans validation.decorators.ts - ajoutez cette fonction
+export function ValidateRequest<
+  B extends z.ZodType,
+  Q extends z.ZodType,
+  P extends z.ZodType,
+>(schemas: { body?: B; query?: Q; params?: P }) {
   return function (
     target: any,
     propertyKey: string,
@@ -17,25 +21,47 @@ export function ValidateBody<T extends z.ZodType>(schema: T) {
       req: Request,
       res: Response,
       next?: NextFunction
-    ): Promise<any> {
+    ): Promise<Response | void> {
       try {
-        const result = schema.safeParse(req.body);
-
-        if (!result.success) {
-          logger.debug('Body Validation Error:', result.error.errors);
-          const response = ApiResponse.http400({
-            message: 'Validation failed',
-            details: result.error.errors.map((err) => ({
-              field: err.path.join('.'),
-              message: err.message,
-              code: err.code,
-            })),
-          });
-          return res.status(response.httpStatusCode).json(response.data);
+        // Valider params
+        if (schemas.params) {
+          const paramsResult = schemas.params.safeParse(req.params);
+          if (!paramsResult.success) {
+            return handleValidationError(
+              res,
+              'Parameters validation failed',
+              paramsResult.error
+            );
+          }
+          req.params = paramsResult.data as any;
         }
 
-        // Remplacer par les données validées et transformées
-        req.body = result.data;
+        // Valider query
+        if (schemas.query) {
+          const queryResult = schemas.query.safeParse(req.query);
+          if (!queryResult.success) {
+            return handleValidationError(
+              res,
+              'Query validation failed',
+              queryResult.error
+            );
+          }
+          req.query = queryResult.data as any;
+        }
+
+        // Valider body
+        if (schemas.body) {
+          const bodyResult = schemas.body.safeParse(req.body);
+          if (!bodyResult.success) {
+            return handleValidationError(
+              res,
+              'Body validation failed',
+              bodyResult.error
+            );
+          }
+          req.body = bodyResult.data;
+        }
+
         return await originalMethod.call(this, req, res, next);
       } catch (err) {
         logger.error('Validation decorator error:', err);
@@ -48,112 +74,21 @@ export function ValidateBody<T extends z.ZodType>(schema: T) {
   };
 }
 
-export function ValidateQuery<T extends z.ZodType>(schema: T) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ): PropertyDescriptor {
-    const originalMethod = descriptor.value;
-
-    descriptor.value = async function (
-      req: Request,
-      res: Response,
-      next?: NextFunction
-    ): Promise<any> {
-      try {
-        const result = schema.safeParse(req.query);
-
-        if (!result.success) {
-          logger.debug('Query Validation Error:', result.error.errors);
-          const response = ApiResponse.http400({
-            message: 'Query validation failed',
-            details: result.error.errors.map((err) => ({
-              field: err.path.join('.'),
-              message: err.message,
-              code: err.code,
-            })),
-          });
-          return res.status(response.httpStatusCode).json(response.data);
-        }
-
-        req.query = result.data as any;
-        return await originalMethod.call(this, req, res, next);
-      } catch (err) {
-        logger.error('Query validation decorator error:', err);
-        const response = ApiResponse.http500('Internal validation error', err);
-        return res.status(response.httpStatusCode).json(response.data);
-      }
-    };
-
-    return descriptor;
-  };
-}
-
-export function ValidateParams<T extends z.ZodType>(schema: T) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ): PropertyDescriptor {
-    const originalMethod = descriptor.value;
-
-    descriptor.value = async function (
-      req: Request,
-      res: Response,
-      next?: NextFunction
-    ): Promise<any> {
-      try {
-        const result = schema.safeParse(req.params);
-
-        if (!result.success) {
-          logger.debug('Params Validation Error:', result.error.errors);
-          const response = ApiResponse.http400({
-            message: 'Parameters validation failed',
-            details: result.error.errors.map((err) => ({
-              field: err.path.join('.'),
-              message: err.message,
-              code: err.code,
-            })),
-          });
-          return res.status(response.httpStatusCode).json(response.data);
-        }
-
-        req.params = result.data as any;
-        return await originalMethod.call(this, req, res, next);
-      } catch (err) {
-        logger.error('Params validation decorator error:', err);
-        const response = ApiResponse.http500('Internal validation error', err);
-        return res.status(response.httpStatusCode).json(response.data);
-      }
-    };
-
-    return descriptor;
-  };
-}
-
-// Décorateur composé pour validation complète
-export function ValidateRequest<
-  B extends z.ZodType,
-  Q extends z.ZodType,
-  P extends z.ZodType,
->(options: { body?: B; query?: Q; params?: P }) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ): PropertyDescriptor {
-    // Appliquer les validateurs dans l'ordre inverse (params -> query -> body)
-    if (options.params) {
-      ValidateParams(options.params)(target, propertyKey, descriptor);
-    }
-    if (options.query) {
-      ValidateQuery(options.query)(target, propertyKey, descriptor);
-    }
-    if (options.body) {
-      ValidateBody(options.body)(target, propertyKey, descriptor);
-    }
-
-    return descriptor;
-  };
+// Fonction helper pour les erreurs
+function handleValidationError(
+  res: Response,
+  message: string,
+  error: z.ZodError
+): Response {
+  logger.debug('Validation Error:', error.errors);
+  const response = ApiResponse.http400({
+    message,
+    type: 'ValidationError',
+    details: error.errors.map((err) => ({
+      field: err.path.join('.'),
+      message: err.message,
+      code: err.code,
+    })),
+  });
+  return res.status(response.httpStatusCode).json(response.data);
 }

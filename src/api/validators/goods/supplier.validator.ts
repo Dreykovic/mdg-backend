@@ -17,12 +17,6 @@ export const SupplierSchemas = {
       .min(1, 'Country is required')
       .max(100, 'Country is too long'),
     postalCode: z.string().max(20, 'Postal code is too long').optional(),
-    phone: z.string().max(20, 'Phone number is too long').optional(),
-    email: z
-      .string()
-      .email('Invalid email format')
-      .max(255, 'Email is too long')
-      .optional(),
   }),
 
   // Schema pour mettre à jour un fournisseur
@@ -54,12 +48,6 @@ export const SupplierSchemas = {
       .max(100, 'Country is too long')
       .optional(),
     postalCode: z.string().max(20, 'Postal code is too long').optional(),
-    phone: z.string().max(20, 'Phone number is too long').optional(),
-    email: z
-      .string()
-      .email('Invalid email format')
-      .max(255, 'Email is too long')
-      .optional(),
   }),
 };
 

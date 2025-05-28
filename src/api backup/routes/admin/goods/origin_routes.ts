@@ -3,7 +3,7 @@ import Container from 'typedi';
 import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 import verifyJWT from '@/middlewares/jwt.middleware';
 import { rbacMiddleware } from '@/middlewares/rbac.middleware';
-import { OriginController } from '@/api/controllers/admin/goods/origin_controller';
+import { OriginController } from '@/api/controllers/admin/goods/origin.controller';
 
 const originController = Container.get(OriginController);
 const originsRouter = express.Router();

@@ -1,7 +1,7 @@
 import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
+import logger from '@/core/utils/logger.util';
 import ServiceDefinition from '@/services/definitions/base_service';
 import { Prisma } from '@prisma/client';
-import { log } from 'console';
 import { Service } from 'typedi';
 
 @Service()
@@ -15,7 +15,7 @@ export default class OriginService extends ServiceDefinition {
     const origin = await this.db.origin.create({
       data: cleanData,
     });
-    log('Created Origin', origin);
+    logger.debug('Created Origin', origin);
     return { origin };
   }
 
@@ -39,7 +39,7 @@ export default class OriginService extends ServiceDefinition {
         orderBy: { createdAt: 'desc' },
       }),
     ]);
-    log('Filtered Origins Fetched successfully');
+    logger.debug('Filtered Origins Fetched successfully');
 
     return {
       data,
@@ -52,7 +52,7 @@ export default class OriginService extends ServiceDefinition {
   @ServiceErrorHandler()
   async originsList(): Promise<{ origins: any[] }> {
     const origins = await this.db.origin.findMany();
-    log(' Origins Fetched successfully');
+    logger.debug(' Origins Fetched successfully');
 
     return { origins };
   }
@@ -62,7 +62,7 @@ export default class OriginService extends ServiceDefinition {
     await this.db.origin.delete({
       where: filter,
     });
-    log(' Origin deleted successfully');
+    logger.debug(' Origin deleted successfully');
 
     return true;
   }
@@ -76,7 +76,7 @@ export default class OriginService extends ServiceDefinition {
       where: filter,
       data,
     });
-    log('Updated Origin', origin);
+    logger.debug('Updated Origin', origin);
 
     return { origin };
   }

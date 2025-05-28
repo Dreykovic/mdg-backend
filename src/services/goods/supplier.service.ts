@@ -1,8 +1,7 @@
 import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
+import logger from '@/core/utils/logger.util';
 import ServiceDefinition from '@/services/definitions/base_service';
 import { Prisma, Supplier } from '@prisma/client';
-
-import { log } from 'console';
 
 import { Service } from 'typedi';
 
@@ -82,7 +81,9 @@ export default class SupplierService extends ServiceDefinition {
       data,
     });
 
-    log(`Supplier updated successfully: ${JSON.stringify(updatedSupplier)}`);
+    logger.debug(
+      `Supplier updated successfully: ${JSON.stringify(updatedSupplier)}`
+    );
 
     return { supplier: updatedSupplier };
   }

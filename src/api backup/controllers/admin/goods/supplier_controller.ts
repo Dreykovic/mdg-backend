@@ -6,7 +6,7 @@ import { Service } from 'typedi';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import SupplierService from '@/services/goods/supplier_service';
+import SupplierService from '@/services/goods/supplier.service';
 
 @Service()
 export default class SupplierController {

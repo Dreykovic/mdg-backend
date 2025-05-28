@@ -1,7 +1,7 @@
 import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
+import logger from '@/core/utils/logger.util';
 import ServiceDefinition from '@/services/definitions/base_service';
 import { Prisma } from '@prisma/client';
-import { log } from 'console';
 import { Service } from 'typedi';
 
 @Service()
@@ -15,7 +15,7 @@ export default class CategoryService extends ServiceDefinition {
     const category = await this.db.productCategory.create({
       data: cleanData,
     });
-    log('Created Product Category : ', category);
+    logger.debug('Created Product Category : ', category);
     return { category };
   }
 
@@ -39,7 +39,7 @@ export default class CategoryService extends ServiceDefinition {
         orderBy: { createdAt: 'desc' },
       }),
     ]);
-    log('Filtered Product category List fetched successfully ');
+    logger.debug('Filtered Product category List fetched successfully ');
 
     return {
       data,
@@ -53,7 +53,7 @@ export default class CategoryService extends ServiceDefinition {
   async categoriesList(): Promise<{ categories: any[] }> {
     const categories = await this.db.productCategory.findMany();
 
-    log('Product category List fetched successfully ');
+    logger.debug('Product category List fetched successfully ');
 
     return { categories };
   }
@@ -65,7 +65,7 @@ export default class CategoryService extends ServiceDefinition {
     await this.db.productCategory.delete({
       where: filter,
     });
-    log(' Product category deleted successfully ');
+    logger.debug(' Product category deleted successfully ');
 
     return true;
   }
@@ -80,7 +80,7 @@ export default class CategoryService extends ServiceDefinition {
       data,
     });
 
-    log(`Category updated successfully : `, updatedCategory);
+    logger.debug(`Category updated successfully : `, updatedCategory);
 
     return { category: updatedCategory };
   }

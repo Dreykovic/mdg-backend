@@ -23,14 +23,6 @@ export const SupplierSchemas = {
       .email('Invalid email format')
       .max(255, 'Email is too long')
       .optional(),
-    contactPerson: z
-      .string()
-      .max(255, 'Contact person name is too long')
-      .optional(),
-    taxId: z.string().max(50, 'Tax ID is too long').optional(),
-    paymentTerms: z.string().max(100, 'Payment terms is too long').optional(),
-    notes: z.string().max(1000, 'Notes are too long').optional(),
-    isActive: z.boolean().default(true),
   }),
 
   // Schema pour mettre à jour un fournisseur
@@ -68,19 +60,6 @@ export const SupplierSchemas = {
       .email('Invalid email format')
       .max(255, 'Email is too long')
       .optional(),
-    contactPerson: z
-      .string()
-      .max(255, 'Contact person name is too long')
-      .optional(),
-    taxId: z.string().max(50, 'Tax ID is too long').optional(),
-    paymentTerms: z.string().max(100, 'Payment terms is too long').optional(),
-    notes: z.string().max(1000, 'Notes are too long').optional(),
-    isActive: z.boolean().optional(),
-  }),
-
-  // Schema pour supprimer un fournisseur
-  deleteSupplier: z.object({
-    id: z.number().int().positive('ID must be a positive integer'),
   }),
 };
 
@@ -91,7 +70,5 @@ export type CreateSupplierRequest = z.infer<
 export type UpdateSupplierRequest = z.infer<
   typeof SupplierSchemas.updateSupplier
 >;
-export type DeleteSupplierRequest = z.infer<
-  typeof SupplierSchemas.deleteSupplier
->;
+
 export type SupplierSchemasType = typeof SupplierSchemas;

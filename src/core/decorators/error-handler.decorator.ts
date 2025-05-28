@@ -3,9 +3,9 @@
 import { Request, Response } from 'express';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import { PrismaService } from '@/database/prisma/prisma.service';
+import { ValidationError } from '@/core/decorators/validation.decorator'; // Import ajouté
 import logger from '../utils/logger.util';
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export function ControllerErrorHandler(
   defaultMessage = 'An error occurred',
   code = 400
@@ -21,10 +21,28 @@ export function ControllerErrorHandler(
       req: Request,
       res: Response,
       ...args: any[]
-    ): Promise<void> {
+    ): Promise<void | Response<any, Record<string, any>>> {
       try {
-        await originalMethod.apply(this, [req, res, ...args]);
+        return await originalMethod.apply(this, [req, res, ...args]);
       } catch (error) {
+        // Gestion spéciale pour ValidationError
+        if (error instanceof ValidationError) {
+          logger.debug(`Validation error in ${propertyKey.toString()}:`, {
+            source: error.source,
+            details: error.details,
+            method: req.method,
+            url: req.url,
+          });
+
+          const response = ApiResponse.http400({
+            message: error.message,
+            type: 'ValidationError',
+            details: error.details,
+          });
+          return res.status(response.httpStatusCode).json(response.data);
+        }
+
+        // Gestion normale des autres erreurs (votre code existant)
         const errorMessage = (error as Error)?.message || defaultMessage;
 
         logger.error(`Controller error in ${propertyKey.toString()}:`, {
@@ -47,11 +65,10 @@ export function ControllerErrorHandler(
         const response = responseMap[code] ?? responseMap[400];
         if (typeof response === 'function') {
           const result = response();
-          res.status(result.httpStatusCode).json(result.data);
-        } else {
-          // Fallback in case no valid response function is found
-          res.status(500).json({ message: defaultMessage });
+          return res.status(result.httpStatusCode).json(result.data);
         }
+        // Fallback in case no valid response function is found
+        return res.status(500).json({ message: defaultMessage });
       }
     };
 
@@ -59,13 +76,13 @@ export function ControllerErrorHandler(
   };
 }
 
+// Vos autres décorateurs restent inchangés
 /**
  * Décorateur pour gérer les erreurs dans les services
  * @param customMessage - Message d'erreur personnalisé (optionnel)
  * @param logOperation - Si true, log le nom de l'opération (défaut: true)
  * @param preserveOriginalError - Si true, preserve l'erreur originale, sinon wrap dans une nouvelle Error (défaut: false)
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export function ServiceErrorHandler(
   customMessage?: string,
   logOperation = true,
@@ -113,7 +130,6 @@ export function ServiceErrorHandler(
 /**
  * Décorateur spécialisé pour les opérations d'authentification
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export function AuthServiceErrorHandler(
   customMessage = 'Authentication operation failed'
 ): MethodDecorator {
@@ -123,7 +139,6 @@ export function AuthServiceErrorHandler(
 /**
  * Décorateur pour les opérations critiques qui doivent préserver l'erreur originale
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export function CriticalServiceErrorHandler(
   customMessage?: string
 ): MethodDecorator {

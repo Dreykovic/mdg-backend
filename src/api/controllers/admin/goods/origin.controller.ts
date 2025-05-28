@@ -12,7 +12,7 @@ import {
   Put,
 } from '@/core/decorators/route.decorator';
 import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
-import { ValidateRequest } from '@/core/decorators/validation.dacorator';
+import { ValidateRequest } from '@/core/decorators/validation.decorator';
 import {
   CreateOriginRequest,
   OriginSchemas,

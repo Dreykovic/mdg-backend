@@ -2,9 +2,23 @@
 // core/decorators/validation.decorator.ts
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import ApiResponse from '@/core/utils/apiResponse.util';
-import logger from '@/core/utils/logger.util';
-// Dans validation.decorators.ts - ajoutez cette fonction
+
+// Classe d'erreur personnalisée pour la validation
+export class ValidationError extends Error {
+  constructor(
+    message: string,
+    public details: Array<{
+      field: string;
+      message: string;
+      code: string;
+    }>,
+    public source: 'params' | 'query' | 'body'
+  ) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
 export function ValidateRequest<
   B extends z.ZodType,
   Q extends z.ZodType,
@@ -27,10 +41,14 @@ export function ValidateRequest<
         if (schemas.params) {
           const paramsResult = schemas.params.safeParse(req.params);
           if (!paramsResult.success) {
-            return handleValidationError(
-              res,
+            throw new ValidationError(
               'Parameters validation failed',
-              paramsResult.error
+              paramsResult.error.errors.map((err) => ({
+                field: err.path.join('.'),
+                message: err.message,
+                code: err.code,
+              })),
+              'params'
             );
           }
           req.params = paramsResult.data as any;
@@ -40,10 +58,14 @@ export function ValidateRequest<
         if (schemas.query) {
           const queryResult = schemas.query.safeParse(req.query);
           if (!queryResult.success) {
-            return handleValidationError(
-              res,
+            throw new ValidationError(
               'Query validation failed',
-              queryResult.error
+              queryResult.error.errors.map((err) => ({
+                field: err.path.join('.'),
+                message: err.message,
+                code: err.code,
+              })),
+              'query'
             );
           }
           req.query = queryResult.data as any;
@@ -53,10 +75,14 @@ export function ValidateRequest<
         if (schemas.body) {
           const bodyResult = schemas.body.safeParse(req.body);
           if (!bodyResult.success) {
-            return handleValidationError(
-              res,
+            throw new ValidationError(
               'Body validation failed',
-              bodyResult.error
+              bodyResult.error.errors.map((err) => ({
+                field: err.path.join('.'),
+                message: err.message,
+                code: err.code,
+              })),
+              'body'
             );
           }
           req.body = bodyResult.data;
@@ -64,9 +90,8 @@ export function ValidateRequest<
 
         return await originalMethod.call(this, req, res, next);
       } catch (err) {
-        logger.error('Validation decorator error:', err);
-        const response = ApiResponse.http500('Internal validation error', err);
-        return res.status(response.httpStatusCode).json(response.data);
+        // Laisser ControllerErrorHandler gérer toutes les erreurs
+        throw err;
       }
     };
 
@@ -74,21 +99,15 @@ export function ValidateRequest<
   };
 }
 
-// Fonction helper pour les erreurs
-function handleValidationError(
-  res: Response,
-  message: string,
-  error: z.ZodError
-): Response {
-  logger.debug('Validation Error:', error.errors);
-  const response = ApiResponse.http400({
-    message,
-    type: 'ValidationError',
-    details: error.errors.map((err) => ({
-      field: err.path.join('.'),
-      message: err.message,
-      code: err.code,
-    })),
-  });
-  return res.status(response.httpStatusCode).json(response.data);
-}
+// Décorateurs individuels (si vous préférez parfois séparer)
+// export function ValidateBody<T extends z.ZodType>(schema: T): PropertyDescriptor {
+//   return ValidateRequest({ body: schema });
+// }
+
+// export function ValidateQuery<T extends z.ZodType>(schema: T) {
+//   return ValidateRequest({ query: schema });
+// }
+
+// export function ValidateParams<T extends z.ZodType>(schema: T) {
+//   return ValidateRequest({ params: schema });
+// }

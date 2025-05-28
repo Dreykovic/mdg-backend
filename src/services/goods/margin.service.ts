@@ -72,7 +72,7 @@ export default class MarginService extends ServiceDefinition {
     return true;
   }
 
-  @ServiceErrorHandler()
+  @ServiceErrorHandler('Failed to update margin.')
   async updateMargin(
     data: Prisma.MarginLevelUncheckedUpdateInput,
     filter: Prisma.MarginLevelWhereUniqueInput

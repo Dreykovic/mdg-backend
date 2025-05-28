@@ -4,7 +4,7 @@ import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 
 import verifyJWT from '@/middlewares/jwt.middleware';
 import { rbacMiddleware } from '@/middlewares/rbac.middleware';
-import { MarginController } from '@/api/controllers/admin/goods/margin-level.controller';
+import { MarginController } from '@/api/controllers/admin/goods/margin.controller';
 
 const marginController = Container.get(MarginController);
 const marginsRouter = express.Router();

@@ -12,7 +12,7 @@ import {
   Put,
 } from '@/core/decorators/route.decorator';
 import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
-import { ValidateRequest } from '@/core/decorators/validation.dacorator';
+import { ValidateRequest } from '@/core/decorators/validation.decorator';
 import { MarginSchemas } from '@/api/validators/goods/margin.validator';
 import logger from '@/core/utils/logger.util';
 import { CommonSchemas } from '@/api/validators/shared/common.validator';
@@ -126,10 +126,10 @@ export class MarginController {
    */
   @Put('/update/:modelId')
   @ControllerErrorHandler('Failed to update margin.')
-  @ValidateRequest({
-    params: CommonSchemas.entityNumberParam,
-    body: MarginSchemas.updateMargin,
-  })
+  // @ValidateRequest({
+  //   params: CommonSchemas.entityNumberParam,
+  //   body: MarginSchemas.updateMargin,
+  // })
   async updateMargin(req: Request, res: Response): Promise<void> {
     logger.debug('Update Margin Request Received');
 
@@ -139,7 +139,7 @@ export class MarginController {
     if (id === null) {
       throw new Error('Invalid modelId parameter');
     }
-
+    logger.debug(`Updating Margin with ID: ${id}`);
     const filter = { id };
     const data = req.body;
 

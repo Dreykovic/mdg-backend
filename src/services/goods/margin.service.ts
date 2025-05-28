@@ -77,15 +77,11 @@ export default class MarginService extends ServiceDefinition {
     data: Prisma.MarginLevelUncheckedUpdateInput,
     filter: Prisma.MarginLevelWhereUniqueInput
   ): Promise<{ margin: MarginLevel }> {
-    try {
-      const margin = await this.db.marginLevel.update({
-        where: filter,
-        data,
-      });
-      logger.debug('Updated Margin : ', margin);
-      return { margin };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    const margin = await this.db.marginLevel.update({
+      where: filter,
+      data,
+    });
+    logger.debug('Updated Margin : ', margin);
+    return { margin };
   }
 }

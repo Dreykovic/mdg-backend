@@ -3,7 +3,7 @@ import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import MarginService from '@/services/goods/margin-level.service';
+import MarginService from '@/services/goods/margin.service';
 import {
   Controller,
   Delete,
@@ -80,7 +80,7 @@ export class MarginController {
    * @param {Response} res - The HTTP response object.
    * @returns {Promise<void>} Resolves with the created margin data.
    */
-  @Post('/')
+  @Post('/save')
   @ControllerErrorHandler('Failed to create margin.')
   @ValidateRequest({
     body: MarginSchemas.createMargin,
@@ -102,7 +102,7 @@ export class MarginController {
    * @param {Response} res - The HTTP response object.
    * @returns {Promise<void>} Resolves when the margin is successfully deleted.
    */
-  @Delete('/')
+  @Delete('/delete')
   @ControllerErrorHandler('Failed to delete margin.')
   @ValidateRequest({
     body: CommonSchemas.deleteEntityWithNumberId,
@@ -124,7 +124,7 @@ export class MarginController {
    * @param {Response} res - The HTTP response object.
    * @returns {Promise<void>} Resolves with the updated margin data.
    */
-  @Put('/:modelId')
+  @Put('/update/:modelId')
   @ControllerErrorHandler('Failed to update margin.')
   @ValidateRequest({
     params: CommonSchemas.entityNumberParam,

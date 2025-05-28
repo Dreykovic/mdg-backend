@@ -5,7 +5,7 @@ import { Service } from 'typedi';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '../../../../core/utils/string.util';
-import CategoryService from '@/services/goods/category_service';
+import CategoryService from '@/services/goods/category.service';
 
 @Service()
 export class CategoryController {

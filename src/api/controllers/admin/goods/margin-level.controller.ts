@@ -4,7 +4,7 @@ import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import MarginService from '@/services/goods/margin_level_service';
+import MarginService from '@/services/goods/margin-level.service';
 import {
   Controller,
   Delete,

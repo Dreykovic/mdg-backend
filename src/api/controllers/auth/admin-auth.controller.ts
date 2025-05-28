@@ -12,7 +12,7 @@ import {
 } from '@/core/decorators/route.decorator';
 import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
 import logger from '@/core/utils/logger.util';
-import { ValidateRequest } from '@/core/decorators/validation.dacorator';
+import { ValidateRequest } from '@/core/decorators/validation.decorator';
 import { AdminAuthSchemas } from '@/api/validators/auth/admin.validator';
 @Service()
 @Controller('/admin') // Niveau controller

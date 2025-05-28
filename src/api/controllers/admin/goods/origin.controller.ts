@@ -15,10 +15,10 @@ import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorato
 import { ValidateRequest } from '@/core/decorators/validation.dacorator';
 import {
   CreateOriginRequest,
-  DeleteOriginRequest,
   OriginSchemas,
 } from '@/api/validators/goods/origin.validator';
 import logger from '@/core/utils/logger.util';
+import { CommonSchemas } from '@/api/validators/shared/common.validator';
 
 @Service()
 @Controller('/goods/origins', ['auth', 'rbac:ADMIN'])
@@ -35,7 +35,7 @@ export class OriginController {
   @Get('/')
   @ControllerErrorHandler('Error fetching origins.')
   @ValidateRequest({
-    query: OriginSchemas.getOrigins,
+    query: CommonSchemas.getEntities,
   })
   async origins(req: Request, res: Response): Promise<void> {
     logger.debug('Filtered List Origins Request Received');
@@ -108,12 +108,12 @@ export class OriginController {
   @Delete('/')
   @ControllerErrorHandler('Error deleting origin.')
   @ValidateRequest({
-    body: OriginSchemas.deleteOrigin,
+    body: CommonSchemas.deleteEntityWithNumberId,
   })
   async deleteOrigin(req: Request, res: Response): Promise<void> {
     logger.debug('Delete Origin Request Received');
 
-    const filter: DeleteOriginRequest = req.body;
+    const filter = req.body;
     const payload = await this.originService.deleteOrigin(filter);
 
     const response = ApiResponse.http200(payload);
@@ -130,7 +130,7 @@ export class OriginController {
   @Put('/update/:modelId')
   @ControllerErrorHandler('Error updating origin.')
   @ValidateRequest({
-    params: OriginSchemas.originParams,
+    params: CommonSchemas.entityNumberParam,
     body: OriginSchemas.updateOrigin,
   })
   async updateOrigin(req: Request, res: Response): Promise<void> {

@@ -4,7 +4,7 @@ import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 
 import { rbacMiddleware } from '@/middlewares/rbac.middleware';
 import verifyJWT from '@/middlewares/jwt.middleware';
-import SupplierController from '@/api/controllers/admin/goods/supplier_controller';
+import SupplierController from '@/api/controllers/admin/goods/supplier.controller';
 
 const supplierController = Container.get(SupplierController);
 const supplierRouter = express.Router();

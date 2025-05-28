@@ -40,7 +40,12 @@ export class OriginController {
   async origins(req: Request, res: Response): Promise<void> {
     logger.debug('Filtered List Origins Request Received');
 
-    const { page, pageSize, filters } = req.query as any;
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 10;
+    const filters =
+      req.query.filters !== undefined && req.query.filters !== null
+        ? JSON.parse(req.query.filters as string)
+        : {};
     const allowedFields = ['country'];
 
     const whereConditions = WhereConditionBuilder.generateWhereConditions(
@@ -105,7 +110,7 @@ export class OriginController {
    * @param {Response} res - The HTTP response object.
    * @returns {Promise<void>} Resolves when the origin is successfully deleted.
    */
-  @Delete('/')
+  @Delete('/delete')
   @ControllerErrorHandler('Error deleting origin.')
   @ValidateRequest({
     body: CommonSchemas.deleteEntityWithNumberId,

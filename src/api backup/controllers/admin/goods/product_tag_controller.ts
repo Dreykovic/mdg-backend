@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import ProductTagService from '@/services/goods/product_tag_service';
+import ProductTagService from '@/services/goods/product-tag.service';
 
 @Service()
 export class ProductTagController {

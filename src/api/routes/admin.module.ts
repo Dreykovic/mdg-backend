@@ -4,6 +4,7 @@ import { CategoryController } from '../controllers/admin/goods/category.controll
 import { MarginController } from '../controllers/admin/goods/margin.controller';
 import { OriginController } from '../controllers/admin/goods/origin.controller';
 import SupplierController from '../controllers/admin/goods/supplier.controller';
+import { ProductTagController } from '../controllers/admin/goods/product-tag.controller';
 
 // Configuration complète avec 4 niveaux de préfixage
 const adminModule: ModuleConfig = {
@@ -14,6 +15,7 @@ const adminModule: ModuleConfig = {
     MarginController,
     OriginController,
     SupplierController,
+    ProductTagController,
   ],
 };
 

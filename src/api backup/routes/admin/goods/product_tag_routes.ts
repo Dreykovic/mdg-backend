@@ -3,7 +3,7 @@ import Container from 'typedi';
 import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 import { rbacMiddleware } from '@/middlewares/rbac.middleware';
 import verifyJWT from '@/middlewares/jwt.middleware';
-import { ProductTagController } from '@/api/controllers/admin/goods/product_tag_controller';
+import { ProductTagController } from '@/api/controllers/admin/goods/product-tag.controller';
 
 const productTagController = Container.get(ProductTagController);
 const productTagsRouter = express.Router();

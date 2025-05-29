@@ -5,7 +5,7 @@ import { Service } from 'typedi';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import ProductTagLinkService from '@/services/goods/productètag_link_service';
+import ProductTagLinkService from '@/services/goods/product-tag-link.service';
 
 @Service()
 export class ProductTagLinkController {

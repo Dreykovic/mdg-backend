@@ -1,7 +1,7 @@
 import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
+import logger from '@/core/utils/logger.util';
 import ServiceDefinition from '@/services/definitions/base_service';
 import { Prisma, ProductTagLink } from '@prisma/client';
-import { log } from 'console';
 import { Service } from 'typedi';
 
 @Service()
@@ -11,7 +11,7 @@ export default class ProductTagLinkService extends ServiceDefinition {
     data: Prisma.ProductTagLinkUncheckedCreateInput
   ): Promise<{ productTagLink: ProductTagLink }> {
     const cleanData = data;
-    log(cleanData);
+    logger.debug(cleanData);
     const productTagLink = await this.db.productTagLink.create({
       data: cleanData,
     });

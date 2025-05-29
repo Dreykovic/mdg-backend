@@ -19,7 +19,7 @@ import logger from '@/core/utils/logger.util';
 import { ProductTagLinkSchemas } from '@/api/validators/goods/product-tag-link.validator';
 
 @Service()
-@Controller('/goods/product-tag-links', ['auth', 'rbac:ADMIN'])
+@Controller('/goods/tag-links', ['auth', 'rbac:ADMIN'])
 export class ProductTagLinkController {
   constructor(private readonly productTagLinkService: ProductTagLinkService) {}
 
@@ -65,7 +65,7 @@ export class ProductTagLinkController {
     res.status(response.httpStatusCode).json(response.data);
   }
 
-  @Get('/list/:modelId')
+  @Get('/product/:modelId')
   @ControllerErrorHandler(
     'Error fetching product tag links list by product ID.'
   )

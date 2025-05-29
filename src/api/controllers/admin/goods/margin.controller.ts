@@ -110,7 +110,7 @@ export class MarginController {
   @Delete('/delete')
   @ControllerErrorHandler('Failed to delete margin.')
   @ValidateRequest({
-    body: CommonSchemas.deleteEntityWithNumberId,
+    body: CommonSchemas.enntityWithNumberId,
   })
   async deleteMargin(req: Request, res: Response): Promise<void> {
     logger.debug('Delete Margin Request Received');

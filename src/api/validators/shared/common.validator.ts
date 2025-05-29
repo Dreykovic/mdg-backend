@@ -27,10 +27,10 @@ export const CommonSchemas = {
   }),
 
   // Schema pour supprimer une marge
-  deleteEntityWithNumberId: z.object({
+  enntityWithNumberId: z.object({
     id: z.number().int().positive('ID must be a positive integer'),
   }),
-  deleteEntityWithStringId: z.object({
+  enntityWithStringId: z.object({
     id: z.string().uuid('Product ID must be a valid UUID'),
   }),
 
@@ -40,17 +40,17 @@ export const CommonSchemas = {
   }),
 
   entityStringParam: z.object({
-    id: z.string().uuid('Product ID must be a valid UUID'),
+    modelId: z.string().uuid('Product ID must be a valid UUID'),
   }),
 };
 
 // Inférence des types TypeScript automatique
 export type GetEntitiesQuery = z.infer<typeof CommonSchemas.getEntities>;
-export type DeleteEntityWithNumberIdRequest = z.infer<
-  typeof CommonSchemas.deleteEntityWithNumberId
+export type EnntityWithNumberIdRequest = z.infer<
+  typeof CommonSchemas.enntityWithNumberId
 >;
-export type DeleteEntityWithStringIdRequest = z.infer<
-  typeof CommonSchemas.deleteEntityWithStringId
+export type EnntityWithStringIdRequest = z.infer<
+  typeof CommonSchemas.enntityWithStringId
 >;
 
 export type EntityNumberParamsRequest = z.infer<

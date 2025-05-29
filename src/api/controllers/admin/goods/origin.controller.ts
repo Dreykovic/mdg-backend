@@ -113,7 +113,7 @@ export class OriginController {
   @Delete('/delete')
   @ControllerErrorHandler('Error deleting origin.')
   @ValidateRequest({
-    body: CommonSchemas.deleteEntityWithNumberId,
+    body: CommonSchemas.enntityWithNumberId,
   })
   async deleteOrigin(req: Request, res: Response): Promise<void> {
     logger.debug('Delete Origin Request Received');

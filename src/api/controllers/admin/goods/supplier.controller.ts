@@ -83,7 +83,7 @@ export default class SupplierController {
   @Delete('/delete')
   @ControllerErrorHandler('Error deleting supplier.')
   @ValidateRequest({
-    body: CommonSchemas.deleteEntityWithNumberId,
+    body: CommonSchemas.enntityWithNumberId,
   })
   async deleteSupplier(req: Request, res: Response): Promise<void> {
     logger.debug('Delete Supplier Request Received');

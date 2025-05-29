@@ -84,7 +84,7 @@ export class ProductTagController {
   @Delete('/delete')
   @ControllerErrorHandler('Error deleting product tag.')
   @ValidateRequest({
-    body: CommonSchemas.deleteEntityWithNumberId,
+    body: CommonSchemas.enntityWithNumberId,
   })
   async deleteProductTag(req: Request, res: Response): Promise<void> {
     logger.debug('Delete Product Tag Request Received');

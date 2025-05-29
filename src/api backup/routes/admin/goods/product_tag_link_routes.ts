@@ -4,7 +4,7 @@ import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 
 import { rbacMiddleware } from '@/middlewares/rbac.middleware';
 import verifyJWT from '@/middlewares/jwt.middleware';
-import { ProductTagLinkController } from '@/api/controllers/admin/goods/product_tag_link_controller';
+import { ProductTagLinkController } from '@/api/controllers/admin/goods/product-tag-link.controller';
 
 const productTagLinkController = Container.get(ProductTagLinkController);
 const productTagLinksRouter = express.Router();

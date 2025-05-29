@@ -6,45 +6,45 @@ import { Service } from 'typedi';
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
 import ProductTagLinkService from '@/services/goods/product-tag-link.service';
+import { Controller, Get } from '@/core/decorators/route.decorator';
+import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
+import { CommonSchemas } from '@/api/validators/shared/common.validator';
+import { ValidateRequest } from '@/core/decorators/validation.decorator';
 
 @Service()
+@Controller('/goods/product-tag-links', ['auth', 'rbac:ADMIN'])
 export class ProductTagLinkController {
   constructor(private readonly productTagLinkService: ProductTagLinkService) {}
 
+  @Get('/')
+  @ControllerErrorHandler('Error fetching product tag links.')
+  @ValidateRequest({
+    query: CommonSchemas.getEntities,
+  })
   async productTagLinks(req: Request, res: Response): Promise<void> {
-    try {
-      log('List ProductTagLink  Request Received');
+    log('List ProductTagLink  Request Received');
 
-      const page = parseInt(req.query.page as string) || 1;
-      const pageSize = parseInt(req.query.pageSize as string) || 10;
-      const filters = req.query.filters
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 10;
+    const filters =
+      req.query.filters !== undefined && req.query.filters !== null
         ? JSON.parse(req.query.filters as string)
         : {};
-      const allowedFields = ['name'];
+    const allowedFields = ['name'];
 
-      const whereConditions = WhereConditionBuilder.generateWhereConditions(
-        filters,
-        allowedFields
-      );
+    const whereConditions = WhereConditionBuilder.generateWhereConditions(
+      filters,
+      allowedFields
+    );
 
-      const payload = await this.productTagLinkService.productTagLinks(
-        page,
-        pageSize,
-        whereConditions
-      );
+    const payload = await this.productTagLinkService.productTagLinks(
+      page,
+      pageSize,
+      whereConditions
+    );
 
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      log(error);
-
-      const response = ApiResponse.http400({
-        message:
-          (error as Error).message ||
-          'An error occurred while fetching productTagLink categories.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
   }
 
   async tagLinksList(req: Request, res: Response): Promise<void> {

@@ -234,7 +234,6 @@ export default class ProductService extends ServiceDefinition {
     }
   }
 
-  @CriticalServiceErrorHandler()
   private logMissingEntities(category: any, origin: any, supplier: any): void {
     if (
       category === null ||
@@ -250,7 +249,6 @@ export default class ProductService extends ServiceDefinition {
     }
   }
 
-  @CriticalServiceErrorHandler()
   private generateEntityCodes(entities: {
     category: any;
     origin: any;
@@ -265,7 +263,6 @@ export default class ProductService extends ServiceDefinition {
     };
   }
 
-  @CriticalServiceErrorHandler()
   private extractCode(
     value: string | undefined,
     length: number,
@@ -277,7 +274,6 @@ export default class ProductService extends ServiceDefinition {
     return StringUtil.generateSlug(value).substring(0, length).toUpperCase();
   }
 
-  @CriticalServiceErrorHandler()
   private buildBasePattern(codes: {
     catCode: string;
     origCode: string;
@@ -297,7 +293,6 @@ export default class ProductService extends ServiceDefinition {
     return this.calculateSequenceNumber(existingProducts);
   }
 
-  @CriticalServiceErrorHandler()
   private calculateSequenceNumber(existingProducts: any[]): number {
     if (
       existingProducts.length === 0 ||
@@ -313,7 +308,6 @@ export default class ProductService extends ServiceDefinition {
 
     return numericMatch !== null ? parseInt(numericMatch[0], 10) + 1 : 1;
   }
-  @CriticalServiceErrorHandler()
   private buildAttributeFlags(
     isGlutenFree: boolean,
     isGMOFree: boolean
@@ -341,6 +335,7 @@ export default class ProductService extends ServiceDefinition {
     return this.ensureUniqueSKU(sku);
   }
 
+  @CriticalServiceErrorHandler()
   private async ensureUniqueSKU(sku: string): Promise<string> {
     try {
       const existingSKU = await this.db.product.findUnique({ where: { sku } });

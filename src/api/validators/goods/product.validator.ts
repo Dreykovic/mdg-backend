@@ -3,7 +3,7 @@ import StringUtil from '@/core/utils/string.util';
 import { z } from 'zod';
 
 // Enum pour VisibilityType (à adapter selon votre définition)
-const VisibilityTypeEnum = z.enum(['DRAFT', 'PUBLISHED', 'HIDDEN', 'ARCHIVED']);
+const VisibilityTypeEnum = z.enum(['DRAFT', 'VISIBLE', 'HIDDEN', 'ARCHIVED']);
 
 // Transformers utilitaires
 const transformers = {

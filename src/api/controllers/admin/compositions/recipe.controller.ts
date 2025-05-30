@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { log } from 'console';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 
@@ -17,6 +16,7 @@ import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorato
 import { ValidateRequest } from '@/core/decorators/validation.decorator';
 import { CommonSchemas } from '@/api/validators/shared/common.validator';
 import { RecipeSchemas } from '@/api/validators/compositions/recipe.validator';
+import logger from '@/core/utils/logger.util';
 
 @Service()
 @Controller('/compositions/recipes', ['auth', 'rbac:ADMIN'])
@@ -29,7 +29,7 @@ export class RecipeController {
     query: CommonSchemas.getEntities,
   })
   async recipes(req: Request, res: Response): Promise<void> {
-    log('List Recipe Categories Request Received');
+    logger.debug('List Recipe Categories Request Received');
 
     const page = Number(req.query.page) || 1;
     const pageSize = Number(req.query.pageSize) || 10;
@@ -60,7 +60,7 @@ export class RecipeController {
     params: CommonSchemas.entityNumberParam,
   })
   async recipe(req: Request, res: Response): Promise<void> {
-    log('Fetch unique recipe  Request Received');
+    logger.debug('Fetch unique recipe  Request Received');
 
     const modelIdParam = req.params.modelId;
     const recipeId = StringUtil.parseAndValidateNumber(modelIdParam);
@@ -81,7 +81,7 @@ export class RecipeController {
   @Get('/list')
   @ControllerErrorHandler('Error getting recipe categories list')
   async recipesList(_req: Request, res: Response): Promise<void> {
-    log('List Recipe Categories Request Received');
+    logger.debug('List Recipe Categories Request Received');
 
     const payload = await this.recipeService.recipesList();
 
@@ -95,17 +95,17 @@ export class RecipeController {
     body: RecipeSchemas.createRecipe,
   })
   async createRecipe(req: Request, res: Response): Promise<void> {
-    log('Create Recipe Category Request Received');
+    logger.debug('Create Recipe Category Request Received');
 
     const data = req.body;
-    log((req as any).user);
-    log(data);
+    logger.debug((req as any).user);
+    logger.debug(data);
 
     data.userId = (req as any).user.id;
     data.preparationTime = parseInt(data.preparationTime);
     data.cookingTime = parseInt(data.cookingTime);
     data.servings = parseInt(data.servings);
-    log(data);
+    logger.debug(data);
     const payload = await this.recipeService.createRecipe(data);
 
     const response = ApiResponse.http200(payload);
@@ -118,7 +118,7 @@ export class RecipeController {
     body: CommonSchemas.enntityWithNumberId,
   })
   async deleteRecipe(req: Request, res: Response): Promise<void> {
-    log('Delete Recipe Category Request Received');
+    logger.debug('Delete Recipe Category Request Received');
 
     const filter = req.body;
     const payload = await this.recipeService.deleteRecipe(filter);
@@ -134,7 +134,7 @@ export class RecipeController {
     body: RecipeSchemas.updateRecipe,
   })
   async updateRecipe(req: Request, res: Response): Promise<void> {
-    log('Update Recipe Request Received');
+    logger.debug('Update Recipe Request Received');
 
     const modelIdParam = req.params.modelId;
     const id = StringUtil.parseAndValidateNumber(modelIdParam);
@@ -144,7 +144,7 @@ export class RecipeController {
     }
     const filter = { id };
     const data = req.body;
-    log('this is data to update', data);
+    logger.debug('this is data to update', data);
     data.userId = (req as any).user.id;
 
     const payload = await this.recipeService.updateRecipe(data, filter);

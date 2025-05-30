@@ -3,7 +3,7 @@ import Container from 'typedi';
 import prefixRoutes from '@/middlewares/prefixRoutes.middleware';
 import { rbacMiddleware } from '@/middlewares/rbac.middleware';
 import verifyJWT from '@/middlewares/jwt.middleware';
-import { StepController } from '@/api/controllers/admin/compositions/step_controller';
+import { StepController } from '@/api/controllers/admin/compositions/step.controller';
 
 const stepController = Container.get(StepController);
 const stepsRouter = express.Router();

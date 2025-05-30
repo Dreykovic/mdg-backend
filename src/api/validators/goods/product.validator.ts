@@ -1,57 +1,11 @@
 // validators/product.validator.ts
-import StringUtil from '@/core/utils/string.util';
 import { z } from 'zod';
+import { transformers } from '../shared/utils';
 
 // Enum pour VisibilityType (à adapter selon votre définition)
 const VisibilityTypeEnum = z.enum(['DRAFT', 'VISIBLE', 'HIDDEN', 'ARCHIVED']);
 
 // Transformers utilitaires
-const transformers = {
-  stringToBoolean: z.union([z.boolean(), z.string()]).transform((val) => {
-    if (typeof val === 'boolean') {
-      return val;
-    }
-    return StringUtil.parseBool(val);
-  }),
-
-  stringToNumber: z.union([z.number(), z.string()]).transform((val) => {
-    if (typeof val === 'number') {
-      return val;
-    }
-    const parsed = parseFloat(val);
-    if (isNaN(parsed)) {
-      throw new Error('Invalid number format');
-    }
-    return parsed;
-  }),
-
-  stringToInt: z.union([z.number(), z.string()]).transform((val) => {
-    if (typeof val === 'number') {
-      return Math.floor(val);
-    }
-    const parsed = parseInt(val, 10);
-    if (isNaN(parsed)) {
-      throw new Error('Invalid integer format');
-    }
-    return parsed;
-  }),
-
-  stringToIntOrNull: z
-    .union([z.number(), z.string(), z.null()])
-    .transform((val) => {
-      if (val === null || val === '' || val === undefined) {
-        return null;
-      }
-      if (typeof val === 'number') {
-        return Math.floor(val);
-      }
-      const parsed = parseInt(val, 10);
-      if (isNaN(parsed)) {
-        throw new Error('Invalid integer format');
-      }
-      return parsed;
-    }),
-};
 
 export const ProductSchemas = {
   // Schema pour créer un produit

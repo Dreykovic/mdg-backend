@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import ProductTagService from '@/services/goods/product-tag.service';
+import RecipeCategoryService from '@/services/compositions/recipe-category.service';
 import {
   Controller,
   Delete,
@@ -16,20 +16,18 @@ import {
 import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
 import { ValidateRequest } from '@/core/decorators/validation.decorator';
 import { CommonSchemas } from '@/api/validators/shared/common.validator';
-import logger from '@/core/utils/logger.util';
 import { CategorySchemas } from '@/api/validators/category.validator';
+import logger from '@/core/utils/logger.util';
 
 @Service()
-@Controller('/goods/product-tags', ['auth', 'rbac:ADMIN'])
-export class ProductTagController {
-  constructor(private readonly productTagService: ProductTagService) {}
+@Controller('/compositions/recipe-categories', ['auth', 'rbac:ADMIN'])
+export class RecipeCategoryController {
+  constructor(private readonly recipeCategoryService: RecipeCategoryService) {}
 
   @Get('/')
-  @ControllerErrorHandler('Error fetching product tags.')
-  @ValidateRequest({
-    query: CommonSchemas.getEntities,
-  })
-  async productTags(req: Request, res: Response): Promise<void> {
+  @ControllerErrorHandler('Failed to fetch recipe categories.')
+  @ValidateRequest({ query: CommonSchemas.getEntities })
+  async recipeCategories(req: Request, res: Response): Promise<void> {
     logger.debug('List Recipe Categories Request Received');
 
     const page = Number(req.query.page) || 1;
@@ -44,7 +42,7 @@ export class ProductTagController {
       allowedFields
     );
 
-    const payload = await this.productTagService.productTags(
+    const payload = await this.recipeCategoryService.recipeCategories(
       page,
       pageSize,
       whereConditions
@@ -55,55 +53,56 @@ export class ProductTagController {
   }
 
   @Get('/list')
-  @ControllerErrorHandler('Error fetching product tags list.')
-  async productTagsList(_req: Request, res: Response): Promise<void> {
+  @ControllerErrorHandler('Failed to fetch recipe categories list.')
+  async recipeCategoriesList(req: Request, res: Response): Promise<void> {
     logger.debug('List Recipe Categories Request Received');
 
-    const payload = await this.productTagService.productTagsList();
+    const payload = await this.recipeCategoryService.recipeCategoriesList();
 
     const response = ApiResponse.http200(payload);
     res.status(response.httpStatusCode).json(response.data);
   }
 
   @Post('/save')
-  @ControllerErrorHandler('Error creating product tag.')
+  @ControllerErrorHandler('Failed to create recipe category.')
   @ValidateRequest({
     body: CategorySchemas.createCategory,
   })
-  async createProductTag(req: Request, res: Response): Promise<void> {
-    logger.debug('Create Product Tag Request Received');
+  async createRecipeCategory(req: Request, res: Response): Promise<void> {
+    logger.debug('Create Recipe Category Request Received');
 
     const data = req.body;
-    logger.debug(data);
-    const payload = await this.productTagService.createProductTag(data);
+
+    const payload = await this.recipeCategoryService.createRecipeCategory(data);
 
     const response = ApiResponse.http200(payload);
     res.status(response.httpStatusCode).json(response.data);
   }
 
   @Delete('/delete')
-  @ControllerErrorHandler('Error deleting product tag.')
+  @ControllerErrorHandler('Failed to delete recipe category.')
   @ValidateRequest({
     body: CommonSchemas.enntityWithNumberId,
   })
-  async deleteProductTag(req: Request, res: Response): Promise<void> {
-    logger.debug('Delete Product Tag Request Received');
+  async deleteRecipeCategory(req: Request, res: Response): Promise<void> {
+    logger.debug('Delete Recipe Category Request Received');
 
     const filter = req.body;
-    const payload = await this.productTagService.deleteProductTag(filter);
+    const payload =
+      await this.recipeCategoryService.deleteRecipeCategory(filter);
 
     const response = ApiResponse.http200(payload);
     res.status(response.httpStatusCode).json(response.data);
   }
 
   @Put('/update/:modelId')
-  @ControllerErrorHandler('Error updating product tag.')
+  @ControllerErrorHandler('Failed to update recipe category.')
   @ValidateRequest({
     params: CommonSchemas.entityNumberParam,
     body: CategorySchemas.updateCategory,
   })
-  async updateProductTag(req: Request, res: Response): Promise<void> {
-    logger.debug('Update Product Tag Request Received');
+  async updateRecipeCategory(req: Request, res: Response): Promise<void> {
+    logger.debug('Update Recipe Category Request Received');
 
     const modelIdParam = req.params.modelId;
     const id = StringUtil.parseAndValidateNumber(modelIdParam);
@@ -112,9 +111,12 @@ export class ProductTagController {
       throw Error("Invalid modelId parameter'");
     }
     const filter = { id };
-    const data: Prisma.ProductTagUpdateInput = req.body;
+    const data: Prisma.RecipeCategoryUpdateInput = req.body;
 
-    const payload = await this.productTagService.updateProductTag(data, filter);
+    const payload = await this.recipeCategoryService.updateRecipeCategory(
+      data,
+      filter
+    );
 
     const response = ApiResponse.http200(payload);
     res.status(response.httpStatusCode).json(response.data);

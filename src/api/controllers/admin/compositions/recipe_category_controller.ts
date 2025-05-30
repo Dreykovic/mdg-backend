@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import RecipeCategoryService from '@/services/compositions/recipe_category_service';
+import RecipeCategoryService from '@/services/compositions/recipe-category.service';
 
 @Service()
 export class RecipeCategoryController {

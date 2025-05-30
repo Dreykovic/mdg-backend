@@ -129,10 +129,6 @@ export class StepController {
     const filter = { id };
     const data = req.body;
 
-    data.duration = parseInt(data.duration);
-    data.stepNumber = parseInt(data.stepNumber);
-    data.recipeId = parseInt(data.recipeId);
-
     logger.debug(data);
     const payload = await this.stepService.updateStep(data, filter);
 

@@ -1,2 +1,6 @@
 import { RecipeCategoryController } from './recipe-category.controller';
-export const compositionsModuleController = [RecipeCategoryController];
+import { RecipeController } from './recipe.controller';
+export const compositionsModuleController = [
+  RecipeCategoryController,
+  RecipeController,
+];

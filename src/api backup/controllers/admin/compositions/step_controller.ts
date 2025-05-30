@@ -5,7 +5,7 @@ import { Service } from 'typedi';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import StepService from '@/services/compositions/step_service';
+import StepService from '@/services/compositions/step.service';
 
 @Service()
 export class StepController {

@@ -1,7 +1,7 @@
 import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
+import logger from '@/core/utils/logger.util';
 import ServiceDefinition from '@/services/definitions/base_service';
 import { Prisma } from '@prisma/client';
-import { log } from 'console';
 import { Service } from 'typedi';
 
 @Service()
@@ -84,7 +84,9 @@ export default class IngredientService extends ServiceDefinition {
       data,
     });
 
-    log(`Category updated successfully: ${JSON.stringify(updatedIngredient)}`);
+    logger.debug(
+      `Category updated successfully: ${JSON.stringify(updatedIngredient)}`
+    );
 
     return { ingredient: updatedIngredient };
   }

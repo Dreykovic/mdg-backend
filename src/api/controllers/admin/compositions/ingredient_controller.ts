@@ -5,7 +5,7 @@ import { Service } from 'typedi';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import IngredientService from '@/services/compositions/ingredient_service';
+import IngredientService from '@/services/compositions/ingredient.service';
 
 @Service()
 export class IngredientController {

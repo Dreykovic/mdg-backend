@@ -5,7 +5,7 @@ import { Service } from 'typedi';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import RecipeCategoryLinkService from '@/services/compositions/recipe_category_link_service';
+import RecipeCategoryLinkService from '@/services/compositions/recipe-category-link.service';
 
 @Service()
 export class RecipeCategoryLinkController {

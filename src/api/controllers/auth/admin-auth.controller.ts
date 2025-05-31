@@ -2,7 +2,7 @@ import { UserLogin } from '@/core/types';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import { Request, Response } from 'express';
 import { Service } from 'typedi';
-import AdminAuthService from '@/services/auth/auth_service';
+import AdminAuthService from '@/services/auth/auth.service';
 import {
   Controller,
   Delete,

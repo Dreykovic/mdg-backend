@@ -4,7 +4,7 @@ import {
 } from '@/core/decorators/error-handler.decorator';
 import logger from '@/core/utils/logger.util';
 import StringUtil from '@/core/utils/string.util';
-import ServiceDefinition from '@/services/definitions/base_service';
+import ServiceDefinition from '@/services/definitions/base.service';
 import { Prisma, Product } from '@prisma/client';
 import { Service } from 'typedi';
 

@@ -22,7 +22,7 @@ import {
 } from '@/core/types';
 import { v4 as uuidv4 } from 'uuid'; // Import the UUID function for generating unique identifiers
 import { Service } from 'typedi';
-import ServiceDefinition from '../definitions/base_service';
+import ServiceDefinition from '../definitions/base.service';
 import BcryptUtil from '../../core/utils/bcrypt.util';
 import _ from 'lodash';
 import config from '@/config';

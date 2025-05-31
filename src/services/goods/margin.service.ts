@@ -1,4 +1,4 @@
-import ServiceDefinition from '@/services/definitions/base_service';
+import ServiceDefinition from '@/services/definitions/base.service';
 import { Service } from 'typedi';
 import { MarginLevel, Prisma } from '@prisma/client';
 import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';

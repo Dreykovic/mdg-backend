@@ -1,4 +1,4 @@
-import ServiceDefinition from '@/services/definitions/base_service';
+import ServiceDefinition from '@/services/definitions/base.service';
 import { Prisma } from '@prisma/client';
 import { Service } from 'typedi';
 

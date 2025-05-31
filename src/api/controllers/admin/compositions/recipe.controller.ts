@@ -4,7 +4,7 @@ import { Service } from 'typedi';
 
 import WhereConditionBuilder from '@/core/utils/filter.utils';
 import StringUtil from '@/core/utils/string.util';
-import RecipeService from '@/services/compositions/recipe_service';
+import RecipeService from '@/services/compositions/recipe.service';
 import {
   Controller,
   Delete,

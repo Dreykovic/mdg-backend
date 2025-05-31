@@ -1,4 +1,4 @@
-import ServiceDefinition from '@/services/definitions/base_service';
+import ServiceDefinition from '@/services/definitions/base.service';
 import logger from '@/core/utils/logger.util';
 
 import { MovementReason, MovementType } from '@prisma/client';

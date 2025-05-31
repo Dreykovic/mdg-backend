@@ -1,4 +1,4 @@
-import ServiceDefinition from '@/services/definitions/base_service';
+import ServiceDefinition from '@/services/definitions/base.service';
 import { Prisma, UOMType } from '@prisma/client';
 import { log } from 'console';
 import { Service } from 'typedi';

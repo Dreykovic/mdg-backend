@@ -1,5 +1,5 @@
 import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
-import ServiceDefinition from '@/services/definitions/base_service';
+import ServiceDefinition from '@/services/definitions/base.service';
 import { Prisma, RecipeCategoryLink } from '@prisma/client';
 import { Service } from 'typedi';
 

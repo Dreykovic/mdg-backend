@@ -48,4 +48,24 @@ export const transformers = {
     }
     return parsed;
   }),
+
+  stringToUuidOrNull: z
+    .union([z.string(), z.null()])
+    .transform((val) => {
+      if (val === null || val === '' || val === undefined) {
+        return null;
+      }
+      return val;
+    })
+    .refine(
+      (val) => val === null || z.string().uuid().safeParse(val).success,
+      'Must be a valid UUID or null'
+    ),
+
+  stringOrNull: z.union([z.string(), z.null()]).transform((val) => {
+    if (val === '' || val === undefined) {
+      return null;
+    }
+    return val;
+  }),
 };

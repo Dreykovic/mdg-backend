@@ -20,7 +20,7 @@ import logger from '@/core/utils/logger.util';
 import { CategorySchemas } from '@/api/validators/category.validator';
 
 @Service()
-@Controller('/goods/product-tags', ['auth', 'rbac:ADMIN'])
+@Controller('/goods/tags', ['auth', 'rbac:ADMIN'])
 export class ProductTagController {
   constructor(private readonly productTagService: ProductTagService) {}
 

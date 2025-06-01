@@ -1,13 +1,18 @@
 // app.ts
 import { ModuleConfig } from '@/core/types/route.types';
-import { goodsModuleController } from '../controllers/admin/goods';
-import { compositionsModuleController } from '../controllers/admin/compositions';
+import { goodsModuleControllers } from '../controllers/admin/goods';
+import { compositionsModuleControllers } from '../controllers/admin/compositions';
+import { conversionModuleControllers } from '../controllers/admin/conversion';
 
 // Configuration complète avec 4 niveaux de préfixage
 const adminModule: ModuleConfig = {
   name: 'admin',
   prefix: '/admin', // Niveau 3: Module
-  controllers: [...goodsModuleController, ...compositionsModuleController],
+  controllers: [
+    ...goodsModuleControllers,
+    ...compositionsModuleControllers,
+    ...conversionModuleControllers,
+  ],
 };
 
 export default adminModule;

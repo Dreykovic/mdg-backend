@@ -6,7 +6,7 @@ import { ProductTagController } from './product-tag.controller';
 import { ProductController } from './product.controller';
 import SupplierController from './supplier.controller';
 
-export const goodsModuleController = [
+export const goodsModuleControllers = [
   CategoryController,
   MarginController,
   OriginController,

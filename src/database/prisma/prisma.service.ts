@@ -155,9 +155,10 @@ export class PrismaService {
 
       if (retryCount < PrismaService.MAX_RETRIES) {
         // Calculate exponential backoff with jitter for cluster workers
+        const product =
+          PrismaService.RETRY_DELAY_MS * Math.pow(1.5, retryCount);
         const delay =
-          PrismaService.RETRY_DELAY_MS * Math.pow(1.5, retryCount) +
-          (cluster.isWorker ? Math.floor(Math.random() * 500) : 0);
+          product + (cluster.isWorker ? Math.floor(Math.random() * 500) : 0);
 
         logger.warn(
           colorTxt.yellow(
@@ -257,7 +258,7 @@ export class PrismaService {
 
     // Handle Zod validation issues
     if (
-      error &&
+      error !== null &&
       typeof error === 'object' &&
       'issues' in error &&
       Array.isArray(error.issues)
@@ -284,8 +285,14 @@ export class PrismaService {
         PrismaService.ERROR_MESSAGES[errorCode] || defaultMessage;
 
       // Add context for unique constraint violations
-      if (errorCode === 'P2002' && error.meta?.target) {
-        return new Error(`${errorMessage} Field: ${error.meta.target}`);
+      if (
+        errorCode === 'P2002' &&
+        typeof error.meta !== 'undefined' &&
+        typeof (error.meta as { target?: unknown }).target !== 'undefined'
+      ) {
+        return new Error(
+          `${errorMessage} Field: ${(error.meta as { target: unknown }).target}`
+        );
       }
 
       return new Error(errorMessage);

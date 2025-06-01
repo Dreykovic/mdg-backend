@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { log } from 'console';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 
@@ -17,6 +16,7 @@ import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorato
 import { ValidateRequest } from '@/core/decorators/validation.decorator';
 import { CommonSchemas } from '@/api/validators/shared/common.validator';
 import { IngredientSchemas } from '@/api/validators/compositions/ingredient.validator';
+import logger from '@/core/utils/logger.util';
 
 @Service()
 @Controller('/compositions/ingredients', ['auth', 'rbac:ADMIN'])
@@ -29,7 +29,7 @@ export class IngredientController {
     query: CommonSchemas.getEntities,
   })
   async ingredients(req: Request, res: Response): Promise<void> {
-    log('List Ingredient Categories Request Received');
+    logger.debug('List Ingredient Categories Request Received');
 
     const page = Number(req.query.page) || 1;
     const pageSize = Number(req.query.pageSize) || 10;
@@ -58,7 +58,7 @@ export class IngredientController {
   @Get('/list')
   @ControllerErrorHandler()
   async ingredientsList(req: Request, res: Response): Promise<void> {
-    log('List Ingredient Categories Request Received');
+    logger.debug('List Ingredient Categories Request Received');
     const filters =
       req.query.filters !== undefined && req.query.filters !== null
         ? JSON.parse(req.query.filters as string)
@@ -82,7 +82,7 @@ export class IngredientController {
     body: IngredientSchemas.createIngredient,
   })
   async createIngredient(req: Request, res: Response): Promise<void> {
-    log('Create Ingredient Category Request Received');
+    logger.debug('Create Ingredient Category Request Received');
 
     const data = req.body;
 
@@ -90,7 +90,7 @@ export class IngredientController {
     data.recipeId = parseInt(data.recipeId);
 
     data.unitOfMeasureId = parseInt(data.unitOfMeasureId);
-    log(data);
+    logger.debug(data);
     const payload = await this.ingredientService.createIngredient(data);
 
     const response = ApiResponse.http200(payload);
@@ -103,7 +103,7 @@ export class IngredientController {
     body: CommonSchemas.enntityWithNumberId,
   })
   async deleteIngredient(req: Request, res: Response): Promise<void> {
-    log('Delete Ingredient Category Request Received');
+    logger.debug('Delete Ingredient Category Request Received');
 
     const filter = req.body;
     const payload = await this.ingredientService.deleteIngredient(filter);
@@ -119,7 +119,7 @@ export class IngredientController {
     body: IngredientSchemas.updateIngredient,
   })
   async updateIngredient(req: Request, res: Response): Promise<void> {
-    log('Update Ingredient Category Request Received');
+    logger.debug('Update Ingredient Category Request Received');
 
     const modelIdParam = req.params.modelId;
     const id = StringUtil.parseAndValidateNumber(modelIdParam);

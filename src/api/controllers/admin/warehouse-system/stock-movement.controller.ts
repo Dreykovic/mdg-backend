@@ -3,12 +3,12 @@ import { log } from 'console';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 
-import StockMvtService from '@/services/inventory/stock-mvt.service';
+import StockMvtService from '@/services/warehouse-systeme/stock-mvt.service';
 
 import { Controller } from '@/core/decorators/route.decorator';
 
 @Service()
-@Controller('/inventory/stock-movement', ['auth', 'rbac:ADMIN'])
+@Controller('/stock/movements', ['auth', 'rbac:ADMIN'])
 export class InventoryController {
   constructor(private readonly stockMvtService: StockMvtService) {}
 

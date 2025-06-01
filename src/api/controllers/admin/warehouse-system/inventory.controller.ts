@@ -3,8 +3,8 @@ import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 
 import StringUtil from '@/core/utils/string.util';
-import InventoryService from '@/services/inventory/inventory.service';
-import { InventoryMetadata } from '@/services/inventory/stock.validator';
+import InventoryService from '@/services/warehouse-systeme/inventory.service';
+import { InventoryMetadata } from '@/services/warehouse-systeme/stock.validator';
 import {
   Controller,
   Get,
@@ -14,12 +14,12 @@ import {
 } from '@/core/decorators/route.decorator';
 import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
 import { ValidateRequest } from '@/core/decorators/validation.decorator';
-import { InventorySchemas } from '@/api/validators/inventory/inventory,validator';
+import { InventorySchemas } from '@/api/validators/warehouse-system/inventory,validator';
 import { CommonSchemas } from '@/api/validators/shared/common.validator';
 import logger from '@/core/utils/logger.util';
 
 @Service()
-@Controller('/inventory/main', ['auth', 'rbac:ADMIN'])
+@Controller('/warehouse-system/inventory', ['auth', 'rbac:ADMIN'])
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 

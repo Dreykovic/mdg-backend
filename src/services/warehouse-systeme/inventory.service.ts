@@ -1,7 +1,6 @@
 import { Inventory } from '@prisma/client';
 import { Service } from 'typedi';
 
-import { InventoryMetadata, StockValidator } from './stock.validator';
 import StockService from './stock.service';
 import logger from '@/core/utils/logger.util';
 import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
@@ -20,13 +19,12 @@ export default class InventoryService extends StockService {
   @ServiceErrorHandler()
   async createInventoryWithStockMovement(
     sku: string,
-    inventoryMetadata: InventoryMetadata,
+    inventoryMetadata: Inventory,
     warehouseId?: string,
     userId?: string
   ): Promise<Inventory> {
     return this.db.$transaction(async (tx) => {
       // Validate SKU
-      StockValidator.validateSku(sku);
 
       if (userId === null || userId === undefined || userId === '') {
         throw new Error('User ID is required to create inventory');
@@ -37,24 +35,15 @@ export default class InventoryService extends StockService {
         where: { sku },
       });
 
-      // Validate and find warehouse - use specified or default
-      if (
-        warehouseId !== null &&
-        warehouseId !== undefined &&
-        warehouseId !== ''
-      ) {
-        StockValidator.validateWarehouseId(warehouseId);
-      }
       const warehouse = await this.findWarehouse(warehouseId);
 
       // Validate and normalize inventory metadata
-      const normalizedMetadata =
-        StockValidator.validateInventoryMetadata(inventoryMetadata);
+      const normalizedMetadata = inventoryMetadata;
 
       // Calculate total value if unit cost is provided
       const totalValue = this.calculateStockValue(
         normalizedMetadata.quantity,
-        normalizedMetadata.unitCost
+        normalizedMetadata.unitCost ?? undefined
       );
 
       // Create inventory record
@@ -311,8 +300,7 @@ export default class InventoryService extends StockService {
         const bufferLevel =
           updates.safetyStockLevel ?? existingInventory.safetyStockLevel;
         // Optionally, validate updates if needed
-        const validatedUpdates =
-          StockValidator.validateInventoryUpdateData(safeUpdates);
+        const validatedUpdates = safeUpdates;
         validatedUpdates.inStock =
           existingInventory.availableQuantity > bufferLevel &&
           existingInventory.availableQuantity > 0;

@@ -1,7 +1,6 @@
 import { Inventory, MovementReason, StockMovement } from '@prisma/client';
 import { Service } from 'typedi';
 
-import { StockMovementData, StockValidator } from './stock.validator';
 import StockService from './stock.service';
 import {
   CriticalServiceErrorHandler,
@@ -17,11 +16,10 @@ export default class StockMvtService extends StockService {
    * @returns Created stock movement
    */
   @ServiceErrorHandler()
-  async createStockMovement(data: StockMovementData): Promise<StockMovement> {
+  async createStockMovement(data: StockMovement): Promise<StockMovement> {
     return this.db.$transaction(async (tx) => {
       // Validate the movement data
-      const validatedData = StockValidator.validateStockMovement(data);
-
+      const validatedData = data;
       // Find the inventory record
       const inventory = await tx.inventory.findUniqueOrThrow({
         where: { id: validatedData.inventoryId },
@@ -63,17 +61,7 @@ export default class StockMvtService extends StockService {
           destinationWarehouseId: validatedData.destinationWarehouseId,
           createdById: validatedData.createdById,
           approvedById: validatedData.approvedById,
-          metadata:
-            validatedData.referenceType !== null &&
-            validatedData.referenceType !== undefined &&
-            validatedData.referenceType !== ''
-              ? {
-                  legacy: {
-                    referenceType: validatedData.referenceType,
-                    referenceId: validatedData.referenceId,
-                  },
-                }
-              : undefined,
+          metadata: undefined,
         },
       });
 
@@ -205,7 +193,6 @@ export default class StockMvtService extends StockService {
     tx?: any
   ): Promise<Inventory> {
     const prisma = tx ?? this.db;
-
     // Get the transfer movement
     const movement = await prisma.stockMovement.findUniqueOrThrow({
       where: { id: movementId },
@@ -214,11 +201,9 @@ export default class StockMvtService extends StockService {
         product: true,
       },
     });
-
     if (movement.movementType !== 'TRANSFER') {
       throw new Error('This method only handles transfer movements');
     }
-
     if (
       movement.sourceWarehouseId === null ||
       movement.sourceWarehouseId === undefined ||
@@ -240,7 +225,6 @@ export default class StockMvtService extends StockService {
         `Insufficient inventory for transfer: available ${sourceInventory.availableQuantity}, requested ${movement.quantity}`
       );
     }
-
     // Find or create destination inventory
     let destinationInventory = await prisma.inventory.findFirst({
       where: {
@@ -248,7 +232,6 @@ export default class StockMvtService extends StockService {
         warehouseId: movement.destinationWarehouseId,
       },
     });
-
     destinationInventory ??= await prisma.inventory.create({
       data: {
         productId: movement.productId,
@@ -263,7 +246,6 @@ export default class StockMvtService extends StockService {
         backOrderable: sourceInventory.backOrderable,
       },
     });
-
     // Update source inventory (decrease)
     const updatedSourceInventory = await prisma.inventory.update({
       where: { id: sourceInventory.id },
@@ -294,7 +276,6 @@ export default class StockMvtService extends StockService {
         lastReceivedDate: new Date(),
       },
     });
-
     // Update the movement status
     await prisma.stockMovement.update({
       where: { id: movement.id },
@@ -303,7 +284,6 @@ export default class StockMvtService extends StockService {
         executedAt: new Date(),
       },
     });
-
     return updatedDestinationInventory;
   }
 
@@ -380,7 +360,6 @@ export default class StockMvtService extends StockService {
       },
     });
   }
-
   /**
    * Cancel a pending stock movement
    * @param movementId Movement ID
@@ -419,6 +398,7 @@ export default class StockMvtService extends StockService {
    * @param userId User ID making the update
    * @returns Updated movement
    */
+
   @ServiceErrorHandler()
   async startProcessingMovement(
     movementId: string,

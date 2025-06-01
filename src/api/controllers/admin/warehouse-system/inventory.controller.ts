@@ -4,7 +4,7 @@ import { Service } from 'typedi';
 
 import StringUtil from '@/core/utils/string.util';
 import InventoryService from '@/services/warehouse-systeme/inventory.service';
-import { InventoryMetadata } from '@/services/warehouse-systeme/stock.validator';
+// import { InventoryMetadata } from '@/services/warehouse-systeme/stock.validator';
 import {
   Controller,
   Get,
@@ -37,7 +37,7 @@ export class InventoryController {
     const userId = (req as any).user.id;
 
     // Parse and prepare inventory metadata
-    const inventoryMetaData: InventoryMetadata = {
+    const inventoryMetaData = {
       ...req.body.inventoryMetaData,
       inStock: StringUtil.parseBool(req.body.inventoryMetaData.inStock),
       backOrderable: StringUtil.parseBool(

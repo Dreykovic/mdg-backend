@@ -1,3 +1,7 @@
 import { UOMController } from './unit-of-measure.controller';
+import { VolumeConversionController } from './volume-conversion.controller';
 
-export const conversionModuleControllers = [UOMController];
+export const conversionModuleControllers = [
+  UOMController,
+  VolumeConversionController,
+];

@@ -4,6 +4,7 @@ import { Service } from 'typedi';
 import { InventoryMetadata, StockValidator } from './stock.validator';
 import StockService from './stock.service';
 import logger from '@/core/utils/logger.util';
+import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
 
 @Service()
 export default class InventoryService extends StockService {
@@ -15,6 +16,9 @@ export default class InventoryService extends StockService {
    * @param warehouseId Optional warehouse ID (uses default if not provided)
    * @returns Created inventory record
    */
+
+  // eslint-disable-next-line max-lines-per-function
+  @ServiceErrorHandler()
   async createInventoryWithStockMovement(
     sku: string,
     inventoryMetadata: InventoryMetadata,
@@ -22,98 +26,97 @@ export default class InventoryService extends StockService {
     userId?: string
   ): Promise<Inventory> {
     return this.db.$transaction(async (tx) => {
-      try {
-        // Validate SKU
-        StockValidator.validateSku(sku);
+      // Validate SKU
+      StockValidator.validateSku(sku);
 
-        if (!userId) {
-          throw new Error('User ID is required to create inventory');
-        }
+      if (userId === null || userId === undefined || userId === '') {
+        throw new Error('User ID is required to create inventory');
+      }
 
-        // Find the product first
-        const product = await tx.product.findUniqueOrThrow({
-          where: { sku },
-        });
+      // Find the product first
+      const product = await tx.product.findUniqueOrThrow({
+        where: { sku },
+      });
 
-        // Validate and find warehouse - use specified or default
-        if (warehouseId) {
-          StockValidator.validateWarehouseId(warehouseId);
-        }
-        const warehouse = await this.findWarehouse(warehouseId);
+      // Validate and find warehouse - use specified or default
+      if (
+        warehouseId !== null &&
+        warehouseId !== undefined &&
+        warehouseId !== ''
+      ) {
+        StockValidator.validateWarehouseId(warehouseId);
+      }
+      const warehouse = await this.findWarehouse(warehouseId);
 
-        // Validate and normalize inventory metadata
-        const normalizedMetadata =
-          StockValidator.validateInventoryMetadata(inventoryMetadata);
+      // Validate and normalize inventory metadata
+      const normalizedMetadata =
+        StockValidator.validateInventoryMetadata(inventoryMetadata);
 
-        // Calculate total value if unit cost is provided
-        const totalValue = this.calculateStockValue(
-          normalizedMetadata.quantity,
-          normalizedMetadata.unitCost
+      // Calculate total value if unit cost is provided
+      const totalValue = this.calculateStockValue(
+        normalizedMetadata.quantity,
+        normalizedMetadata.unitCost
+      );
+
+      // Create inventory record
+      const productInventory = await tx.inventory.create({
+        data: {
+          quantity: normalizedMetadata.quantity,
+          availableQuantity: normalizedMetadata.availableQuantity,
+          minimumQuantity: normalizedMetadata.minimumQuantity,
+          maximumQuantity: normalizedMetadata.maximumQuantity,
+          safetyStockLevel: normalizedMetadata.safetyStockLevel,
+          economicOrderQuantity: normalizedMetadata.economicOrderQuantity,
+          reorderThreshold: normalizedMetadata.reorderThreshold,
+          reorderQuantity: normalizedMetadata.reorderQuantity,
+          leadTimeInDays: normalizedMetadata.leadTimeInDays,
+          unitCost: normalizedMetadata.unitCost,
+          totalValue,
+          valuationMethod: normalizedMetadata.valuationMethod,
+          inStock: normalizedMetadata.inStock,
+          backOrderable: normalizedMetadata.backOrderable,
+          stockLocation: normalizedMetadata.stockLocation,
+          notes: normalizedMetadata.notes,
+          warehouseId: warehouse.id,
+          productId: product.id,
+        },
+      });
+
+      // Vérifier si un mouvement de stock doit être enregistré
+      if (productInventory.quantity > 0) {
+        // Générer une référence pour le mouvement de stock
+        const reference = await this.generateMovementReference(
+          'INCOMING', // Utilisation du nouveau type
+          warehouse.id
         );
 
-        // Create inventory record
-        const productInventory = await tx.inventory.create({
+        // Enregistrer le mouvement de stock avec le nouveau schéma
+        await tx.stockMovement.create({
           data: {
+            reference,
+            inventoryId: productInventory.id,
+            productId: product.id,
             quantity: normalizedMetadata.quantity,
-            availableQuantity: normalizedMetadata.availableQuantity,
-            minimumQuantity: normalizedMetadata.minimumQuantity,
-            maximumQuantity: normalizedMetadata.maximumQuantity,
-            safetyStockLevel: normalizedMetadata.safetyStockLevel,
-            economicOrderQuantity: normalizedMetadata.economicOrderQuantity,
-            reorderThreshold: normalizedMetadata.reorderThreshold,
-            reorderQuantity: normalizedMetadata.reorderQuantity,
-            leadTimeInDays: normalizedMetadata.leadTimeInDays,
             unitCost: normalizedMetadata.unitCost,
             totalValue,
-            valuationMethod: normalizedMetadata.valuationMethod,
-            inStock: normalizedMetadata.inStock,
-            backOrderable: normalizedMetadata.backOrderable,
-            stockLocation: normalizedMetadata.stockLocation,
-            notes: normalizedMetadata.notes,
-            warehouseId: warehouse.id,
-            productId: product.id,
-          },
-        });
-
-        // Vérifier si un mouvement de stock doit être enregistré
-        if (productInventory.quantity > 0) {
-          // Générer une référence pour le mouvement de stock
-          const reference = await this.generateMovementReference(
-            'INCOMING', // Utilisation du nouveau type
-            warehouse.id
-          );
-
-          // Enregistrer le mouvement de stock avec le nouveau schéma
-          await tx.stockMovement.create({
-            data: {
-              reference,
-              inventoryId: productInventory.id,
-              productId: product.id,
-              quantity: normalizedMetadata.quantity,
-              unitCost: normalizedMetadata.unitCost,
-              totalValue,
-              movementType: 'INCOMING',
-              reason: 'INVENTORY',
-              status: 'COMPLETED',
-              notes: 'Initial stock',
-              isAdjustment: false,
-              documentNumber: reference,
-              createdById: userId,
-              executedAt: new Date(),
-              metadata: {
-                legacy: {
-                  referenceType: 'INVENTORY',
-                },
+            movementType: 'INCOMING',
+            reason: 'INVENTORY',
+            status: 'COMPLETED',
+            notes: 'Initial stock',
+            isAdjustment: false,
+            documentNumber: reference,
+            createdById: userId,
+            executedAt: new Date(),
+            metadata: {
+              legacy: {
+                referenceType: 'INVENTORY',
               },
             },
-          });
-        }
-
-        return productInventory;
-      } catch (error) {
-        logger.error('Error creating inventory:', error);
-        throw this.handleError(error);
+          },
+        });
       }
+
+      return productInventory;
     });
   }
 
@@ -122,78 +125,78 @@ export default class InventoryService extends StockService {
    * @param productId Product ID
    * @returns Inventory details with stock movements
    */
+  @ServiceErrorHandler()
   async inventory(productId: string): Promise<any> {
-    try {
-      const inventory = this.db.inventory.findUnique({
-        where: { productId },
-        include: {
-          stockMovements: {
-            include: {
-              createdBy: true,
-              executedBy: true,
-              sourceWarehouse: true,
-              destinationWarehouse: true,
-            },
-            orderBy: {
-              createdAt: 'desc',
-            },
+    const inventory = this.db.inventory.findUnique({
+      where: { productId },
+      include: {
+        stockMovements: {
+          include: {
+            createdBy: true,
+            executedBy: true,
+            sourceWarehouse: true,
+            destinationWarehouse: true,
           },
-          warehouse: true,
-          product: {
-            select: {
-              id: true,
-              name: true,
-              sku: true,
-            },
+          orderBy: {
+            createdAt: 'desc',
           },
         },
-      });
-      return inventory;
-    } catch (error) {
-      throw this.handleError(error);
-    }
+        warehouse: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+          },
+        },
+      },
+    });
+    return inventory;
   }
 
   /**
    * Get inventory levels summary
    * @returns Summary of inventory levels by status
    */
-  async getInventorySummary() {
-    try {
-      const [total, inStock, lowStock, outOfStock, totalValue] =
-        await Promise.all([
-          this.db.inventory.count(),
-          this.db.inventory.count({
-            where: { inStock: true },
-          }),
-          this.db.inventory.count({
-            where: {
-              inStock: true,
-              quantity: {
-                lte: this.db.inventory.fields.reorderThreshold,
-              },
+  @ServiceErrorHandler()
+  async getInventorySummary(): Promise<{
+    total: number;
+    inStock: number;
+    lowStock: number;
+    outOfStock: number;
+    totalValue: number;
+  }> {
+    const [total, inStock, lowStock, outOfStock, totalValue] =
+      await Promise.all([
+        this.db.inventory.count(),
+        this.db.inventory.count({
+          where: { inStock: true },
+        }),
+        this.db.inventory.count({
+          where: {
+            inStock: true,
+            quantity: {
+              lte: this.db.inventory.fields.reorderThreshold,
             },
-          }),
-          this.db.inventory.count({
-            where: { inStock: false },
-          }),
-          this.db.inventory.aggregate({
-            _sum: {
-              totalValue: true,
-            },
-          }),
-        ]);
+          },
+        }),
+        this.db.inventory.count({
+          where: { inStock: false },
+        }),
+        this.db.inventory.aggregate({
+          _sum: {
+            totalValue: true,
+          },
+        }),
+      ]);
 
-      return {
-        total,
-        inStock,
-        lowStock,
-        outOfStock,
-        totalValue: totalValue._sum.totalValue || 0,
-      };
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    return {
+      total,
+      inStock,
+      lowStock,
+      outOfStock,
+      totalValue: totalValue._sum.totalValue ?? 0,
+    };
   }
 
   /**

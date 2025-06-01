@@ -18,14 +18,14 @@ import logger from '@/core/utils/logger.util';
 
 @Service()
 @Controller('/warehouse-system/movements', ['auth', 'rbac:ADMIN'])
-export class InventoryController {
+export class StockMvtController {
   constructor(private readonly stockMvtService: StockMvtService) {}
 
   /**
    * Create a stock movement
    */
   @Post('/save')
-  @ControllerErrorHandler('InventoryController.createStockMovement')
+  @ControllerErrorHandler('StockMvtController.createStockMovement')
   @ValidateRequest({
     body: StockMvtSchemas.createStockMovement,
   })
@@ -51,7 +51,7 @@ export class InventoryController {
    * Get a stock movement by ID
    */
   @Get('/:modelId')
-  @ControllerErrorHandler('InventoryController.getStockMovement')
+  @ControllerErrorHandler('StockMvtController.getStockMovement')
   @ValidateRequest({
     params: CommonSchemas.entityStringParam,
   })
@@ -77,7 +77,7 @@ export class InventoryController {
    */
 
   @Get('/recent')
-  @ControllerErrorHandler('InventoryController.getRecentMovements')
+  @ControllerErrorHandler('StockMvtController.getRecentMovements')
   @ValidateRequest({
     query: StockMvtSchemas.getRecentMovements,
   })
@@ -98,7 +98,7 @@ export class InventoryController {
    * Process a stock movement
    */
   @Patch('/:modelId/process')
-  @ControllerErrorHandler('InventoryController.processStockMovement')
+  @ControllerErrorHandler('StockMvtController.processStockMovement')
   @ValidateRequest({
     params: CommonSchemas.entityStringParam,
     body: StockMvtSchemas.processStockMovement,

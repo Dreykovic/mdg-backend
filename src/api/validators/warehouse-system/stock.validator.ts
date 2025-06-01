@@ -143,57 +143,6 @@ export const StockMvtSchemas = {
 
   // Additional schemas for common operations
 
-  // Schema for bulk inventory operations
-  bulkInventoryUpdate: z.object({
-    body: z.object({
-      inventoryIds: z
-        .array(BaseSchemas.uuid)
-        .min(1, 'At least one inventory ID required'),
-      updates: z.object({
-        safetyStockLevel: BaseSchemas.quantity.optional(),
-        reorderThreshold: BaseSchemas.quantity.optional(),
-        reorderQuantity: BaseSchemas.positiveQuantity.optional(),
-        isActive: z.boolean().optional(),
-        notes: transformers.trimmedString.optional(),
-      }),
-    }),
-    params: z.object({}),
-    query: z.object({}),
-  }),
-
-  // Schema for inventory search and filtering
-  searchInventory: z.object({
-    body: z.object({}),
-    params: z.object({}),
-    query: z.object({
-      search: z.string().optional(),
-      warehouseId: transformers.optionalUuid,
-      inStock: z.boolean().optional(),
-      isActive: z.boolean().optional(),
-      belowSafetyStock: z.boolean().optional(),
-      belowReorderThreshold: z.boolean().optional(),
-      valuationMethod: z.enum(['FIFO', 'LIFO', 'WAC', 'FEFO']).optional(),
-      page: z
-        .string()
-        .transform((val) => Math.max(1, Number(val) || 1))
-        .default('1'),
-      pageSize: z
-        .string()
-        .transform((val) => Math.min(100, Math.max(1, Number(val) || 10)))
-        .default('10'),
-      sortBy: z
-        .enum([
-          'quantity',
-          'availableQuantity',
-          'unitCost',
-          'totalValue',
-          'updatedAt',
-        ])
-        .default('updatedAt'),
-      sortOrder: z.enum(['asc', 'desc']).default('desc'),
-    }),
-  }),
-
   // Schema for stock movement history
   getMovementHistory: z.object({
     body: z.object({}),
@@ -238,12 +187,7 @@ export type GetRecentMovementsRequest = z.infer<
 export type ProcessStockMovementRequest = z.infer<
   typeof StockMvtSchemas.processStockMovement
 >;
-export type BulkInventoryUpdateRequest = z.infer<
-  typeof StockMvtSchemas.bulkInventoryUpdate
->;
-export type SearchInventoryRequest = z.infer<
-  typeof StockMvtSchemas.searchInventory
->;
+
 export type GetMovementHistoryRequest = z.infer<
   typeof StockMvtSchemas.getMovementHistory
 >;

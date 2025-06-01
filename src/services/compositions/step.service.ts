@@ -1,7 +1,7 @@
 import { ServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
+import logger from '@/core/utils/logger.util';
 import ServiceDefinition from '@/services/definitions/base.service';
 import { Prisma, Step } from '@prisma/client';
-import { log } from 'console';
 import { Service } from 'typedi';
 
 @Service()
@@ -77,7 +77,9 @@ export default class StepService extends ServiceDefinition {
       data,
     });
 
-    log(`Ingredient Step updated successfully: ${JSON.stringify(updatedStep)}`);
+    logger.debug(
+      `Ingredient Step updated successfully: ${JSON.stringify(updatedStep)}`
+    );
 
     return { step: updatedStep };
   }

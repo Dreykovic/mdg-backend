@@ -3,8 +3,8 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { AllowedSitesType } from './types';
 import RecipeScrappingUtil from './util';
-import { log } from 'console';
 import { allowedSitesSelectorsConfig, SiteSelectorConfig } from './config';
+import logger from '@/core/utils/logger.util';
 
 @Service()
 export default class RecipeScrappingService {
@@ -37,7 +37,7 @@ export default class RecipeScrappingService {
     $: cheerio.CheerioAPI,
     config: SiteSelectorConfig
   ): Record<string, number | null> => {
-    log(config);
+    logger.debug(config);
     const extractedTimes: Record<string, string> = {};
 
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)
@@ -49,7 +49,7 @@ export default class RecipeScrappingService {
         extractedTimes[label] = value;
       }
     });
-    log('Extracted Times: ', extractedTimes);
+    logger.debug('Extracted Times: ', extractedTimes);
     const times: Record<string, number | null> = {};
     for (const [key, value] of Object.entries(extractedTimes)) {
       times[key] = this.recipeScrappingUtil.convertTimeToMinutes(value);
@@ -60,7 +60,7 @@ export default class RecipeScrappingService {
   // Fetch and scrape data from a given URL
   extractTitle($: cheerio.CheerioAPI, config: SiteSelectorConfig): string {
     const title: string = $(config.title).text().trim();
-    log('Extracted Title: ', title);
+    logger.debug('Extracted Title: ', title);
     return title;
   }
   extractServings(
@@ -68,7 +68,7 @@ export default class RecipeScrappingService {
     config: SiteSelectorConfig
   ): number | null {
     const extractedServings: string = $(config.servings).text().trim();
-    log('Extracted Servigns: ', extractedServings);
+    logger.debug('Extracted Servigns: ', extractedServings);
     const servings = this.recipeScrappingUtil.parseServings(extractedServings);
     return servings;
   }
@@ -77,7 +77,7 @@ export default class RecipeScrappingService {
     config: SiteSelectorConfig
   ): string {
     const description: string = $(config.description).text().trim();
-    log('Extracted Description: ', description);
+    logger.debug('Extracted Description: ', description);
     return description;
   }
   extractIngredients(
@@ -101,7 +101,7 @@ export default class RecipeScrappingService {
       const ingredient = { quantity, unit, name };
       extractedIngredients.push(ingredient);
     });
-    log('Extracted Ingrédient: ', extractedIngredients);
+    logger.debug('Extracted Ingrédient: ', extractedIngredients);
     const ingredients = extractedIngredients.map(
       ({ quantity, unit, name }) => ({
         quantity: quantity
@@ -124,13 +124,16 @@ export default class RecipeScrappingService {
       const title = `Step ${++index}`;
       const stepDescriptionElmt = $(item).find(config.steps.description);
 
-      log('Extracted Step description: ', stepDescriptionElmt.before().text());
+      logger.debug(
+        'Extracted Step description: ',
+        stepDescriptionElmt.before().text()
+      );
 
       const description = stepDescriptionElmt.text().trim();
 
       steps[title] = description;
     });
-    log('Extracted Steps: ', steps);
+    logger.debug('Extracted Steps: ', steps);
 
     return steps;
   }

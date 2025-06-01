@@ -2,7 +2,7 @@ import { Transporter } from 'nodemailer';
 import ejs from 'ejs';
 import path from 'path';
 import { MailOptions, MailServiceInterface } from './nodemailer.types';
-import { log } from 'console';
+import logger from '@/core/utils/logger.util';
 
 export class MailService implements MailServiceInterface {
   private readonly transporter: Transporter;
@@ -28,16 +28,16 @@ export class MailService implements MailServiceInterface {
       )) as string;
 
       const mailOptions = {
-        from: options.from || '"Your Name" <your-email@example.com>',
+        from: options.from ?? '"Your Name" <your-email@example.com>',
         to: options.to,
         subject: options.subject,
         html, // Le contenu HTML est maintenant typé en `string`
       };
 
       await this.transporter.sendMail(mailOptions);
-      log('Email envoyé avec succès.');
+      logger.debug('Email envoyé avec succès.');
     } catch (error) {
-      log("Erreur lors de l'envoi de l'email :", error);
+      logger.debug("Erreur lors de l'envoi de l'email :", error);
     }
   }
 }

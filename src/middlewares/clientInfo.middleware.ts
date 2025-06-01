@@ -47,7 +47,7 @@ export const clientInfoMiddleware = (
     };
 
     // Optionally log the detected client information (useful for debugging)
-    // log('Client info detected:', data);
+    // logger.debug('Client info detected:', data);
 
     // Attach the client information to the request object (be sure to type 'req' correctly)
     (req as any).clientInfo = data;

@@ -1,6 +1,6 @@
 import { Service } from 'typedi';
 import { fractionMap } from './types';
-import { log } from 'console';
+import logger from '@/core/utils/logger.util';
 
 @Service()
 export default class RecipeScrappingUtil {
@@ -8,10 +8,10 @@ export default class RecipeScrappingUtil {
   extractDomain(url: string): string | undefined | null {
     try {
       const match = url.match(/^(?:https?:\/\/)?(www\.)?([^/]+)/);
-      log(match);
+      logger.debug(match);
       return match ? match[2] : null;
     } catch (error) {
-      log(`Error extracting domain from URL: ${url}`, error);
+      logger.debug(`Error extracting domain from URL: ${url}`, error);
       return null;
     }
   }
@@ -45,7 +45,7 @@ export default class RecipeScrappingUtil {
       // Handle simple decimal numbers
       return parseFloat(fraction);
     } catch (error) {
-      log(`Error converting fraction to float: ${fraction}`, error);
+      logger.debug(`Error converting fraction to float: ${fraction}`, error);
       return NaN;
     }
   }
@@ -84,7 +84,7 @@ export default class RecipeScrappingUtil {
 
       return totalMinutes > 0 ? totalMinutes : null;
     } catch (error) {
-      log(`Error converting time to minutes: ${timeStr}`, error);
+      logger.debug(`Error converting time to minutes: ${timeStr}`, error);
       return null;
     }
   };
@@ -117,7 +117,7 @@ export default class RecipeScrappingUtil {
 
       return null;
     } catch (error) {
-      log(`Error parsing servings: ${servingsStr}`, error);
+      logger.debug(`Error parsing servings: ${servingsStr}`, error);
       return null;
     }
   };
@@ -126,7 +126,7 @@ export default class RecipeScrappingUtil {
     try {
       return unit.replace(/\(|\)/g, '').trim(); // Supprime toutes les parenthèses et espaces inutiles
     } catch (error) {
-      log(`Error cleaning unit: ${unit}`, error);
+      logger.debug(`Error cleaning unit: ${unit}`, error);
       return unit; // Retourne l'unité originale en cas d'erreur
     }
   };

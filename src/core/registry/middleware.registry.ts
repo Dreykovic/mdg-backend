@@ -1,8 +1,8 @@
 // core/MiddlewareRegistry.ts
 import rateLimit from 'express-rate-limit';
-import { log } from 'console';
 import { createRbacMiddleware } from '@/middlewares/rbac.middleware';
 import verifyJWT from '@/middlewares/jwt.middleware';
+import logger from '../utils/logger.util';
 
 export class MiddlewareRegistry {
   private readonly middlewares = new Map<string, any>();
@@ -57,7 +57,7 @@ export class MiddlewareRegistry {
   private createCacheMiddleware(seconds: number) {
     return (req: any, res: any, next: any): void => {
       res.set('Cache-Control', `public, max-age=${seconds}`);
-      log(`Cache set for ${seconds} seconds`);
+      logger.debug(`Cache set for ${seconds} seconds`);
       next();
     };
   }

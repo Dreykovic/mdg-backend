@@ -115,7 +115,7 @@ export class IngredientController {
   @Put('/update/:modelId')
   @ControllerErrorHandler()
   @ValidateRequest({
-    params: IngredientSchemas.ingredientParam,
+    params: CommonSchemas.entityNumberParam,
     body: IngredientSchemas.updateIngredient,
   })
   async updateIngredient(req: Request, res: Response): Promise<void> {

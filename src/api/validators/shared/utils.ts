@@ -68,4 +68,11 @@ export const transformers = {
     }
     return val;
   }),
+  positiveNumber: z.number().min(0, 'Must be a positive number'),
+  strictlyPositiveNumber: z.number().min(0.01, 'Must be greater than 0'),
+  uuidString: z.string().uuid('Must be a valid UUID'),
+  trimmedString: z.string().transform((val) => val.trim()),
+
+  optionalFloat: z.number().optional(),
+  optionalInt: z.number().int().optional(),
 };

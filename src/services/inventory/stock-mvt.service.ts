@@ -199,7 +199,6 @@ export default class StockMvtService extends StockService {
    * @param tx Optional transaction object
    * @returns Destination inventory
    */
-  // eslint-disable-next-line max-lines-per-function
   @CriticalServiceErrorHandler()
   private async processTransfer(
     movementId: string,

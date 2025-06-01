@@ -17,7 +17,6 @@ export default class InventoryService extends StockService {
    * @returns Created inventory record
    */
 
-  // eslint-disable-next-line max-lines-per-function
   @ServiceErrorHandler()
   async createInventoryWithStockMovement(
     sku: string,

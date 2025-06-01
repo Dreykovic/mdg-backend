@@ -8,13 +8,14 @@ import StockMvtService from '@/services/warehouse-systeme/stock-mvt.service';
 import { Controller } from '@/core/decorators/route.decorator';
 
 @Service()
-@Controller('/stock/movements', ['auth', 'rbac:ADMIN'])
+@Controller('/warehouse-system/movements', ['auth', 'rbac:ADMIN'])
 export class InventoryController {
   constructor(private readonly stockMvtService: StockMvtService) {}
 
   /**
    * Create a stock movement
    */
+
   async createStockMovement(req: Request, res: Response): Promise<void> {
     try {
       const movementData = req.body;

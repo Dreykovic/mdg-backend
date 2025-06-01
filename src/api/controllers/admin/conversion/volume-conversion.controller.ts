@@ -16,7 +16,7 @@ import { VolumeConversionSchemas } from '@/api/validators/conversion/volume-conv
 import logger from '@/core/utils/logger.util';
 
 @Service()
-@Controller('/admin/conversion/volume-conversion', ['auth', 'rbac:ADMIN'])
+@Controller('/conversion/volumes', ['auth', 'rbac:ADMIN'])
 export class VolumeConversionController {
   constructor(
     private readonly volumeConversionService: VolumeConversionService

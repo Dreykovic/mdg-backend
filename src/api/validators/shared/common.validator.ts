@@ -1,6 +1,14 @@
 // validators/margin.validator.ts
 import { z } from 'zod';
-
+// Base validation schemas
+export const BaseSchemas = {
+  uuid: z.string().uuid('Must be a valid UUID'),
+  quantity: z.number().min(0, 'Quantity cannot be negative'),
+  positiveQuantity: z.number().min(0.01, 'Quantity must be positive'),
+  sku: z.string().min(1, 'SKU is required').max(100, 'SKU too long'),
+  warehouseId: z.string().uuid('Warehouse ID must be a valid UUID'),
+  userId: z.string().min(1, 'User ID is required'),
+};
 export const CommonSchemas = {
   // Schema pour la pagination et filtres
   getEntities: z.object({

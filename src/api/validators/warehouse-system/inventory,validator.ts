@@ -1,17 +1,8 @@
 import { z } from 'zod';
 import { transformers } from '../shared/utils';
+import { BaseSchemas } from '../shared/common.validator';
 
 // Utility transformers for the controller
-
-// Base validation schemas
-const BaseSchemas = {
-  uuid: z.string().uuid('Must be a valid UUID'),
-  quantity: z.number().min(0, 'Quantity cannot be negative'),
-  positiveQuantity: z.number().min(0.01, 'Quantity must be positive'),
-  sku: z.string().min(1, 'SKU is required').max(100, 'SKU too long'),
-  warehouseId: z.string().uuid('Warehouse ID must be a valid UUID'),
-  userId: z.string().min(1, 'User ID is required'),
-};
 
 // Movement action enum for processing
 const MovementActionEnum = z.enum(['approve', 'start', 'complete', 'cancel']);

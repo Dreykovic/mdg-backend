@@ -5,7 +5,10 @@ import { Service } from 'typedi';
 
 import StockMvtService from '@/services/warehouse-systeme/stock-mvt.service';
 
-import { Controller } from '@/core/decorators/route.decorator';
+import { Controller, Post } from '@/core/decorators/route.decorator';
+import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorator';
+import { ValidateRequest } from '@/core/decorators/validation.decorator';
+import { StockMvtSchemas } from '@/api/validators/warehouse-system/stock.validator';
 
 @Service()
 @Controller('/warehouse-system/movements', ['auth', 'rbac:ADMIN'])
@@ -15,32 +18,26 @@ export class InventoryController {
   /**
    * Create a stock movement
    */
-
+  @Post('/save')
+  @ControllerErrorHandler('InventoryController.createStockMovement')
+  @ValidateRequest({
+    body: StockMvtSchemas.createStockMovement,
+  })
   async createStockMovement(req: Request, res: Response): Promise<void> {
-    try {
-      const movementData = req.body;
-      const userId = (req as any).user.id;
+    const movementData = req.body;
+    const userId = (req as any).user.id;
 
-      log('Create Stock Movement Request Received');
+    log('Create Stock Movement Request Received');
 
-      // Ensure user ID is included
-      movementData.createdById = userId;
+    // Ensure user ID is included
+    movementData.createdById = userId;
 
-      const movement =
-        await this.stockMvtService.createStockMovement(movementData);
+    const movement =
+      await this.stockMvtService.createStockMovement(movementData);
 
-      const payload = { movement };
-      const response = ApiResponse.http200(payload);
-      res.status(response.httpStatusCode).json(response.data);
-    } catch (error) {
-      log(error);
-      const response = ApiResponse.http400({
-        message:
-          (error as Error).message ||
-          'An error occurred while creating stock movement.',
-      });
-      res.status(response.httpStatusCode).json(response.data);
-    }
+    const payload = { movement };
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
   }
   //TODO: Use this controller
 

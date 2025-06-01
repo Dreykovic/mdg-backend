@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { log } from 'console';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 import WhereConditionBuilder from '@/core/utils/filter.utils';
@@ -14,6 +13,7 @@ import { ControllerErrorHandler } from '@/core/decorators/error-handler.decorato
 import { ValidateRequest } from '@/core/decorators/validation.decorator';
 import { CommonSchemas } from '@/api/validators/shared/common.validator';
 import { VolumeConversionSchemas } from '@/api/validators/conversion/volume-conversion.validator';
+import logger from '@/core/utils/logger.util';
 
 @Service()
 @Controller('/admin/conversion/volume-conversion', ['auth', 'rbac:ADMIN'])
@@ -38,7 +38,7 @@ export class VolumeConversionController {
     query: CommonSchemas.getEntities,
   })
   async volumeConversions(req: Request, res: Response): Promise<void> {
-    log('List volumeConversions Request Received');
+    logger.debug('List volumeConversions Request Received');
 
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 10;
@@ -67,7 +67,7 @@ export class VolumeConversionController {
   @Get('/list')
   @ControllerErrorHandler('VolumeConversionController.volumeConversionsList')
   async volumeConversionsList(req: Request, res: Response): Promise<void> {
-    log('List volumeConversion Request Received');
+    logger.debug('List volumeConversion Request Received');
 
     const payload = await this.volumeConversionService.volumeConversionsList();
 
@@ -88,7 +88,7 @@ export class VolumeConversionController {
     body: VolumeConversionSchemas.createVolumeConversion,
   })
   async createVolumeConversion(req: Request, res: Response): Promise<void> {
-    log('Create volumeConversion Request Received');
+    logger.debug('Create volumeConversion Request Received');
 
     const data = req.body;
     data.m1 = parseFloat(data.m1);
@@ -115,7 +115,7 @@ export class VolumeConversionController {
     body: CommonSchemas.enntityWithNumberId,
   })
   async deleteVolumeConversion(req: Request, res: Response): Promise<void> {
-    log('Delete volumeConversion Request Received');
+    logger.debug('Delete volumeConversion Request Received');
 
     const filter = req.body;
     const payload =

@@ -1,14 +1,13 @@
 import { Inventory, MovementReason, StockMovement } from '@prisma/client';
 import { Service } from 'typedi';
-import logger from '@/core/utils/logger.util';
 
 import { StockMovementData, StockValidator } from './stock.validator';
 import StockService from './stock.service';
-import { log } from 'console';
 import {
   CriticalServiceErrorHandler,
   ServiceErrorHandler,
 } from '@/core/decorators/error-handler.decorator';
+import logger from '@/core/utils/logger.util';
 
 @Service()
 export default class StockMvtService extends StockService {
@@ -38,7 +37,7 @@ export default class StockMvtService extends StockService {
       // Calculate total value
       const totalValue = this.calculateStockValue(
         validatedData.quantity,
-        (validatedData.unitCost || inventory.unitCost) as number
+        (validatedData.unitCost ?? inventory.unitCost) as number
       );
 
       // Create the movement
@@ -48,7 +47,7 @@ export default class StockMvtService extends StockService {
           inventoryId: validatedData.inventoryId,
           productId: validatedData.productId,
           quantity: validatedData.quantity,
-          unitCost: validatedData.unitCost || inventory.unitCost,
+          unitCost: validatedData.unitCost ?? inventory.unitCost,
           totalValue,
           movementType: validatedData.movementType,
           reason: validatedData.reason as MovementReason,
@@ -57,21 +56,24 @@ export default class StockMvtService extends StockService {
           lotNumber: validatedData.lotNumber,
           expiryDate: validatedData.expiryDate,
           batchId: validatedData.batchId,
-          isAdjustment: validatedData.isAdjustment || false,
-          documentNumber: validatedData.documentNumber || reference,
+          isAdjustment: validatedData.isAdjustment ?? false,
+          documentNumber: validatedData.documentNumber ?? reference,
           scheduledAt: validatedData.scheduledAt,
           sourceWarehouseId: validatedData.sourceWarehouseId,
           destinationWarehouseId: validatedData.destinationWarehouseId,
           createdById: validatedData.createdById,
           approvedById: validatedData.approvedById,
-          metadata: validatedData.referenceType
-            ? {
-                legacy: {
-                  referenceType: validatedData.referenceType,
-                  referenceId: validatedData.referenceId,
-                },
-              }
-            : undefined,
+          metadata:
+            validatedData.referenceType !== null &&
+            validatedData.referenceType !== undefined &&
+            validatedData.referenceType !== ''
+              ? {
+                  legacy: {
+                    referenceType: validatedData.referenceType,
+                    referenceId: validatedData.referenceId,
+                  },
+                }
+              : undefined,
         },
       });
 
@@ -232,7 +234,7 @@ export default class StockMvtService extends StockService {
 
     // Verify we have enough stock
     if (
-      !sourceInventory.backOrderable &&
+      sourceInventory.backOrderable === false &&
       sourceInventory.availableQuantity < movement.quantity
     ) {
       throw new Error(
@@ -248,23 +250,20 @@ export default class StockMvtService extends StockService {
       },
     });
 
-    if (!destinationInventory) {
-      // Create new inventory record in destination
-      destinationInventory = await prisma.inventory.create({
-        data: {
-          productId: movement.productId,
-          warehouseId: movement.destinationWarehouseId,
-          quantity: 0,
-          availableQuantity: 0,
-          reorderThreshold: sourceInventory.reorderThreshold,
-          reorderQuantity: sourceInventory.reorderQuantity,
-          unitCost: sourceInventory.unitCost,
-          valuationMethod: sourceInventory.valuationMethod,
-          inStock: false,
-          backOrderable: sourceInventory.backOrderable,
-        },
-      });
-    }
+    destinationInventory ??= await prisma.inventory.create({
+      data: {
+        productId: movement.productId,
+        warehouseId: movement.destinationWarehouseId,
+        quantity: 0,
+        availableQuantity: 0,
+        reorderThreshold: sourceInventory.reorderThreshold,
+        reorderQuantity: sourceInventory.reorderQuantity,
+        unitCost: sourceInventory.unitCost,
+        valuationMethod: sourceInventory.valuationMethod,
+        inStock: false,
+        backOrderable: sourceInventory.backOrderable,
+      },
+    });
 
     // Update source inventory (decrease)
     const updatedSourceInventory = await prisma.inventory.update({
@@ -280,7 +279,7 @@ export default class StockMvtService extends StockService {
         inStock: sourceInventory.quantity - movement.quantity > 0,
       },
     });
-    log(updatedSourceInventory);
+    logger.debug(updatedSourceInventory);
     // Update destination inventory (increase)
     const updatedDestinationInventory = await prisma.inventory.update({
       where: { id: destinationInventory.id },
@@ -290,7 +289,7 @@ export default class StockMvtService extends StockService {
           destinationInventory.availableQuantity + movement.quantity,
         totalValue: this.calculateStockValue(
           destinationInventory.quantity + movement.quantity,
-          destinationInventory.unitCost || sourceInventory.unitCost
+          destinationInventory.unitCost ?? sourceInventory.unitCost
         ),
         inStock: true,
         lastReceivedDate: new Date(),
@@ -314,46 +313,43 @@ export default class StockMvtService extends StockService {
    * @param movementId Movement ID
    * @returns Stock movement with related data
    */
+  @ServiceErrorHandler()
   async getStockMovement(movementId: string): Promise<any> {
-    try {
-      return this.db.stockMovement.findUniqueOrThrow({
-        where: { id: movementId },
-        include: {
-          inventory: true,
-          product: {
-            select: {
-              id: true,
-              name: true,
-              sku: true,
-            },
+    return this.db.stockMovement.findUniqueOrThrow({
+      where: { id: movementId },
+      include: {
+        inventory: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
           },
-          createdBy: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          approvedBy: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          executedBy: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          sourceWarehouse: true,
-          destinationWarehouse: true,
-          parentMovement: true,
-          childMovements: true,
         },
-      });
-    } catch (error) {
-      throw this.handleError(error);
-    }
+        createdBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        approvedBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        executedBy: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        sourceWarehouse: true,
+        destinationWarehouse: true,
+        parentMovement: true,
+        childMovements: true,
+      },
+    });
   }
 
   /**
@@ -361,32 +357,29 @@ export default class StockMvtService extends StockService {
    * @param limit Number of movements to return
    * @returns Recent stock movements
    */
+  @ServiceErrorHandler()
   async getRecentMovements(limit = 10): Promise<any> {
-    try {
-      return this.db.stockMovement.findMany({
-        take: limit,
-        orderBy: {
-          createdAt: 'desc',
-        },
-        include: {
-          product: {
-            select: {
-              id: true,
-              name: true,
-              sku: true,
-            },
-          },
-          inventory: {
-            select: {
-              id: true,
-              quantity: true,
-            },
+    return this.db.stockMovement.findMany({
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
           },
         },
-      });
-    } catch (error) {
-      throw this.handleError(error);
-    }
+        inventory: {
+          select: {
+            id: true,
+            quantity: true,
+          },
+        },
+      },
+    });
   }
 
   /**
@@ -395,32 +388,30 @@ export default class StockMvtService extends StockService {
    * @param userId User ID making the cancellation
    * @returns Updated movement
    */
+  @ServiceErrorHandler()
   async cancelStockMovement(
     movementId: string,
     userId: string
   ): Promise<StockMovement> {
-    try {
-      const movement = await this.db.stockMovement.findUniqueOrThrow({
-        where: { id: movementId },
-      });
+    const movement = await this.db.stockMovement.findUniqueOrThrow({
+      where: { id: movementId },
+    });
 
-      if (movement.status === 'COMPLETED') {
-        throw new Error('Cannot cancel a completed movement');
-      }
+    if (movement.status === 'COMPLETED') {
+      throw new Error('Cannot cancel a completed movement');
+    }
 
-      return this.db.stockMovement.update({
-        where: { id: movementId },
-        data: {
-          status: 'CANCELLED',
-          notes: movement.notes
+    return this.db.stockMovement.update({
+      where: { id: movementId },
+      data: {
+        status: 'CANCELLED',
+        notes:
+          movement.notes !== null && movement.notes !== ''
             ? `${movement.notes} | Cancelled by user.`
             : 'Cancelled by user.',
-          executedById: userId,
-        },
-      });
-    } catch (error) {
-      throw this.handleError(error);
-    }
+        executedById: userId,
+      },
+    });
   }
 
   /**
@@ -429,31 +420,28 @@ export default class StockMvtService extends StockService {
    * @param userId User ID making the update
    * @returns Updated movement
    */
+  @ServiceErrorHandler()
   async startProcessingMovement(
     movementId: string,
     userId: string
   ): Promise<StockMovement> {
-    try {
-      const movement = await this.db.stockMovement.findUniqueOrThrow({
-        where: { id: movementId },
-      });
+    const movement = await this.db.stockMovement.findUniqueOrThrow({
+      where: { id: movementId },
+    });
 
-      if (movement.status !== 'DRAFT' && movement.status !== 'PLANNED') {
-        throw new Error(
-          `Cannot start processing a movement with status: ${movement.status}`
-        );
-      }
-
-      return this.db.stockMovement.update({
-        where: { id: movementId },
-        data: {
-          status: 'IN_PROGRESS',
-          executedById: userId,
-        },
-      });
-    } catch (error) {
-      throw this.handleError(error);
+    if (movement.status !== 'DRAFT' && movement.status !== 'PLANNED') {
+      throw new Error(
+        `Cannot start processing a movement with status: ${movement.status}`
+      );
     }
+
+    return this.db.stockMovement.update({
+      where: { id: movementId },
+      data: {
+        status: 'IN_PROGRESS',
+        executedById: userId,
+      },
+    });
   }
 
   /**
@@ -462,36 +450,33 @@ export default class StockMvtService extends StockService {
    * @param userId User ID approving the movement
    * @returns Approved movement
    */
+  @ServiceErrorHandler()
   async approveStockMovement(
     movementId: string,
     userId: string
   ): Promise<StockMovement> {
-    try {
-      const movement = await this.db.stockMovement.findUniqueOrThrow({
-        where: { id: movementId },
-      });
+    const movement = await this.db.stockMovement.findUniqueOrThrow({
+      where: { id: movementId },
+    });
 
-      // Only draft or planned movements can be approved
-      if (movement.status !== 'DRAFT' && movement.status !== 'PLANNED') {
-        throw new Error(
-          `Cannot approve a movement with status: ${movement.status}`
-        );
-      }
-
-      return this.db.stockMovement.update({
-        where: { id: movementId },
-        data: {
-          approvedById: userId,
-          // If scheduled for future, keep as PLANNED, otherwise move to IN_PROGRESS
-          status:
-            movement.scheduledAt && movement.scheduledAt > new Date()
-              ? 'PLANNED'
-              : 'IN_PROGRESS',
-        },
-      });
-    } catch (error) {
-      throw this.handleError(error);
+    // Only draft or planned movements can be approved
+    if (movement.status !== 'DRAFT' && movement.status !== 'PLANNED') {
+      throw new Error(
+        `Cannot approve a movement with status: ${movement.status}`
+      );
     }
+
+    return this.db.stockMovement.update({
+      where: { id: movementId },
+      data: {
+        approvedById: userId,
+        // If scheduled for future, keep as PLANNED, otherwise move to IN_PROGRESS
+        status:
+          movement.scheduledAt && movement.scheduledAt > new Date()
+            ? 'PLANNED'
+            : 'IN_PROGRESS',
+      },
+    });
   }
 
   /**
@@ -500,34 +485,31 @@ export default class StockMvtService extends StockService {
    * @param userId User completing the movement
    * @returns Updated inventory
    */
+  @ServiceErrorHandler()
   async completeStockMovement(
     movementId: string,
     userId: string
   ): Promise<Inventory> {
     return this.db.$transaction(async (tx) => {
-      try {
-        const movement = await tx.stockMovement.findUniqueOrThrow({
-          where: { id: movementId },
-        });
+      const movement = await tx.stockMovement.findUniqueOrThrow({
+        where: { id: movementId },
+      });
 
-        // Can only complete movements that are in progress
-        if (movement.status !== 'IN_PROGRESS') {
-          throw new Error(
-            `Cannot complete a movement with status: ${movement.status}`
-          );
-        }
-
-        // Update executor
-        await tx.stockMovement.update({
-          where: { id: movementId },
-          data: { executedById: userId },
-        });
-
-        // Apply the movement to inventory
-        return this.applyStockMovement(movementId, tx);
-      } catch (error) {
-        throw this.handleError(error);
+      // Can only complete movements that are in progress
+      if (movement.status !== 'IN_PROGRESS') {
+        throw new Error(
+          `Cannot complete a movement with status: ${movement.status}`
+        );
       }
+
+      // Update executor
+      await tx.stockMovement.update({
+        where: { id: movementId },
+        data: { executedById: userId },
+      });
+
+      // Apply the movement to inventory
+      return this.applyStockMovement(movementId, tx);
     });
   }
 }

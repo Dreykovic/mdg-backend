@@ -1,25 +1,29 @@
 import ServiceDefinition from '@/services/definitions/base.service';
 import logger from '@/core/utils/logger.util';
 
-import { MovementReason, MovementType } from '@prisma/client';
+import { MovementReason, MovementType, Warehouse } from '@prisma/client';
 
 import { Service } from 'typedi';
+import { CriticalServiceErrorHandler } from '@/core/decorators/error-handler.decorator';
 
 @Service()
 export default class StockService extends ServiceDefinition {
   /**
    * Find a warehouse by ID or get the default
    */
-  async findWarehouse(warehouseId?: string) {
-    if (warehouseId) {
-      return this.db.warehouse.findUniqueOrThrow({
+  @CriticalServiceErrorHandler('StockService.findWarehouse')
+  async findWarehouse(warehouseId?: string): Promise<Warehouse> {
+    if (warehouseId !== null && warehouseId !== undefined) {
+      const warehouse = await this.db.warehouse.findUniqueOrThrow({
         where: { id: warehouseId },
       });
+      return warehouse;
     }
 
-    return this.db.warehouse.findFirstOrThrow({
+    const defaultWarehouse = await this.db.warehouse.findFirstOrThrow({
       where: { isDefault: true },
     });
+    return defaultWarehouse;
   }
 
   /**
@@ -49,9 +53,10 @@ export default class StockService extends ServiceDefinition {
       const basePattern = `${typePrefix}-${dateStr}`;
 
       // Add warehouse prefix if provided
-      const warehousePrefix = warehouseId
-        ? await this.getWarehousePrefix(warehouseId)
-        : '';
+      const warehousePrefix =
+        typeof warehouseId === 'string' && warehouseId.trim() !== ''
+          ? await this.getWarehousePrefix(warehouseId)
+          : '';
       const fullPattern = warehousePrefix
         ? `${warehousePrefix}-${basePattern}`
         : basePattern;
@@ -76,11 +81,20 @@ export default class StockService extends ServiceDefinition {
 
       // Determine sequence number
       let sequenceNumber = 1;
-      if (latestMovement?.reference) {
+      if (
+        latestMovement !== null &&
+        latestMovement !== undefined &&
+        typeof latestMovement.reference === 'string' &&
+        latestMovement.reference.trim() !== ''
+      ) {
         const parts = latestMovement.reference.split('-');
-        if (parts && parts.length > 0) {
+        if (parts.length > 0) {
           const lastPart = parts[parts.length - 1];
-          if (lastPart && /^\d+$/.test(lastPart)) {
+          if (
+            typeof lastPart === 'string' &&
+            lastPart !== '' &&
+            /^\d+$/.test(lastPart)
+          ) {
             sequenceNumber = parseInt(lastPart, 10) + 1;
           }
         }
@@ -154,7 +168,11 @@ export default class StockService extends ServiceDefinition {
         where: { id: warehouseId },
       });
 
-      if (warehouse?.name) {
+      if (
+        warehouse &&
+        typeof warehouse.name === 'string' &&
+        warehouse.name.trim() !== ''
+      ) {
         // Use first 2 characters of warehouse name, uppercase
         return warehouse.name.substring(0, 2).toUpperCase();
       }

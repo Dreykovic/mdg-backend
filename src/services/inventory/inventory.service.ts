@@ -1,8 +1,8 @@
 import { Inventory } from '@prisma/client';
 import { Service } from 'typedi';
 
-import { InventoryMetadata, StockValidator } from './stock_validator';
-import StockService from './stock_service';
+import { InventoryMetadata, StockValidator } from './stock.validator';
+import StockService from './stock.service';
 import logger from '@/core/utils/logger.util';
 
 @Service()

@@ -4,9 +4,9 @@ import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
 
 import StringUtil from '@/core/utils/string.util';
-import InventoryService from '@/services/inventory/inventory_service';
-import StockMvtService from '@/services/inventory/stock_mvt_service';
-import { InventoryMetadata } from '@/services/inventory/stock_validator';
+import InventoryService from '@/services/inventory/inventory.service';
+import StockMvtService from '@/services/inventory/stock-mvt.service';
+import { InventoryMetadata } from '@/services/inventory/stock.validator';
 
 @Service()
 export class InventoryController {

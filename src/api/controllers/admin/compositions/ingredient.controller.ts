@@ -19,7 +19,7 @@ import { CommonSchemas } from '@/api/validators/shared/common.validator';
 import { IngredientSchemas } from '@/api/validators/compositions/ingredient.validator';
 
 @Service()
-@Controller('/compositions/ingredient', ['auth', 'rbac:ADMIN'])
+@Controller('/compositions/ingredients', ['auth', 'rbac:ADMIN'])
 export class IngredientController {
   constructor(private readonly ingredientService: IngredientService) {}
 

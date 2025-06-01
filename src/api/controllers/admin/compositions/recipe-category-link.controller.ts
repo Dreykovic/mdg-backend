@@ -19,7 +19,7 @@ import { RecipeCategoryLinkSchemas } from '@/api/validators/compositions/recipe-
 import logger from '@/core/utils/logger.util';
 
 @Service()
-@Controller('/compositions/recipe-category-link', ['auth', 'rbac:ADMIN'])
+@Controller('/compositions/category-links', ['auth', 'rbac:ADMIN'])
 export class RecipeCategoryLinkController {
   constructor(
     private readonly recipeCategoryLinkService: RecipeCategoryLinkService

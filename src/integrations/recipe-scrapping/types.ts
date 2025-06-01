@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 export const allowedSitesArray = [
   'allrecipes.com',
   'cooking.nytimes.com',

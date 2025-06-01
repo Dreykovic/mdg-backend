@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+
 export const allowedSitesSelectorsConfig = {
   'cooking.nytimes.com': {
+    url: 'https://cooking.nytimes.com',
     title: '.pantry--title-display',
     description: '.topnote_topnoteParagraphs__A3OtF',
     ingredients: {
@@ -18,6 +21,7 @@ export const allowedSitesSelectorsConfig = {
     servings: '.ingredients_recipeYield__DN65p > span:last-child',
   },
   'allrecipes.com': {
+    url: 'https://www.allrecipes.com',
     title: 'h1.article-heading',
     description: '.article-subheading',
     ingredients: {
@@ -39,6 +43,7 @@ export const allowedSitesSelectorsConfig = {
     servings: '.mm-recipes-serving-size-adjuster__meta',
   },
   'simplyrecipes.com': {
+    url: 'https://www.simplyrecipes.com',
     title: 'h2.comp.recipe-block__header.text-block',
     description:
       '.comp.article__header--project.mntl-sc-page.mntl-block.article-intro.text-passage.structured-content',

@@ -1,13 +1,10 @@
 import { Service } from 'typedi';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { AllowedSitesType } from './recipeScrapping.types';
-import RecipeScrappingUtil from './recipeScrapping.util';
+import { AllowedSitesType } from './types';
+import RecipeScrappingUtil from './util';
 import { log } from 'console';
-import {
-  allowedSitesSelectorsConfig,
-  SiteSelectorConfig,
-} from './recipeScrapping.config';
+import { allowedSitesSelectorsConfig, SiteSelectorConfig } from './config';
 
 @Service()
 export default class RecipeScrappingService {
@@ -22,7 +19,12 @@ export default class RecipeScrappingService {
   checkUrl(link: string): string {
     const domain = this.recipeScrappingUtil.extractDomain(link);
     const isValidSite = this.allowedSites.has(domain as AllowedSitesType);
-    if (!domain || !isValidSite) {
+    if (
+      domain === null ||
+      domain === undefined ||
+      domain === '' ||
+      !isValidSite
+    ) {
       throw new Error(
         'Invalid URL. Please provide a valid URL from allowed sites.'
       );
@@ -31,7 +33,10 @@ export default class RecipeScrappingService {
     }
   }
 
-  extractTimes = ($: cheerio.CheerioAPI, config: SiteSelectorConfig) => {
+  extractTimes = (
+    $: cheerio.CheerioAPI,
+    config: SiteSelectorConfig
+  ): Record<string, number | null> => {
     log(config);
     const extractedTimes: Record<string, string> = {};
 
@@ -58,7 +63,10 @@ export default class RecipeScrappingService {
     log('Extracted Title: ', title);
     return title;
   }
-  extractServings($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
+  extractServings(
+    $: cheerio.CheerioAPI,
+    config: SiteSelectorConfig
+  ): number | null {
     const extractedServings: string = $(config.servings).text().trim();
     log('Extracted Servigns: ', extractedServings);
     const servings = this.recipeScrappingUtil.parseServings(extractedServings);
@@ -72,7 +80,10 @@ export default class RecipeScrappingService {
     log('Extracted Description: ', description);
     return description;
   }
-  extractIngredients($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
+  extractIngredients(
+    $: cheerio.CheerioAPI,
+    config: SiteSelectorConfig
+  ): Array<{ quantity: number | null; unit: string | null; name: string }> {
     const extractedIngredients: Array<{
       quantity: string;
       unit: string;
@@ -102,7 +113,10 @@ export default class RecipeScrappingService {
     );
     return ingredients;
   }
-  extractSteps($: cheerio.CheerioAPI, config: SiteSelectorConfig) {
+  extractSteps(
+    $: cheerio.CheerioAPI,
+    config: SiteSelectorConfig
+  ): Record<string, string> {
     const steps: Record<string, string> = {};
     let index = 0;
     // Loop through all `<dt>` elements (labels) and extract corresponding `<dd>` values (times)

@@ -1,5 +1,5 @@
 import { Service } from 'typedi';
-import { fractionMap } from './recipeScrapping.types';
+import { fractionMap } from './types';
 import { log } from 'console';
 
 @Service()
@@ -19,12 +19,15 @@ export default class RecipeScrappingUtil {
   // Function to convert a fraction to a float
   fractionToFloat(fraction: string | undefined): number {
     try {
-      if (!fraction) {
+      if (fraction === undefined || fraction === null || fraction === '') {
         return NaN;
-      } // Handle the case where fraction is undefined
+      } // Handle the case where fraction is undefined, null, or empty string
 
       // Check if the fraction is in Unicode form (e.g., ½, ⅓)
-      if (fractionMap[fraction]) {
+      if (
+        fractionMap[fraction] !== undefined &&
+        fractionMap[fraction] !== null
+      ) {
         return fractionMap[fraction];
       }
 
@@ -61,11 +64,20 @@ export default class RecipeScrappingUtil {
         const value = parseInt(match[1] ?? '', 10);
         const unit = match[2]?.toLowerCase();
 
-        if (unit?.startsWith('hour') || unit?.startsWith('hr')) {
+        if (
+          typeof unit === 'string' &&
+          (unit.startsWith('hour') || unit.startsWith('hr'))
+        ) {
           totalMinutes += value * 60;
-        } else if (unit?.startsWith('minute') || unit?.startsWith('min')) {
+        } else if (
+          typeof unit === 'string' &&
+          (unit.startsWith('minute') || unit.startsWith('min'))
+        ) {
           totalMinutes += value;
-        } else if (unit?.startsWith('second') || unit?.startsWith('sec')) {
+        } else if (
+          typeof unit === 'string' &&
+          (unit.startsWith('second') || unit.startsWith('sec'))
+        ) {
           totalMinutes += Math.round(value / 60); // Convertir les secondes en minutes
         }
       }
@@ -119,6 +131,7 @@ export default class RecipeScrappingUtil {
     }
   };
 
+  // eslint-disable-next-line complexity
   normalizeQuantity = (quantity: string): number | null => {
     try {
       if (!quantity) {
@@ -130,16 +143,36 @@ export default class RecipeScrappingUtil {
       if (rangeMatch) {
         const num1 = this.normalizeQuantity(rangeMatch[1] ?? '');
         const num2 = this.normalizeQuantity(rangeMatch[2] ?? '');
-        return num1 && num2 ? (num1 + num2) / 2 : (num1 ?? num2);
+        if (
+          num1 !== null &&
+          num1 !== undefined &&
+          !isNaN(num1) &&
+          num2 !== null &&
+          num2 !== undefined &&
+          !isNaN(num2)
+        ) {
+          return (num1 + num2) / 2;
+        } else if (num1 !== null && num1 !== undefined && !isNaN(num1)) {
+          return num1;
+        } else if (num2 !== null && num2 !== undefined && !isNaN(num2)) {
+          return num2;
+        }
+        return null;
       }
 
       // Gérer les nombres mixtes et fractions (ex: "3 1/2", "1/4")
       const fractionMatch = quantity.match(/^(\d+)?\s*(\d+)\/(\d+)$/);
       if (fractionMatch) {
-        const whole = fractionMatch[1] ? parseInt(fractionMatch[1], 10) : 0;
+        const whole =
+          fractionMatch[1] !== undefined &&
+          fractionMatch[1] !== null &&
+          fractionMatch[1].trim() !== ''
+            ? parseInt(fractionMatch[1], 10)
+            : 0;
         const numerator = parseInt(fractionMatch[2] ?? '', 10);
         const denominator = parseInt(fractionMatch[3] ?? '', 10);
-        return whole + numerator / denominator;
+        const quotient = numerator / denominator;
+        return whole + quotient;
       }
 
       // Gérer les nombres normaux (ex: "6")

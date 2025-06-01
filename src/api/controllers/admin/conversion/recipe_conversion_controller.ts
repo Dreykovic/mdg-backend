@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { log } from 'console';
 import ApiResponse from '@/core/utils/apiResponse.util';
 import { Service } from 'typedi';
-import RecipeScrappingService from '@/integrations/recipe-scrapping/recipeScrapping.service';
+import RecipeScrappingService from '@/integrations/recipe-scrapping/service';
 
 @Service()
 export class RecipeConversionController {

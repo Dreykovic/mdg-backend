@@ -17,7 +17,7 @@ import appRoot from 'app-root-path'; // Importing the root path of the applicati
 dotenv.config({ path: `${appRoot.path}/.env` });
 
 // Exporting the environment variables as an object for use in the application
-export const env = process.env;
+export const { env } = process;
 
 // Exporting the current Node environment, defaulting to 'development' if not specified
 export const nodeEnv: string = env.NODE_ENV ?? 'development';

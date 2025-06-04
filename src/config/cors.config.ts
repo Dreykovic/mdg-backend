@@ -21,22 +21,63 @@ const { allowOrigins, credentials, methods, maxAge } = config.cors;
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    // If origin is undefined (like server-to-server requests) or in the allowed list
-    if (!origin || allowOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      // Log rejected origins in development mode
-      if (config.isDev) {
-        logger.warn(`CORS rejected origin: ${origin}`);
-      }
-      callback(new Error(`Origin ${origin} not allowed by CORS policy`), false);
+    // Debug en mode développement
+    if (config.isDev) {
+      logger.debug(`CORS check - Origin: "${origin}", Type: ${typeof origin}`);
     }
+
+    // Autoriser les requêtes sans origin (Postman, server-to-server, cURL, etc.)
+    if (origin === undefined || origin === null || origin === '') {
+      if (config.isDev) {
+        logger.debug(
+          'CORS: Allowing request without origin (Postman/server-to-server)'
+        );
+      }
+      callback(null, true);
+      return;
+    }
+
+    // Vérifier si l'origin est dans la liste autorisée
+    if (typeof origin === 'string' && allowOrigins.includes(origin)) {
+      if (config.isDev) {
+        logger.debug(`CORS: Allowing origin from whitelist: ${origin}`);
+      }
+      callback(null, true);
+      return;
+    }
+
+    // En développement, autoriser localhost avec différents ports
+    if (config.isDev && typeof origin === 'string') {
+      const isLocalhost = origin.match(
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/
+      );
+      if (isLocalhost) {
+        logger.debug(`CORS: Allowing localhost in development: ${origin}`);
+        callback(null, true);
+        return;
+      }
+    }
+
+    // Rejeter tout autre origin
+    if (config.isDev) {
+      logger.debug(`CORS rejected origin: ${origin}`);
+    }
+    callback(new Error(`Origin ${origin} not allowed by CORS policy`), false);
   },
+
+  // Autoriser les credentials (cookies, headers d'auth)
   credentials,
+
+  // Méthodes HTTP autorisées
   methods,
+
+  // Durée de cache pour les requêtes preflight
   maxAge,
+
+  // Code de succès pour les requêtes OPTIONS
   optionsSuccessStatus: 200,
-  // Allow standard and custom headers
+
+  // Headers autorisés dans les requêtes
   allowedHeaders: [
     'Content-Type',
     'Authorization',
@@ -45,25 +86,38 @@ const corsOptions: cors.CorsOptions = {
     'Origin',
     'X-API-Key',
     'X-Access-Token',
+    'X-Refresh-Token',
+    'Cache-Control',
+    'Pragma',
   ],
-  // Expose these headers to the client
+
+  // Headers exposés au client dans les réponses
   exposedHeaders: [
     'Content-Length',
     'X-Rate-Limit-Limit',
     'X-Rate-Limit-Remaining',
     'X-Rate-Limit-Reset',
+    'X-Total-Count',
+    'X-Page-Count',
   ],
+
+  // Gestion des requêtes preflight
+  preflightContinue: false,
 };
 
-// Log CORS configuration in development mode
+// Log de la configuration CORS en mode développement
 if (config.isDev) {
-  logger.info('CORS configuration loaded:');
-  logger.info(
-    `- Allowed origins: ${allowOrigins.join(', ') || 'None specified'}`
+  logger.debug('='.repeat(50));
+  logger.debug('CORS configuration loaded:');
+  logger.debug(`- Environment: ${config.nodeEnv}`);
+  logger.debug(
+    `- Allowed origins: ${allowOrigins.length ? allowOrigins.join(', ') : 'None specified (allowing undefined/null origins)'}`
   );
-  logger.info(`- Credentials allowed: ${credentials}`);
-  logger.info(`- Methods allowed: ${methods?.join(', ')}`);
-  logger.info(`- Max age: ${maxAge} seconds`);
+  logger.debug(`- Credentials allowed: ${credentials}`);
+  logger.debug(`- Methods allowed: ${methods?.join(', ')}`);
+  logger.debug(`- Max age: ${maxAge} seconds`);
+  logger.debug(`- Localhost auto-allowed: ${config.isDev ? 'Yes' : 'No'}`);
+  logger.debug('='.repeat(50));
 }
 
 export default corsOptions;

@@ -1,0 +1,43 @@
+// Exemple avec validation composée
+// controllers/product.controller.ts
+@Service()
+@Controller('/products')
+export class ProductController {
+  constructor(private readonly productService: ProductService) {}
+
+  @Post('/')
+  @ValidateBody(ProductSchemas.create)
+  @UseMiddlewares('auth', 'rbac:ADMIN')
+  @ControllerErrorHandler('Product creation failed.')
+  async create(req: Request, res: Response): Promise<void> {
+    const data: CreateProductRequest = req.body; // Typé automatiquement
+    const payload = await this.productService.create(data);
+    const response = ApiResponse.http201(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+
+  @Get('/search')
+  @ValidateQuery(ProductSchemas.search)
+  @ControllerErrorHandler('Product search failed.')
+  async search(req: Request, res: Response): Promise<void> {
+    const filters = req.query; // Typé et avec valeurs par défaut
+    const payload = await this.productService.search(filters);
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+
+  @Put('/:id')
+  @ValidateRequest({
+    params: ProductSchemas.idParam,
+    body: ProductSchemas.update,
+  })
+  @UseMiddlewares('auth', 'rbac:ADMIN')
+  @ControllerErrorHandler('Product update failed.')
+  async update(req: Request, res: Response): Promise<void> {
+    const { id } = req.params; // Typé et validé
+    const data = req.body; // Typé et validé
+    const payload = await this.productService.update(id, data);
+    const response = ApiResponse.http200(payload);
+    res.status(response.httpStatusCode).json(response.data);
+  }
+}

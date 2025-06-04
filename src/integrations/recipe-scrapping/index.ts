@@ -1,2 +1,2 @@
-export * from './recipeScrapping.service';
-export * from './recipeScrapping.types';
+export * from './service';
+export * from './types';

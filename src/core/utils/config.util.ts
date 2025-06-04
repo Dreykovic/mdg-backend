@@ -1,0 +1,57 @@
+/**
+ * cors.util.ts
+ *
+ * Utility function to parse a JSON string into an array of allowed origins.
+ * Ensures that the provided string is correctly formatted and represents a valid array.
+ * Logs errors if parsing fails and provides a default fallback.
+ */
+
+import { log } from 'console';
+
+/**
+ * Parses a JSON string to extract an array of allowed origins for CORS.
+ * @param originsString - A JSON string representing an array of allowed origins.
+ * @returns An array of allowed origins, or a fallback value (`['*']`) if parsing fails.
+ */
+export function parseAllowedOrigins(originsString: string): string[] {
+  try {
+    // Attempt to parse the JSON string
+    const array = JSON.parse(originsString);
+
+    // Validate that the parsed value is an array
+    if (!Array.isArray(array)) {
+      // Throw an error if the parsed value is not an array
+      throw new Error('The JSON string does not represent a valid array.');
+    }
+    return array;
+  } catch (error) {
+    // Log an error message if parsing fails
+    log('Error while parsing CORS_ALLOW_ORIGINS:', (error as Error).message);
+
+    // Return a default value to allow all origins
+    return ['*'];
+  }
+}
+
+// Helper to parse numeric environment variables safely
+export const parseNumericEnv = (
+  value: string | undefined,
+  defaultValue: number
+): number => {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+
+// Helper to parse boolean environment variables safely
+export const parseBooleanEnv = (
+  value: string | undefined,
+  defaultValue: boolean
+): boolean => {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+  return value.toLowerCase() === 'true';
+};

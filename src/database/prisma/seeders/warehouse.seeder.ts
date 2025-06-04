@@ -7,7 +7,9 @@ import { PrismaClient } from '@prisma/client'; // Prisma types for database sche
  * This function seeds the database with default warehouse.
  * It ensures that at least one warehouse exists in the database.
  */
-export async function seedDefaultWareHouse(prismaService: PrismaClient) {
+export async function seedDefaultWareHouse(
+  prismaService: PrismaClient
+): Promise<void> {
   await prismaService.warehouse.upsert({
     where: { name: 'Main' },
     update: {},

@@ -13,7 +13,8 @@ export const VolumeConversionSchemas = {
       stdVolId: z
         .number()
         .int()
-        .positive('Standard volume ID must be a positive integer'),
+        .positive('Standard volume ID must be a positive integer')
+        .optional(),
     })
     .transform((data) => ({
       ...data,

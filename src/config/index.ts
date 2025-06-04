@@ -10,34 +10,15 @@
  */
 
 import { env, nodeEnv } from './env.config';
-import { parseAllowedOrigins } from '@/core/utils/cors.util';
 import { EnvConfig } from './types';
 import { ProfileName } from '@prisma/client';
 import os from 'os';
 import { log } from 'console';
-
-// Helper to parse numeric environment variables safely
-const parseNumericEnv = (
-  value: string | undefined,
-  defaultValue: number
-): number => {
-  if (!value) {
-    return defaultValue;
-  }
-  const parsed = parseInt(value, 10);
-  return isNaN(parsed) ? defaultValue : parsed;
-};
-
-// Helper to parse boolean environment variables safely
-const parseBooleanEnv = (
-  value: string | undefined,
-  defaultValue: boolean
-): boolean => {
-  if (!value) {
-    return defaultValue;
-  }
-  return value.toLowerCase() === 'true';
-};
+import {
+  parseAllowedOrigins,
+  parseBooleanEnv,
+  parseNumericEnv,
+} from '@/core/utils/config.util';
 
 // Configuration object with strongly typed properties
 const config: EnvConfig = {
@@ -80,7 +61,7 @@ const config: EnvConfig = {
     certificate: env.SSL_CERTIFICATE ?? '',
     ca: env.SSL_CA_CERTIFICATE, // Optional CA certificate
     ciphers: env.SSL_CIPHERS, // Optional custom ciphers
-    secureProtocol: env.SSL_SECURE_PROTOCOL || 'TLSv1_2_method', // TLS protocol version
+    secureProtocol: env.SSL_SECURE_PROTOCOL ?? 'TLSv1_2_method', // TLS protocol version
     dhparam: env.SSL_DHPARAM, // Optional Diffie-Hellman parameters
     preferServerCiphers: parseBooleanEnv(env.SSL_PREFER_SERVER_CIPHERS, true),
     sessionTimeout: parseNumericEnv(env.SSL_SESSION_TIMEOUT, 300), // in seconds
@@ -98,7 +79,7 @@ const config: EnvConfig = {
   cors: {
     allowOrigins: parseAllowedOrigins(env.CORS_ALLOW_ORIGINS as string),
     credentials: parseBooleanEnv(env.CORS_CREDENTIALS, true),
-    methods: env.CORS_METHODS?.split(',').map((m) => m.trim()) || [
+    methods: env.CORS_METHODS?.split(',').map((m) => m.trim()) ?? [
       'GET',
       'POST',
       'PUT',
@@ -120,7 +101,7 @@ const config: EnvConfig = {
     accessToken: env.JWT_ACCESS_TOKEN_SECRET ?? '',
     mobileExpiredIn: env.JWT_MOBILE_EXPIRED_IN ?? '30d',
     maxConnexions: parseNumericEnv(env.JWT_MAX_CONNEXION, 2),
-    algorithm: env.JWT_ALGORITHM || 'HS256', // Algorithm used for JWT signing
+    algorithm: env.JWT_ALGORITHM ?? 'HS256', // Algorithm used for JWT signing
   },
 
   // OTP (One-Time Password) configuration
@@ -165,7 +146,7 @@ const config: EnvConfig = {
   // Server connection settings
   keepAliveTimeout: parseNumericEnv(env.KEEP_ALIVE_TIMEOUT, 5000), // TCP keep-alive in ms
   headerTimeout: parseNumericEnv(env.HEADER_TIMEOUT, 60000), // Header timeout in ms
-  maxRequestSize: env.MAX_REQUEST_SIZE || '50mb', // Max request body size
+  maxRequestSize: env.MAX_REQUEST_SIZE ?? '50mb', // Max request body size
   trustProxy: parseBooleanEnv(env.TRUST_PROXY, true), // Trust proxy headers
 
   // Database settings
@@ -178,8 +159,8 @@ const config: EnvConfig = {
   // Mail configuration
   mail: {
     enabled: parseBooleanEnv(env.MAIL_ENABLED, false),
-    service: env.EMAIL_SMTP_SERVICE || 'gmail',
-    host: env.EMAIL_SMTP_HOST || 'smtp.gmail.com',
+    service: env.EMAIL_SMTP_SERVICE ?? 'gmail',
+    host: env.EMAIL_SMTP_HOST ?? 'smtp.gmail.com',
     port: parseNumericEnv(env.EMAIL_SMTP_PORT, 587),
     secure: parseBooleanEnv(env.EMAIL_SMTP_SECURE, false),
     user: env.EMAIL_SMTP_USER,
@@ -194,7 +175,12 @@ if (config.isDev) {
   log(
     `Clustering enabled: ${config.cluster} (${config.clusterWorkers} workers)`
   );
-  log('Allowed Origins:', config.cors.allowOrigins);
+
+  log('Config loaded:', typeof config !== 'undefined' && config !== null);
+  log(
+    'Config keys:',
+    config !== undefined && config !== null ? Object.keys(config) : 'undefined'
+  );
 }
 
 export default config;

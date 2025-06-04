@@ -1,11 +1,11 @@
 import { Transporter } from 'nodemailer';
 import ejs from 'ejs';
 import path from 'path';
-import { MailServiceInterface, MailOptions } from './postmark.types';
-import { log } from 'console';
+import { MailOptions, MailServiceInterface } from './postmark.types';
+import logger from '@/core/utils/logger.util';
 
 export class MailService implements MailServiceInterface {
-  private transporter: Transporter;
+  private readonly transporter: Transporter;
 
   constructor(transporter: Transporter) {
     this.transporter = transporter;
@@ -28,16 +28,16 @@ export class MailService implements MailServiceInterface {
       )) as string;
 
       const mailOptions = {
-        from: options.from || '"Your Name" <your-email@example.com>',
+        from: options.from ?? '"Your Name" <your-email@example.com>',
         to: options.to,
         subject: options.subject,
         html, // Le contenu HTML est maintenant typé en `string`
       };
 
       await this.transporter.sendMail(mailOptions);
-      log('Email envoyé avec succès.');
+      logger.debug('Email envoyé avec succès.');
     } catch (error) {
-      log("Erreur lors de l'envoi de l'email :", error);
+      logger.debug("Erreur lors de l'envoi de l'email :", error);
     }
   }
 }

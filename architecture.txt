@@ -4,85 +4,133 @@
 │   ├── architecture.md
 │   ├── dependency-injection.md
 │   ├── README.md
+│   ├── routes-debug-quick-guide.md
 │   └── setup.md
 ├── eslint.config.mjs
 ├── jest.config.ts
 ├── logs
-│   ├── application.log
-│   └── error.log
 ├── nodemon.json
 ├── package.json
 ├── package-lock.json
 ├── src
+│   ├── api
+│   │   ├── controller_example.txt
+│   │   ├── controllers
+│   │   │   ├── admin
+│   │   │   │   ├── compositions
+│   │   │   │   │   ├── ingredient_controller.ts
+│   │   │   │   │   ├── recipe_category_controller.ts
+│   │   │   │   │   ├── recipe_category_link_controller.ts
+│   │   │   │   │   ├── recipe_controller.ts
+│   │   │   │   │   └── step_controller.ts
+│   │   │   │   ├── conversion
+│   │   │   │   │   ├── recipe_conversion_controller.ts
+│   │   │   │   │   ├── unit_of_measure_controller.ts
+│   │   │   │   │   └── volume_conversion_controller.ts
+│   │   │   │   ├── goods
+│   │   │   │   │   ├── category_controller.ts
+│   │   │   │   │   ├── margin_level_controller.ts
+│   │   │   │   │   ├── origin_controller.ts
+│   │   │   │   │   ├── product_controller.ts
+│   │   │   │   │   ├── product_tag_controller.ts
+│   │   │   │   │   ├── product_tag_link_controller.ts
+│   │   │   │   │   └── supplier_controller.ts
+│   │   │   │   └── inventory_controller.ts
+│   │   │   ├── auth
+│   │   │   │   └── admin_auth_controller.ts
+│   │   │   ├── shop
+│   │   │   └── test_controller.ts
+│   │   ├── m.txt
+│   │   ├── route_example.txt
+│   │   └── routes.ts
+│   ├── api backup
+│   │   ├── controllers
+│   │   │   ├── admin
+│   │   │   │   ├── compositions
+│   │   │   │   │   ├── ingredient_controller.ts
+│   │   │   │   │   ├── recipe_category_controller.ts
+│   │   │   │   │   ├── recipe_category_link_controller.ts
+│   │   │   │   │   ├── recipe_controller.ts
+│   │   │   │   │   └── step_controller.ts
+│   │   │   │   ├── conversion
+│   │   │   │   │   ├── recipe_conversion_controller.ts
+│   │   │   │   │   ├── unit_of_measure_controller.ts
+│   │   │   │   │   └── volume_conversion_controller.ts
+│   │   │   │   ├── goods
+│   │   │   │   │   ├── category_controller.ts
+│   │   │   │   │   ├── margin_level_controller.ts
+│   │   │   │   │   ├── origin_controller.ts
+│   │   │   │   │   ├── product_controller.ts
+│   │   │   │   │   ├── product_tag_controller.ts
+│   │   │   │   │   ├── product_tag_link_controller.ts
+│   │   │   │   │   └── supplier_controller.ts
+│   │   │   │   └── inventory_controller.ts
+│   │   │   ├── auth
+│   │   │   │   └── admin_auth_controller.ts
+│   │   │   └── shop
+│   │   └── routes
+│   │       ├── admin
+│   │       │   ├── admin_routes.ts
+│   │       │   ├── compositions
+│   │       │   │   ├── index.ts
+│   │       │   │   ├── ingredient_routes.ts
+│   │       │   │   ├── recipe_category_link.ts
+│   │       │   │   ├── recipe_category_routes.ts
+│   │       │   │   ├── recipe_routes.ts
+│   │       │   │   └── step_routes.ts
+│   │       │   ├── conversion
+│   │       │   │   ├── index.ts
+│   │       │   │   ├── recipe_conversion_routes.ts
+│   │       │   │   ├── unit_of_measur_routes.ts
+│   │       │   │   └── volume_routes.ts
+│   │       │   ├── goods
+│   │       │   │   ├── category_routes.ts
+│   │       │   │   ├── index.ts
+│   │       │   │   ├── margin_level_routes.ts
+│   │       │   │   ├── origin_routes.ts
+│   │       │   │   ├── product_routes.ts
+│   │       │   │   ├── product_tag_link_routes.ts
+│   │       │   │   ├── product_tag_routes.ts
+│   │       │   │   └── supplier_routes.ts
+│   │       │   └── inventory
+│   │       │       ├── index.ts
+│   │       │       ├── inventory_routes.ts
+│   │       │       └── stock_mvt_routes.ts
+│   │       ├── auth
+│   │       │   └── admin_auth_routes.ts
+│   │       ├── index.ts
+│   │       └── shop
 │   ├── config
 │   │   ├── cors.config.ts
 │   │   ├── env.config.ts
 │   │   ├── index.ts
 │   │   ├── mail.config.ts
-│   │   ├── multer.config.ts
-│   │   ├── swagger.config.ts
 │   │   └── types.d.ts
 │   ├── core
-│   │   ├── constants
-│   │   │   └── images.ts
-│   │   ├── middlewares
-│   │   │   ├── clientInfo.middleware.ts
-│   │   │   ├── error.middleware.ts
-│   │   │   ├── jwt.middleware.ts
-│   │   │   ├── morgan.middleware.ts
-│   │   │   ├── multer
-│   │   │   │   ├── fileUpload.middleware.ts
-│   │   │   │   └── multer.ts
-│   │   │   ├── prefixRoutes.middleware.ts
-│   │   │   ├── preventCrossScripting.middleware.ts
-│   │   │   ├── rateLimiter.middleware.ts
-│   │   │   ├── rbac.middleware.ts
-│   │   │   ├── setDefaultParam.middleware..ts
-│   │   │   └── xss.middleware.ts
+│   │   ├── decorators
+│   │   │   ├── errorHandler.decorators.ts
+│   │   │   └── route.decorators.ts
+│   │   ├── registry
+│   │   │   ├── middleware.registry.ts
+│   │   │   └── validator.registry.ts
+│   │   ├── scanner
+│   │   │   └── route.scanner.ts
 │   │   ├── types
-│   │   │   └── index.ts
+│   │   │   ├── index.ts
+│   │   │   └── route.types.ts
 │   │   └── utils
 │   │       ├── apiResponse.util.ts
 │   │       ├── bcrypt.util.ts
 │   │       ├── cors.util.ts
 │   │       ├── date.util.ts
-│   │       ├── fileSystem.util.ts
+│   │       ├── env.util.ts
 │   │       ├── filter.utils.ts
 │   │       ├── jwt.util.ts
 │   │       ├── logger.util.ts
 │   │       └── string.util.ts
 │   ├── database
 │   │   └── prisma
-│   │       ├── dto
-│   │       │   └── interfaces.ts
 │   │       ├── migrations
-│   │       │   ├── 20250213113545_init
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250213115321_
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250226105552_
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250226110630_
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250228115858_init
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250312194135_y
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250312233452_d
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250312234310_
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250313083432_
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250313104848_
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250314085503_
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250320055801_
-│   │       │   │   └── migration.sql
-│   │       │   ├── 20250320060629_
-│   │       │   │   └── migration.sql
-│   │       │   └── migration_lock.toml
 │   │       ├── models
 │   │       │   ├── MarginLevel.ts
 │   │       │   ├── Origin.ts
@@ -94,7 +142,6 @@
 │   │       ├── schema.backup.prisma
 │   │       ├── schema copy 2.prisma
 │   │       ├── schema.prisma
-│   │       ├── schemas
 │   │       └── seeders
 │   │           ├── seed.ts
 │   │           ├── unit.seeder.ts
@@ -121,124 +168,52 @@
 │   │       ├── recipeScrapping.service.ts
 │   │       ├── recipeScrapping.types.ts
 │   │       └── recipeScrapping.util.ts
-│   ├── modules
-│   │   ├── adminAuth
-│   │   │   ├── adminAuth.controller.ts
-│   │   │   ├── adminAuth.module.ts
-│   │   │   ├── adminAuth.routes.ts
-│   │   │   ├── adminAuth.service.ts
-│   │   │   ├── adminAuth.swagger.ts
-│   │   │   └── adminAuth.types.ts
-│   │   ├── catalog
-│   │   │   ├── catalog.module.ts
-│   │   │   ├── catalog.routes.ts
-│   │   │   ├── productCatalog
-│   │   │   │   ├── category
-│   │   │   │   │   ├── category.controller.ts
-│   │   │   │   │   ├── category.routes.ts
-│   │   │   │   │   ├── category.service.ts
-│   │   │   │   │   └── category.swagger.ts
-│   │   │   │   ├── margin
-│   │   │   │   │   ├── margin.controller.ts
-│   │   │   │   │   ├── margin.routes.ts
-│   │   │   │   │   ├── margin.service.ts
-│   │   │   │   │   └── margin.swagger.ts
-│   │   │   │   ├── origin
-│   │   │   │   │   ├── origin.controller.ts
-│   │   │   │   │   ├── origin.routes.ts
-│   │   │   │   │   ├── origin.service.ts
-│   │   │   │   │   └── origin.swagger.ts
-│   │   │   │   ├── product
-│   │   │   │   │   ├── product.controller.ts
-│   │   │   │   │   ├── product.routes.ts
-│   │   │   │   │   ├── product.service.ts
-│   │   │   │   │   └── product.swagger.ts
-│   │   │   │   ├── productCatalog.routes.ts
-│   │   │   │   ├── ProductTag
-│   │   │   │   │   ├── productTag.controller.ts
-│   │   │   │   │   ├── productTag.routes.ts
-│   │   │   │   │   └── productTag.service.ts
-│   │   │   │   ├── ProductTagLink
-│   │   │   │   │   ├── productTagLink.controller.ts
-│   │   │   │   │   ├── productTagLink.service.ts
-│   │   │   │   │   └── recipeCategoryLink.routes.ts
-│   │   │   │   └── supplier
-│   │   │   │       ├── supplier.controller.ts
-│   │   │   │       ├── supplier.routes.ts
-│   │   │   │       ├── supplier.service.ts
-│   │   │   │       └── supplier.swagger.ts
-│   │   │   ├── recipeCatalog
-│   │   │   │   ├── ingredient
-│   │   │   │   │   ├── ingredient.controller.ts
-│   │   │   │   │   ├── ingredient.routes.ts
-│   │   │   │   │   └── ingredient.service.ts
-│   │   │   │   ├── recipe
-│   │   │   │   │   ├── recipe.controller.ts
-│   │   │   │   │   ├── recipe.routes.ts
-│   │   │   │   │   └── recipe.service.ts
-│   │   │   │   ├── recipeCatalog.routes.ts
-│   │   │   │   ├── recipeCategory
-│   │   │   │   │   ├── recipeCategory.controller.ts
-│   │   │   │   │   ├── recipeCategory.routes.ts
-│   │   │   │   │   └── recipeCategory.service.ts
-│   │   │   │   ├── recipeCategoryLink
-│   │   │   │   │   ├── recipeCategoryLink.controller.ts
-│   │   │   │   │   ├── recipeCategoryLink.routes.ts
-│   │   │   │   │   └── recipeCategoryLink.service.ts
-│   │   │   │   └── step
-│   │   │   │       ├── step.controller.ts
-│   │   │   │       ├── step.routes.ts
-│   │   │   │       └── step.service.ts
-│   │   │   └── uOM
-│   │   │       ├── uOM.controller.ts
-│   │   │       ├── uOM.routes.ts
-│   │   │       ├── uOM.service.ts
-│   │   │       └── uOM.swagger.ts
-│   │   ├── conversion
-│   │   │   ├── conversion.module.ts
-│   │   │   ├── conversion.routes.ts
-│   │   │   ├── recipe
-│   │   │   │   ├── recipeConversion.controller.ts
-│   │   │   │   ├── recipeConversion.routes.ts
-│   │   │   │   ├── volume.service.ts
-│   │   │   │   └── volume.swagger.ts
-│   │   │   └── volume
-│   │   │       ├── volume.controller.ts
-│   │   │       ├── volume.routes.ts
-│   │   │       ├── volume.service.ts
-│   │   │       └── volume.swagger.ts
-│   │   ├── definitions
-│   │   │   └── service.ts
-│   │   ├── files
-│   │   │   ├── files.controller.ts
-│   │   │   ├── files.module.ts
-│   │   │   ├── files.routes.ts
-│   │   │   ├── files.service.ts
-│   │   │   ├── files.swagger.ts
-│   │   │   └── files.types.ts
-│   │   └── stock
-│   │       ├── inventory.routes.ts
-│   │       ├── inventory.service.ts
-│   │       ├── stock.controller.ts
-│   │       ├── stock.module.ts
-│   │       ├── stockMvt.routes.ts
-│   │       ├── stockMvt.service.ts
-│   │       ├── stock.routes.ts
-│   │       ├── stock.service.ts
-│   │       └── stock.validator.ts
+│   ├── middlewares
+│   │   ├── clientInfo.middleware.ts
+│   │   ├── error.middleware.ts
+│   │   ├── jwt.middleware.ts
+│   │   ├── preventCrossScripting.middleware.ts
+│   │   ├── rateLimiter.middleware.ts
+│   │   ├── rbac.middleware.ts
+│   │   └── requestLogger.middleware.ts
 │   ├── public
+│   ├── scripts
 │   ├── server
 │   │   ├── app.ts
-│   │   ├── routes.ts
-│   │   ├── server.ts
-│   │   └── swaggerLoader.ts
+│   │   └── server.ts
+│   ├── services
+│   │   ├── auth
+│   │   │   └── auth_service.ts
+│   │   ├── compositions
+│   │   │   ├── ingredient_service.ts
+│   │   │   ├── recipe_category_link_service.ts
+│   │   │   ├── recipe_category_service.ts
+│   │   │   ├── recipe_service.ts
+│   │   │   └── step_service.ts
+│   │   ├── conversion
+│   │   │   ├── unit_of_measure_service.ts
+│   │   │   └── volume_conversion_service.ts
+│   │   ├── definitions
+│   │   │   └── base_service.ts
+│   │   ├── goods
+│   │   │   ├── category_service.ts
+│   │   │   ├── margin_level_service.ts
+│   │   │   ├── origin_service.ts
+│   │   │   ├── productètag_link_service.ts
+│   │   │   ├── product_service.ts
+│   │   │   ├── product_tag_service.ts
+│   │   │   └── supplier_service.ts
+│   │   └── inventory
+│   │       ├── inventory_service.ts
+│   │       ├── stock_mvt_service.ts
+│   │       ├── stock_service.ts
+│   │       └── stock_validator.ts
 │   └── views
 │       └── mail
 │           └── email.ejs
-├── storage
 ├── tests
 │   ├── e2e
 │   └── integration
 └── tsconfig.json
 
-67 directories, 175 files
+60 directories, 157 files

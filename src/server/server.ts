@@ -5,8 +5,8 @@
  */
 
 import http from 'http';
-import fs from 'fs';
-import expressInstance from 'express';
+// import fs from 'fs';·
+
 import https from 'https';
 import colorTxt from 'ansi-colors';
 import logger from '@/core/utils/logger.util';
@@ -20,15 +20,15 @@ import cluster from 'cluster';
 import os from 'os';
 
 // Types
-type ServerConnections = Set<any>;
+import net from 'net';
+type ServerConnections = Set<net.Socket>;
 type ServerErrorCode = 'EACCES' | 'EADDRINUSE' | 'EADDRNOTAVAIL';
 type ErrorMessageMap = Record<ServerErrorCode, string>;
 
 @Service()
 class Server {
-  private readonly app: expressInstance.Application;
-  private server: http.Server | https.Server;
-  private serverConnections: ServerConnections = new Set();
+  private readonly server: http.Server | https.Server;
+  private readonly serverConnections: ServerConnections = new Set();
   private isShuttingDown = false;
   private startTime: Date | null = null;
 
@@ -43,7 +43,8 @@ class Server {
     private readonly appInstance: App,
     public readonly prismaService: PrismaService
   ) {
-    this.app = appInstance.express;
+    this.appInstance = appInstance;
+
     this.server = this.createServer();
 
     // Setup process uncaught exception handler
@@ -55,7 +56,7 @@ class Server {
    */
   private handleUncaughtException(error: Error): void {
     logger.error(colorTxt.red(`Uncaught exception: ${error.message}`));
-    logger.error(error.stack || 'No stack trace available');
+    logger.error((error.stack ?? '') || 'No stack trace available');
 
     // Only shutdown in production
     if (config.isProd) {
@@ -74,35 +75,38 @@ class Server {
    * @returns {http.Server | https.Server} - The server instance.
    */
   private createServer(): http.Server | https.Server {
-    if (config.ssl.isHttps && config.isProd) {
-      try {
-        // Load SSL certificates with content verification
-        const key = fs.readFileSync(config.ssl.privateKey);
-        const cert = fs.readFileSync(config.ssl.certificate);
+    // if (config.ssl.isHttps && config.isProd) {
+    //   try {
+    //     // Load SSL certificates with content verification
+    //     const key = fs.readFileSync(config.ssl.privateKey);
+    //     const cert = fs.readFileSync(config.ssl.certificate);
 
-        if (!key || !cert) {
-          throw new Error('SSL certificates are empty');
-        }
+    //     if (!key || !cert) {
+    //       throw new Error('SSL certificates are empty');
+    //     }
 
-        const options = { key, cert };
+    //     const options = { key, cert };
 
-        // Add optional CA certificates if configured
-        if (config.ssl.ca && fs.existsSync(config.ssl.ca)) {
-          Object.assign(options, { ca: fs.readFileSync(config.ssl.ca) });
-        }
+    //     // Add optional CA certificates if configured
+    //     if (config.ssl.ca && fs.existsSync(config.ssl.ca)) {
+    //       Object.assign(options, { ca: fs.readFileSync(config.ssl.ca) });
+    //     }
 
-        return https.createServer(options, this.app);
-      } catch (err) {
-        logger.error(
-          colorTxt.red(
-            `SSL certificate error: ${err instanceof Error ? err.message : String(err)}`
-          )
-        );
-        process.exit(1);
-      }
-    }
+    //     return https.createServer(options,this.appInstance.express);
+    //   } catch (err) {
+    //     logger.error(
+    //       colorTxt.red(
+    //         `SSL certificate error: ${err instanceof Error ? err.message : String(err)}`
+    //       )
+    //     );
+    //     process.exit(1);
+    //   }
+    // }
 
-    return http.createServer(this.app);
+    return http.createServer((req, res) => {
+      // Ensure the handler does not return a Promise
+      this.appInstance.express(req, res);
+    });
   }
 
   /**
@@ -199,12 +203,20 @@ class Server {
 
     logger.warn(colorTxt.yellow('Server shutting down gracefully'));
 
+    // Define timeout constants
+    const EXIT_SUCCESS_TIMEOUT_MS = 100;
+
     // Calculate uptime if server was started
     if (this.startTime) {
-      const uptime = (new Date().getTime() - this.startTime.getTime()) / 1000;
+      const SECONDS_PER_HOUR = 3600;
+      const SECONDS_PER_MINUTE = 60;
+      const MILLISECONDS_PER_SECOND = 1000;
+      const uptime =
+        (new Date().getTime() - this.startTime.getTime()) /
+        MILLISECONDS_PER_SECOND;
       logger.info(
         colorTxt.white(
-          `-> Server uptime: ${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`
+          `-> Server uptime: ${Math.floor(uptime / SECONDS_PER_HOUR)}h ${Math.floor((uptime % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE)}m ${Math.floor(uptime % SECONDS_PER_MINUTE)}s`
         )
       );
     }
@@ -221,13 +233,14 @@ class Server {
       logger.info(colorTxt.white('Successfully closed all connections'));
 
       // Exit with success code after cleanup
-      setTimeout(() => process.exit(0), 100);
+      setTimeout(() => process.exit(0), EXIT_SUCCESS_TIMEOUT_MS);
     });
 
     // End all connections gracefully
     this.serverConnections.forEach((connection) => connection.end());
 
     // Set a timeout to forcefully close connections if they don't close gracefully
+    const FORCE_CLOSE_CONNECTIONS_TIMEOUT_MS = 5000;
     setTimeout(() => {
       logger.error(
         colorTxt.red(
@@ -237,35 +250,43 @@ class Server {
       this.serverConnections.forEach((connection) => connection.destroy());
 
       // Final timeout before forced exit
-      setTimeout(() => process.exit(1), 1000);
-    }, 5000);
+      const FORCE_EXIT_TIMEOUT_MS = 1000;
+      setTimeout(() => process.exit(1), FORCE_EXIT_TIMEOUT_MS);
+    }, FORCE_CLOSE_CONNECTIONS_TIMEOUT_MS);
   }
 
   /**
    * Logs the number of open connections and resource usage at a specified interval.
    * @param {number} interval - Interval in milliseconds.
    */
-  private monitorResources(interval: number = 30000): void {
+  private monitorResources(interval = 30000): void {
     setInterval(() => {
       // Connection info
       const connectionCount = this.serverConnections.size;
 
       // Memory usage
       const memoryUsage = process.memoryUsage();
-      const heapUsed = Math.round(memoryUsage.heapUsed / 1024 / 1024);
-      const heapTotal = Math.round(memoryUsage.heapTotal / 1024 / 1024);
-      const rss = Math.round(memoryUsage.rss / 1024 / 1024);
+      const BYTES_PER_MB = 1024 * 1024;
+      const heapUsed = Math.round(memoryUsage.heapUsed / BYTES_PER_MB);
+      const heapTotal = Math.round(memoryUsage.heapTotal / BYTES_PER_MB);
+      const rss = Math.round(memoryUsage.rss / BYTES_PER_MB);
 
       // CPU load
       const cpuUsage = process.cpuUsage();
-      const cpuUser = Math.round(cpuUsage.user / 1000000);
-      const cpuSystem = Math.round(cpuUsage.system / 1000000);
+      const MICROSECONDS_PER_SECOND = 1_000_000;
+      const cpuUser = Math.round(cpuUsage.user / MICROSECONDS_PER_SECOND);
+      const cpuSystem = Math.round(cpuUsage.system / MICROSECONDS_PER_SECOND);
 
       logger.debug(
         `Server stats: ${connectionCount} connections | Memory: ${heapUsed}/${heapTotal}MB (heap), ${rss}MB (total) | CPU: ${cpuUser}s user, ${cpuSystem}s system`
       );
     }, interval);
   }
+
+  /**
+   * Default monitor interval in milliseconds.
+   */
+  private static readonly DEFAULT_MONITOR_INTERVAL_MS = 30000;
 
   /**
    * Initializes and starts the server in single or cluster mode.
@@ -278,65 +299,89 @@ class Server {
 
     // Check if clustering is enabled and we're the master process
     if (config.cluster && cluster.isPrimary) {
-      const numCPUs = os.cpus().length;
-      const workerCount = config.clusterWorkers || numCPUs;
-      const protocol = config.ssl.isHttps && config.isProd ? 'https' : 'http';
-
-      logger.info(
-        colorTxt.cyan(
-          `Starting server in cluster mode with ${workerCount} workers`
-        )
-      );
-
-      // Log the master process server details
-      logger.info(
-        colorTxt.white(
-          `-> Primary process managing server on ${protocol}://${serverHost}:${serverPort}`
-        )
-      );
-
-      // if (protocol === 'http') {
-      //   logger.info(
-      //     colorTxt.green(
-      //       `-> Documentation available at http://${serverHost}:${serverPort}/api-docs`
-      //     )
-      //   );
-      // }
-
-      // Setup worker message handling to get port information
-      cluster.on('message', (worker, message) => {
-        if (message.type === 'SERVER_LISTENING' && message.port) {
-          logger.info(
-            colorTxt.white(
-              `-> Worker ${worker.id} listening on port ${message.port}`
-            )
-          );
-        }
-      });
-
-      // Fork workers
-      for (let i = 0; i < workerCount; i++) {
-        cluster.fork();
-      }
-
-      // Handle worker events
-      cluster.on('exit', (worker, code, signal) => {
-        logger.warn(
-          colorTxt.yellow(
-            `Worker ${worker.id} died with code ${code} and signal ${signal}`
-          )
-        );
-
-        // Replace the dead worker if not shutting down
-        if (!this.isShuttingDown) {
-          logger.info(colorTxt.white('Starting a new worker'));
-          cluster.fork();
-        }
-      });
-
-      return this;
+      return this.setupCluster(serverHost, serverPort);
     }
 
+    this.setupWorker(serverHost, serverPort, silent);
+
+    return this;
+  }
+
+  /**
+   * Sets up the cluster master process.
+   * @param {string} serverHost
+   * @param {number} serverPort
+   * @returns {Server}
+   */
+  private setupCluster(serverHost: string, serverPort: number): Server {
+    const numCPUs = os.cpus().length;
+    const workerCount = config.clusterWorkers || numCPUs;
+    const protocol = config.ssl.isHttps && config.isProd ? 'https' : 'http';
+
+    logger.info(
+      colorTxt.cyan(
+        `Starting server in cluster mode with ${workerCount} workers`
+      )
+    );
+
+    // Log the master process server details
+    logger.info(
+      colorTxt.white(
+        `-> Primary process managing server on ${protocol}://${serverHost}:${serverPort}`
+      )
+    );
+
+    // Setup worker message handling to get port information
+    cluster.on('message', (worker, message) => {
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        'type' in message &&
+        'port' in message &&
+        (message as { type?: unknown }).type === 'SERVER_LISTENING'
+      ) {
+        logger.info(
+          colorTxt.white(
+            `-> Worker ${worker.id} listening on port ${(message as { port: unknown }).port}`
+          )
+        );
+      }
+    });
+
+    // Fork workers
+    for (let i = 0; i < workerCount; i++) {
+      cluster.fork();
+    }
+
+    // Handle worker events
+    cluster.on('exit', (worker, code, signal) => {
+      logger.warn(
+        colorTxt.yellow(
+          `Worker ${worker.id} died with code ${code} and signal ${signal}`
+        )
+      );
+
+      // Replace the dead worker if not shutting down
+      if (!this.isShuttingDown) {
+        logger.info(colorTxt.white('Starting a new worker'));
+        cluster.fork();
+      }
+    });
+
+    return this;
+  }
+
+  /**
+   * Sets up the worker process server.
+   * @param {string} serverHost
+   * @param {number} serverPort
+   * @param {boolean} silent
+   */
+  private setupWorker(
+    serverHost: string,
+    serverPort: number,
+    silent: boolean
+  ): void {
     // Set up event listeners before starting the server
     this.server.on('error', (error) =>
       this.onError(error, serverHost, serverPort)
@@ -363,7 +408,16 @@ class Server {
 
     // Monitor resources if enabled in config
     if (config.debug?.http_connection) {
-      this.monitorResources(config.debug.monitor_interval || 30000);
+      let interval =
+        config.debug.monitor_interval ?? Server.DEFAULT_MONITOR_INTERVAL_MS;
+      if (
+        typeof interval !== 'number' ||
+        !isFinite(interval) ||
+        interval <= 0
+      ) {
+        interval = Server.DEFAULT_MONITOR_INTERVAL_MS;
+      }
+      this.monitorResources(interval);
     }
 
     // Handle system signals for graceful shutdown
@@ -374,8 +428,6 @@ class Server {
         this.shutDown();
       });
     });
-
-    return this;
   }
 
   /**
@@ -389,7 +441,7 @@ class Server {
       if (res.success && !silent) {
         logger.info(colorTxt.white('-> Connected to database successfully'));
       } else if (!res.success) {
-        throw res.error || new Error('Unknown database connection error');
+        throw res.error ?? new Error('Unknown database connection error');
       }
     } catch (error) {
       const errorMessage = `Unable to connect to the database: ${(error as Error).message}`;
@@ -406,6 +458,7 @@ class Server {
   public async bootstrap(silent: boolean): Promise<Server> {
     if (!silent) {
       const dateTime = format(new Date(), 'yyyy:MM:dd\tHH:mm:ss');
+      logger.info(colorTxt.blue(`-> Node.js ${process.version}`));
 
       logger.info(
         colorTxt.bgBlackBright.yellow(
@@ -415,10 +468,17 @@ class Server {
       logger.info(
         colorTxt.bold.blue(`-> Running in ${config.nodeEnv} environment`)
       );
+
       logger.info(colorTxt.blue(`-> Started at ${dateTime}`));
 
       // Show Node.js version
-      logger.info(colorTxt.blue(`-> Node.js ${process.version}`));
+      logger.info(`📡 API Base URL: ${config.api.prefix}`);
+
+      if (!config.isProd) {
+        logger.info(
+          `🔍 Routes debug endpoint: http://localhost:${config.app.port}/debug/routes`
+        );
+      }
     }
 
     // Check database connection before starting server

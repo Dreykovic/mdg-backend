@@ -1,6 +1,6 @@
 import config from '@/config'; // Application configuration (e.g., default user credentials)
 import BcryptUtil from '@/core/utils/bcrypt.util'; // Utility for hashing passwords
-import { PrismaClient, ProfileName } from '@prisma/client'; // Prisma types for database schema
+import { PrismaClient, ProfileName, User } from '@prisma/client'; // Prisma types for database schema
 
 // Get the Prisma service instance from the container
 // const prismaService = Container.get(PrismaService);
@@ -10,7 +10,9 @@ import { PrismaClient, ProfileName } from '@prisma/client'; // Prisma types for 
  * If the user does not exist, it creates one with the default configuration from the `config` file.
  * If the user exists, no update is performed.
  */
-export async function createOrFindDefaultUser(prismaService: PrismaClient) {
+export async function createOrFindDefaultUser(
+  prismaService: PrismaClient
+): Promise<User> {
   const defaultUser = await prismaService.user.upsert({
     where: {
       username: config.defaultUser.name, // Check for an existing user by username

@@ -33,7 +33,7 @@ export default class WhereConditionBuilder {
   static readonly generateWhereConditions = (
     filters: IFilters,
     fields: string[]
-  ) => {
+  ): Record<string, any> => {
     const whereConditions: any = {
       OR: [], // Array for OR conditions
     };

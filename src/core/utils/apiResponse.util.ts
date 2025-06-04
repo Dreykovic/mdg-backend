@@ -37,7 +37,7 @@ export default class ApiResponse {
     const params = {
       success: true,
       message: 'Success',
-      content: data || null,
+      content: data ?? null,
     };
     return { httpStatusCode: 200, data: params };
   }
@@ -47,7 +47,7 @@ export default class ApiResponse {
     const params = {
       success: true,
       message: 'Successfully created',
-      content: data || null,
+      content: data ?? null,
     };
     return { httpStatusCode: 201, data: params };
   }
@@ -69,7 +69,7 @@ export default class ApiResponse {
     const params = {
       success: false,
       message: 'Bad request',
-      error: error || null,
+      error: error ?? null,
     };
     return { httpStatusCode: 400, data: params };
   }
@@ -82,7 +82,7 @@ export default class ApiResponse {
     const params = {
       success: false,
       message: 'Unauthorized access',
-      error: error || null,
+      error: error ?? null,
     };
     return { httpStatusCode: 401, data: params };
   }
@@ -95,7 +95,7 @@ export default class ApiResponse {
     const params = {
       success: false,
       message: 'Forbidden',
-      error: error || null,
+      error: error ?? null,
     };
     return { httpStatusCode: 403, data: params };
   }
@@ -108,7 +108,7 @@ export default class ApiResponse {
     const params = {
       success: false,
       message: 'Not found',
-      error: error || null,
+      error: error ?? null,
     };
     return { httpStatusCode: 404, data: params };
   }
@@ -121,7 +121,7 @@ export default class ApiResponse {
     const params = {
       success: false,
       message: 'Conflict',
-      error: error || null,
+      error: error ?? null,
     };
     return { httpStatusCode: 409, data: params };
   }
@@ -134,7 +134,7 @@ export default class ApiResponse {
     const params = {
       success: false,
       message: customMsg ?? 'Unprocessable entity',
-      error: error || null,
+      error: error ?? null,
     };
     return { httpStatusCode: 422, data: params };
   }
@@ -147,7 +147,7 @@ export default class ApiResponse {
     const params = {
       success: false,
       message: 'Too many requests',
-      error: error || null,
+      error: error ?? null,
     };
     return { httpStatusCode: 429, data: params };
   }
@@ -160,7 +160,7 @@ export default class ApiResponse {
     const params = {
       success: false,
       message: customMsg || 'Internal server error',
-      error: error || null,
+      error: error ?? null,
     };
     return { httpStatusCode: 500, data: params };
   }
@@ -173,7 +173,7 @@ export default class ApiResponse {
     const params = {
       success: false,
       message: 'Service unavailable',
-      error: error || null,
+      error: error ?? null,
     };
     return { httpStatusCode: 503, data: params };
   }

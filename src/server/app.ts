@@ -10,22 +10,21 @@ import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { Service } from 'typedi';
-import logger from '@/core/utils/logger.util';
 
 // Middlewares
-import errorHandler from '@/core/middlewares/error.middleware';
-import preventCrossSiteScripting from '@/core/middlewares/preventCrossScripting.middleware';
-import { rateLimiter } from '@/core/middlewares/rateLimiter.middleware';
-import { clientInfoMiddleware } from '@/core/middlewares/clientInfo.middleware';
+import errorHandler from '@/middlewares/error.middleware';
+import preventCrossSiteScripting from '@/middlewares/preventCrossScripting.middleware';
+import { rateLimiter } from '@/middlewares/rateLimiter.middleware';
+import { clientInfoMiddleware } from '@/middlewares/clientInfo.middleware';
 
 // Configurations
 import corsOptions from '@/config/cors.config';
 import config from '@/config';
 
 // Routes and documentation
-import apiRouter from './routes';
 
-import requestLogger from '@/core/middlewares/requestLogger.middleware';
+import requestLogger from '@/middlewares/requestLogger.middleware';
+import appRoutes from '@/api/routes';
 
 /**
  * Main class that sets up and configures the Express application
@@ -33,15 +32,12 @@ import requestLogger from '@/core/middlewares/requestLogger.middleware';
 @Service()
 class App {
   public express: expressInstance.Application;
-  private readonly baseApiUrl: string;
-  private swaggerDocs = null;
 
   /**
    * Constructor to initialize the Express application and configure middlewares and routes.
    */
   constructor() {
     this.express = expressInstance();
-    this.baseApiUrl = '/' + config.api.prefix.replace(/^\/+/, '');
 
     // Initialize the application in the proper order
     this.configureMiddlewares();
@@ -127,8 +123,7 @@ class App {
     // API Documentation with optimized lazy-loading
 
     // Set up API routes
-    logger.debug(`API base URL: ${this.baseApiUrl}`);
-    this.express.use(this.baseApiUrl, apiRouter);
+    this.express.use(appRoutes);
   }
 }
 

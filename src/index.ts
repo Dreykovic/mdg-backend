@@ -5,7 +5,7 @@ import colorTxt from 'ansi-colors';
 import Container from 'typedi';
 import config from './config';
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   try {
     const silent = config.isTest || process.argv.includes('--silent');
     const server = Container.get(Server);
@@ -39,4 +39,4 @@ async function bootstrap() {
 }
 
 // Start the application
-bootstrap();
+void bootstrap();

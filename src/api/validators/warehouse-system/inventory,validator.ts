@@ -11,7 +11,7 @@ export const InventorySchemas = {
   // Schema for creating inventory
   createInventory: z.object({
     sku: BaseSchemas.sku,
-    wareHouseId: BaseSchemas.warehouseId,
+    wareHouseId: BaseSchemas.warehouseId.optional(),
     inventoryMetaData: z
       .object({
         // Stock information

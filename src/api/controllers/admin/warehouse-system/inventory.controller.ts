@@ -166,7 +166,7 @@ export class InventoryController {
     body: InventorySchemas.updateInventoryQuantity,
   })
   async updateInventoryQuantity(req: Request, res: Response): Promise<void> {
-    const { inventoryId } = req.params;
+    const inventoryId = req.params.modelId;
     const { quantity } = req.body;
     const userId = (req as any).user.id;
 

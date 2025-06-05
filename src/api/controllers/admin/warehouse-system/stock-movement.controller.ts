@@ -56,7 +56,7 @@ export class StockMvtController {
     params: CommonSchemas.entityStringParam,
   })
   async getStockMovement(req: Request, res: Response): Promise<void> {
-    const { movementId } = req.params;
+    const movementId = req.params.modelId;
 
     if (movementId === null || movementId === undefined || movementId === '') {
       throw new Error('Movement ID is required.');

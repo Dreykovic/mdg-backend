@@ -15,7 +15,7 @@ import logger from '@/core/utils/logger.util';
 import { ValidateRequest } from '@/core/decorators/validation.decorator';
 import { AdminAuthSchemas } from '@/api/validators/auth/admin.validator';
 @Service()
-@Controller('/admin') // Niveau controller
+@Controller('/auth') // Niveau controller
 export class AdminAuthController {
   constructor(private readonly adminAuthService: AdminAuthService) {}
 

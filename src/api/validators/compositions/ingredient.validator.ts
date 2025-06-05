@@ -9,15 +9,18 @@ export const IngredientSchemas = {
       name: z.string().max(255, 'Name is too long').optional(),
       quantity: z.number().min(0, 'Quantity must be positive'),
       grindRequired: z.boolean().default(false),
-      recipeId: z
-        .number()
-        .int()
-        .positive('Recipe ID must be a positive integer'),
-      productId: z.string().uuid('Product ID must be a valid UUID').optional(),
-      unitOfMeasureId: z
-        .number()
-        .int()
-        .positive('Unit of measure ID must be a positive integer'),
+      recipeId: transformers.stringToInt
+        .refine((val) => val > 0, 'Recipe ID must be a positive integer')
+        .optional(),
+
+      productId: transformers.stringToUuidOrNull.optional(),
+
+      unitOfMeasureId: transformers.stringToInt
+        .refine(
+          (val) => val > 0,
+          'Unit of measure ID must be a positive integer'
+        )
+        .optional(),
     })
     .refine((data) => data.name !== undefined || data.productId !== undefined, {
       message: 'Either name or productId must be provided',

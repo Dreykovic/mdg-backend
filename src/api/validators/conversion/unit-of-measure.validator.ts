@@ -25,14 +25,7 @@ export const UnitOfMeasureSchemas = {
         if (data.isStandard && data.standardUnitId !== undefined) {
           return false;
         }
-        // Si ce n'est pas une unité standard et qu'elle a un facteur différent de 1, elle doit avoir un standardUnitId
-        if (
-          !data.isStandard &&
-          data.factor !== 1 &&
-          data.standardUnitId === undefined
-        ) {
-          return false;
-        }
+
         return true;
       },
       {

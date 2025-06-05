@@ -14,7 +14,11 @@ export const ProductSchemas = {
     isGlutenFree: z.boolean(),
     isGMOFree: z.boolean(),
     description: z.string().max(1000, 'Description is too long').optional(),
-    sku: z.string().min(1, 'SKU is required').max(100, 'SKU is too long'),
+    sku: z
+      .string()
+      .min(1, 'SKU is required')
+      .max(100, 'SKU is too long')
+      .optional(),
 
     isActive: z.boolean().default(false),
     isArchived: z.boolean().default(false),
@@ -31,29 +35,36 @@ export const ProductSchemas = {
       .min(0, 'Cost per gram ground must be positive'),
     pricePerGramWhole: z
       .number()
-      .min(0, 'Price per gram whole must be positive'),
+      .min(0, 'Price per gram whole must be positive')
+      .optional(),
     pricePerGramGround: z
       .number()
-      .min(0, 'Price per gram ground must be positive'),
-
-    originId: z.number().int().positive('Origin ID must be a positive integer'),
-    subcategoryId: z
-      .number()
-      .int()
-      .positive('Subcategory ID must be a positive integer')
+      .min(0, 'Price per gram ground must be positive')
       .optional(),
-    categoryId: z
-      .number()
-      .int()
-      .positive('Category ID must be a positive integer'),
-    supplierId: z
-      .number()
-      .int()
-      .positive('Supplier ID must be a positive integer'),
-    marginLevelId: z
-      .number()
-      .int()
-      .positive('Margin level ID must be a positive integer'),
+
+    originId: transformers.stringToInt.refine(
+      (val) => val > 0,
+      'Origin ID must be a positive integer'
+    ),
+    categoryId: transformers.stringToInt.refine(
+      (val) => val > 0,
+      'Category ID must be a positive integer'
+    ),
+    supplierId: transformers.stringToInt.refine(
+      (val) => val > 0,
+      'Supplier ID must be a positive integer'
+    ),
+    marginLevelId: transformers.stringToInt.refine(
+      (val) => val > 0,
+      'Margin level ID must be a positive integer'
+    ),
+    // Cas spécial : peut être null
+    subcategoryId: transformers.stringToIntOrNull
+      .refine(
+        (val) => val === null || val > 0,
+        'Subcategory ID must be a positive integer or null'
+      )
+      .optional(),
   }),
 
   // Schema pour mettre à jour un produit avec transformations

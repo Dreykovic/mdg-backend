@@ -1,4 +1,4 @@
-import { Inventory, MovementReason, StockMovement } from '@prisma/client';
+import { Inventory, StockMovement } from '@prisma/client';
 import { Service } from 'typedi';
 
 import StockService from './stock.service';
@@ -37,6 +37,7 @@ export default class StockMvtService extends StockService {
         validatedData.quantity,
         (validatedData.unitCost ?? inventory.unitCost) as number
       );
+      const reason = this.getMovementReasonFromType(validatedData.movementType);
 
       // Create the movement
       const movement = await tx.stockMovement.create({
@@ -48,7 +49,7 @@ export default class StockMvtService extends StockService {
           unitCost: validatedData.unitCost ?? inventory.unitCost,
           totalValue,
           movementType: validatedData.movementType,
-          reason: validatedData.reason as MovementReason,
+          reason,
           status: validatedData.status,
           notes: validatedData.notes,
           lotNumber: validatedData.lotNumber,

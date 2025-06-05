@@ -50,13 +50,13 @@ export class StockMvtController {
   /**
    * Get a stock movement by ID
    */
-  @Get('/:modelId')
+  @Get('/details/:modelId')
   @ControllerErrorHandler('StockMvtController.getStockMovement')
   @ValidateRequest({
     params: CommonSchemas.entityStringParam,
   })
   async getStockMovement(req: Request, res: Response): Promise<void> {
-    const { movementId } = req.params;
+    const movementId = req.params.modelId;
 
     if (movementId === null || movementId === undefined || movementId === '') {
       throw new Error('Movement ID is required.');
@@ -97,14 +97,14 @@ export class StockMvtController {
   /**
    * Process a stock movement
    */
-  @Patch('/:modelId/process')
+  @Patch('/process/:modelId')
   @ControllerErrorHandler('StockMvtController.processStockMovement')
   @ValidateRequest({
     params: CommonSchemas.entityStringParam,
     body: StockMvtSchemas.processStockMovement,
   })
   async processStockMovement(req: Request, res: Response): Promise<void> {
-    const { movementId } = req.params;
+    const movementId = req.params.modelId;
     const { action } = req.body;
     const userId = (req as any).user.id;
 
